@@ -92,6 +92,25 @@ export interface CalendarEventItem {
   updated_at: string;
 }
 
+export interface CalendarCategoryItem {
+  id: string;
+  name: string;
+  color: string;
+  is_visible: number; // 0 or 1
+  is_default?: number; // 0 or 1
+  created_at?: string;
+}
+
+export interface CalendarSettings {
+  hourRange: '24h' | 'extended' | 'work'; // 24h: 0-23, extended: 6-23, work: 8-20
+  slotDensity: 'compact' | 'standard' | 'spacious'; // 48px, 60px, 76px
+  firstDayOfWeek: 'monday' | 'sunday';
+  hideWeekends: boolean;
+  hideCompletedTasks: boolean;
+  defaultTaskDuration: number; // 15, 30, 45, 60 minutes
+  showDDayBadges: boolean;
+}
+
 export interface UnifiedCalendarItem {
   id: string;
   type: 'event' | 'task';

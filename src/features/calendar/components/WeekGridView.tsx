@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import { UnifiedCalendarItem } from '../../../types';
+import { UnifiedCalendarItem, CalendarSettings } from '../../../types';
 import { CurrentTimeIndicator } from './CurrentTimeIndicator';
 import { TimeBlockItem } from './TimeBlockItem';
 import { IOS_COLORS } from '../../../styles/theme';
@@ -8,50 +8,92 @@ import { IOS_COLORS } from '../../../styles/theme';
 interface WeekGridViewProps {
   selectedDate: Date;
   unifiedItems: UnifiedCalendarItem[];
+  settings: CalendarSettings;
   onSelectEvent: (item: UnifiedCalendarItem) => void;
   onSlotPress: (dateStr: string, hour: number) => void;
   isDark?: boolean;
 }
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 06:00 a 23:00
-const HOUR_HEIGHT = 60; // Altura en px por cada hora
-
 export const WeekGridView: React.FC<WeekGridViewProps> = ({
   selectedDate,
   unifiedItems,
+  settings,
   onSelectEvent,
   onSlotPress,
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  // Calcular los 7 días de la semana visible (Lunes a Domingo)
+  // 1. Configuración de Horas según hourRange
+  const { startHour, endHour, hoursList } = useMemo(() => {
+    let start = 6;
+    let end = 23;
+
+    if (settings.hourRange === 'work') {
+      start = 8;
+      end = 20;
+    } else if (settings.hourRange === '24h') {
+      start = 0;
+      end = 23;
+    }
+
+    const list = Array.from({ length: end - start + 1 }, (_, i) => i + start);
+    return { startHour: start, endHour: end, hoursList: list };
+  }, [settings.hourRange]);
+
+  // 2. Altura de fila según slotDensity
+  const hourHeight = useMemo(() => {
+    if (settings.slotDensity === 'compact') return 48;
+    if (settings.slotDensity === 'spacious') return 76;
+    return 60; // standard
+  }, [settings.slotDensity]);
+
+  // 3. Calcular los días de la semana visible según firstDayOfWeek y hideWeekends
   const weekDays = useMemo(() => {
     const curr = new Date(selectedDate);
-    const dayOfWeek = (curr.getDay() + 6) % 7; // 0 = Lunes, 6 = Domingo
-    const monday = new Date(curr);
-    monday.setDate(curr.getDate() - dayOfWeek);
+    const dayOfWeek = curr.getDay(); // 0 = Domingo, 1 = Lunes, ... 6 = Sábado
+    
+    let offset = 0;
+    if (settings.firstDayOfWeek === 'monday') {
+      offset = (dayOfWeek + 6) % 7; // 0 = Lunes, 6 = Domingo
+    } else {
+      offset = dayOfWeek; // 0 = Domingo, 6 = Sábado
+    }
 
-    const days: { date: Date; dateStr: string; dayName: string; dayNum: number; isToday: boolean }[] = [];
-    const dayNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+    const startDate = new Date(curr);
+    startDate.setDate(curr.getDate() - offset);
+
+    const days: { date: Date; dateStr: string; dayName: string; dayNum: number; isToday: boolean; isWeekend: boolean }[] = [];
+    const allDayNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
     const todayStr = '2026-08-24';
 
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const str = d.toISOString().split('T')[0];
+    const count = settings.hideWeekends ? 5 : 7;
 
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const dayIdx = d.getDay();
+      const isWeekend = dayIdx === 0 || dayIdx === 6;
+
+      if (settings.hideWeekends && isWeekend) {
+        continue;
+      }
+
+      const str = d.toISOString().split('T')[0];
       days.push({
         date: d,
         dateStr: str,
-        dayName: dayNames[i],
+        dayName: allDayNames[dayIdx],
         dayNum: d.getDate(),
         isToday: str === todayStr,
+        isWeekend,
       });
+
+      if (days.length === count) break;
     }
 
     return days;
-  }, [selectedDate]);
+  }, [selectedDate, settings.firstDayOfWeek, settings.hideWeekends]);
 
   // Eventos de todo el día separados por fecha
   const allDayItemsByDate = useMemo(() => {
@@ -73,7 +115,7 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
           backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
           borderBottomWidth: 1,
           borderBottomColor: isDark ? '#2C2C2E' : '#E5E5EA',
-          paddingLeft: 56, // Espacio para el eje horario
+          paddingLeft: 56,
         }}
       >
         {weekDays.map((day) => (
@@ -87,7 +129,13 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
               borderRightColor: isDark ? '#242426' : '#F2F2F7',
             }}
           >
-            <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '800',
+                color: day.isWeekend ? '#FF3B30' : theme.text.secondary,
+              }}
+            >
               {day.dayName}
             </Text>
 
@@ -167,16 +215,16 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
       {/* 3. Grilla Horaria Scrollable */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ height: HOURS.length * HOUR_HEIGHT }}
+        contentContainerStyle={{ height: hoursList.length * hourHeight }}
       >
         <View style={{ flex: 1, flexDirection: 'row' }}>
-          {/* Eje Horario Izquierdo (06:00 a 23:00) */}
+          {/* Eje Horario Izquierdo */}
           <View style={{ width: 56, backgroundColor: isDark ? '#121214' : '#F9FAFB' }}>
-            {HOURS.map((hour) => (
+            {hoursList.map((hour) => (
               <View
                 key={hour}
                 style={{
-                  height: HOUR_HEIGHT,
+                  height: hourHeight,
                   justifyContent: 'flex-start',
                   paddingTop: 2,
                   paddingRight: 8,
@@ -190,10 +238,9 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
             ))}
           </View>
 
-          {/* 7 Columnas de Días */}
+          {/* Columnas de Días */}
           <View style={{ flex: 1, flexDirection: 'row', position: 'relative' }}>
             {weekDays.map((day) => {
-              // Filtrar actividades con horario para este día
               const dayTimedItems = unifiedItems.filter(
                 (item) => !item.is_all_day && item.date === day.dateStr && item.start_time
               );
@@ -209,27 +256,29 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
                   }}
                 >
                   {/* Líneas Horarias de Fondo */}
-                  {HOURS.map((hour) => (
+                  {hoursList.map((hour) => (
                     <Pressable
                       key={hour}
                       onPress={() => onSlotPress(day.dateStr, hour)}
                       style={{
-                        height: HOUR_HEIGHT,
+                        height: hourHeight,
                         borderBottomWidth: 1,
                         borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F2F2F7',
                       }}
                     />
                   ))}
 
-                  {/* Indicador de Hora Actual en Vivo (solo en la columna de Hoy) */}
+                  {/* Indicador de Hora Actual en Vivo (solo en la columna de Hoy si cae en el rango) */}
                   {day.isToday && (
-                    <CurrentTimeIndicator hourHeight={HOUR_HEIGHT} isDark={isDark} />
+                    <CurrentTimeIndicator hourHeight={hourHeight} isDark={isDark} />
                   )}
 
                   {/* Bloques de Time-Blocking Posicionados Absolutamente */}
                   {dayTimedItems.map((item) => {
                     const [h, m] = (item.start_time || '08:00').split(':').map(Number);
-                    const top = ((h - 6) * 60 + m) * (HOUR_HEIGHT / 60);
+                    if (h < startHour || h > endHour) return null;
+
+                    const top = ((h - startHour) * 60 + m) * (hourHeight / 60);
 
                     return (
                       <View
@@ -245,7 +294,7 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
                         <TimeBlockItem
                           item={item}
                           onPress={onSelectEvent}
-                          isCompact
+                          isCompact={settings.slotDensity === 'compact'}
                           isDark={isDark}
                         />
                       </View>

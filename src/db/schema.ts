@@ -93,7 +93,15 @@ export const CREATE_TABLES_SQL = `
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
-  CREATE INDEX IF NOT EXISTS idx_events_dates ON calendar_events(start_date, end_date);
+  -- Categorías / Calendarios personalizados
+  CREATE TABLE IF NOT EXISTS calendar_categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#007AFF',
+    is_visible INTEGER DEFAULT 1,
+    is_default INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
 
   -- Categorías de finanzas
   CREATE TABLE IF NOT EXISTS categories (

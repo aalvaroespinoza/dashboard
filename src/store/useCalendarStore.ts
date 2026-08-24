@@ -1,29 +1,39 @@
 import { create } from 'zustand';
-import { CalendarEventItem, CalendarViewMode, UnifiedCalendarItem, TaskItem } from '../types';
+import {
+  CalendarEventItem,
+  CalendarViewMode,
+  UnifiedCalendarItem,
+  CalendarCategoryItem,
+  CalendarSettings,
+} from '../types';
 import { calendarRepo } from '../db/repositories/calendarRepo';
+import { calendarCategoriesRepo } from '../db/repositories/calendarCategoriesRepo';
 import { useTasksStore } from './useTasksStore';
-
-export interface CalendarCategoryItem {
-  id: string;
-  name: string;
-  color: string;
-  isVisible: boolean;
-}
 
 interface CalendarState {
   events: CalendarEventItem[];
   selectedDate: string; // YYYY-MM-DD
   viewMode: CalendarViewMode;
   categories: CalendarCategoryItem[];
+  settings: CalendarSettings;
   isLoading: boolean;
 
   loadEvents: () => Promise<void>;
+  loadCategories: () => Promise<void>;
   setSelectedDate: (date: string) => void;
   setViewMode: (mode: CalendarViewMode) => void;
   nextPeriod: () => void;
   prevPeriod: () => void;
   goToToday: () => void;
-  toggleCategoryVisibility: (categoryId: string) => void;
+  toggleCategoryVisibility: (categoryId: string) => Promise<void>;
+
+  // Gestión de Calendarios
+  createCategory: (name: string, color: string) => Promise<CalendarCategoryItem>;
+  updateCategory: (id: string, updates: Partial<CalendarCategoryItem>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
+
+  // Configuración Pro
+  updateSettings: (updates: Partial<CalendarSettings>) => void;
 
   addEvent: (event: {
     title: string;
@@ -47,27 +57,43 @@ interface CalendarState {
   getDDayText: (targetDateStr: string, baseDateStr?: string) => string;
 }
 
-const DEFAULT_CATEGORIES: CalendarCategoryItem[] = [
-  { id: 'cat-personal', name: 'Personal', color: '#34C759', isVisible: true },
-  { id: 'cat-work', name: 'Trabajo / UTN', color: '#FF9500', isVisible: true },
-  { id: 'cat-study', name: 'Estudios & Exámenes', color: '#007AFF', isVisible: true },
-  { id: 'cat-bday', name: 'Cumpleaños & Eventos', color: '#FF2D55', isVisible: true },
-];
+const DEFAULT_SETTINGS: CalendarSettings = {
+  hourRange: 'extended', // 'extended' (06:00-23:00), '24h' (00:00-23:00), 'work' (08:00-20:00)
+  slotDensity: 'standard', // 'compact' (48px), 'standard' (60px), 'spacious' (76px)
+  firstDayOfWeek: 'monday',
+  hideWeekends: false,
+  hideCompletedTasks: false,
+  defaultTaskDuration: 45,
+  showDDayBadges: true,
+};
 
 export const useCalendarStore = create<CalendarState>((set, get) => ({
   events: [],
   selectedDate: '2026-08-24',
   viewMode: 'month_hybrid',
-  categories: DEFAULT_CATEGORIES,
+  categories: [],
+  settings: DEFAULT_SETTINGS,
   isLoading: false,
 
   loadEvents: async () => {
     set({ isLoading: true });
     try {
-      const events = await calendarRepo.getAll();
-      set({ events, isLoading: false });
+      const [events, categories] = await Promise.all([
+        calendarRepo.getAll(),
+        calendarCategoriesRepo.getAll(),
+      ]);
+      set({ events, categories, isLoading: false });
     } catch {
       set({ isLoading: false });
+    }
+  },
+
+  loadCategories: async () => {
+    try {
+      const categories = await calendarCategoriesRepo.getAll();
+      set({ categories });
+    } catch (e) {
+      console.error('Error loading categories', e);
     }
   },
 
@@ -76,11 +102,43 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
 
   goToToday: () => set({ selectedDate: '2026-08-24' }),
 
-  toggleCategoryVisibility: (categoryId) => {
+  updateSettings: (updates) => {
+    set((state) => ({
+      settings: { ...state.settings, ...updates },
+    }));
+  },
+
+  toggleCategoryVisibility: async (categoryId) => {
+    const current = get().categories.find((c) => c.id === categoryId);
+    if (!current) return;
+
+    const newVisibility = current.is_visible ? 0 : 1;
     set((state) => ({
       categories: state.categories.map((c) =>
-        c.id === categoryId ? { ...c, isVisible: !c.isVisible } : c
+        c.id === categoryId ? { ...c, is_visible: newVisibility } : c
       ),
+    }));
+
+    await calendarCategoriesRepo.update(categoryId, { is_visible: newVisibility });
+  },
+
+  createCategory: async (name, color) => {
+    const created = await calendarCategoriesRepo.create(name, color);
+    set((state) => ({ categories: [...state.categories, created] }));
+    return created;
+  },
+
+  updateCategory: async (id, updates) => {
+    await calendarCategoriesRepo.update(id, updates);
+    set((state) => ({
+      categories: state.categories.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    }));
+  },
+
+  deleteCategory: async (id) => {
+    await calendarCategoriesRepo.delete(id);
+    set((state) => ({
+      categories: state.categories.filter((c) => c.id !== id),
     }));
   },
 
@@ -157,11 +215,11 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 
   getUnifiedItemsForDate: (dateStr: string) => {
-    const { events, categories, getDDayText } = get();
+    const { events, categories, settings, getDDayText } = get();
     const tasks = useTasksStore.getState().tasks;
     const lists = useTasksStore.getState().lists;
 
-    const visibleCategories = categories.filter((c) => c.isVisible).map((c) => c.name.toLowerCase());
+    const visibleCategories = categories.filter((c) => c.is_visible).map((c) => c.name.toLowerCase());
 
     const result: UnifiedCalendarItem[] = [];
 
@@ -174,7 +232,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
         const endTime = evt.end_date.includes('T') ? evt.end_date.split('T')[1].slice(0, 5) : null;
         
         let dDayText = null;
-        if (evt.is_milestone || evt.d_day_target) {
+        if (settings.showDDayBadges && (evt.is_milestone || evt.d_day_target)) {
           dDayText = getDDayText(evt.d_day_target || evtDate, '2026-08-24');
         }
 
@@ -200,6 +258,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     // 2. Inyectar tareas programadas para el día (Google Time-Blocking)
     tasks.forEach((task) => {
       if (task.due_date === dateStr) {
+        if (settings.hideCompletedTasks && task.is_completed) {
+          return;
+        }
+
         const list = lists.find((l) => l.id === task.list_id);
         const listName = list?.title || 'Recordatorios';
         const listColor = list?.color || '#007AFF';
@@ -212,7 +274,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
           location: null,
           date: dateStr,
           start_time: task.due_time || null,
-          end_time: task.due_time ? getEstimatedEndTime(task.due_time) : null,
+          end_time: task.due_time ? getEstimatedEndTime(task.due_time, settings.defaultTaskDuration) : null,
           is_all_day: !task.due_time,
           color: listColor,
           calendar_name: listName,
@@ -251,9 +313,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 }));
 
-function getEstimatedEndTime(startTimeStr: string): string {
+export function getEstimatedEndTime(startTimeStr: string, durationMinutes = 45): string {
   const [h, m] = startTimeStr.split(':').map(Number);
-  const totalMin = h * 60 + m + 45; // default 45min block
+  const totalMin = h * 60 + m + durationMinutes;
   const endH = Math.floor(totalMin / 60) % 24;
   const endM = totalMin % 60;
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;

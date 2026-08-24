@@ -9,6 +9,7 @@ import { CalendarSidebar } from './components/CalendarSidebar';
 import { WeekGridView } from './components/WeekGridView';
 import { MonthHybridView } from './components/MonthHybridView';
 import { EventModal } from './components/EventModal';
+import { CalendarSettingsModal } from './components/CalendarSettingsModal';
 import { IOS_COLORS } from '../../styles/theme';
 
 export const CalendarScreen: React.FC = () => {
@@ -21,6 +22,7 @@ export const CalendarScreen: React.FC = () => {
     selectedDate,
     viewMode,
     categories,
+    settings,
     loadEvents,
     setSelectedDate,
     setViewMode,
@@ -44,6 +46,7 @@ export const CalendarScreen: React.FC = () => {
 
   const [inspectingItem, setInspectingItem] = useState<CalendarEventItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<{ dateStr?: string; hour?: number }>({});
 
   const currentDateObj = useMemo(() => {
@@ -81,7 +84,7 @@ export const CalendarScreen: React.FC = () => {
   // Items unificados para el día seleccionado
   const unifiedItemsForSelectedDate = useMemo(() => {
     return getUnifiedItemsForDate(selectedDate);
-  }, [selectedDate, events, categories]);
+  }, [selectedDate, events, categories, settings]);
 
   // Items unificados para la semana completa
   const unifiedItemsForWeek = useMemo(() => {
@@ -96,7 +99,7 @@ export const CalendarScreen: React.FC = () => {
     const endStr = sunday.toISOString().split('T')[0];
 
     return getUnifiedItemsForRange(startStr, endStr);
-  }, [currentDateObj, events, categories]);
+  }, [currentDateObj, events, categories, settings]);
 
   // Metadata de todos los eventos del mes (para los dots de la cuadrícula)
   const allEventsForMonthMap = useMemo(() => {
@@ -121,7 +124,7 @@ export const CalendarScreen: React.FC = () => {
     });
 
     return map;
-  }, [currentDateObj, events, categories]);
+  }, [currentDateObj, events, categories, settings]);
 
   const handleOpenNewEvent = (dateStr?: string, hour?: number) => {
     setInspectingItem(null);
@@ -151,6 +154,7 @@ export const CalendarScreen: React.FC = () => {
         categories={categories}
         onToggleCategory={toggleCategoryVisibility}
         onAddEvent={() => handleOpenNewEvent(selectedDate)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
         isDark={isDark}
       />
 
@@ -187,6 +191,7 @@ export const CalendarScreen: React.FC = () => {
             <WeekGridView
               selectedDate={currentDateObj}
               unifiedItems={unifiedItemsForWeek}
+              settings={settings}
               onSelectEvent={handleOpenEditEvent}
               onSlotPress={(dateStr, hour) => handleOpenNewEvent(dateStr, hour)}
               isDark={isDark}
@@ -221,6 +226,13 @@ export const CalendarScreen: React.FC = () => {
           setIsModalOpen(false);
           setInspectingItem(null);
         }}
+        isDark={isDark}
+      />
+
+      {/* Modal de Configuración y Personalización Pro */}
+      <CalendarSettingsModal
+        visible={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
         isDark={isDark}
       />
     </View>

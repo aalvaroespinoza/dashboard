@@ -29,9 +29,9 @@ function calculateDDay(targetDateStr, baseDateStr = '2026-08-24') {
 }
 
 // Función pura de estimación de fin de slot para tareas de Time-Blocking
-function getEstimatedEndTime(startTimeStr) {
+function getEstimatedEndTime(startTimeStr, durationMinutes = 45) {
   const [h, m] = startTimeStr.split(':').map(Number);
-  const totalMin = h * 60 + m + 45;
+  const totalMin = h * 60 + m + durationMinutes;
   const endH = Math.floor(totalMin / 60) % 24;
   const endM = totalMin % 60;
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
@@ -78,11 +78,12 @@ test('3. Cálculo de Badges D-Day para Hitos y Exámenes en Zona Horaria Córdob
   assert.equal(calculateDDay('2026-08-20', today), 'D+4', 'Hace 4 días debe ser D+4');
 });
 
-test('4. Estimación de Bloques de Time-Blocking (45 minutos estándar)', () => {
-  assert.equal(getEstimatedEndTime('09:00'), '09:45');
-  assert.equal(getEstimatedEndTime('14:30'), '15:15');
-  assert.equal(getEstimatedEndTime('23:30'), '00:15');
-  assert.equal(getEstimatedEndTime('18:20'), '19:05');
+test('4. Estimación de Bloques de Time-Blocking Configurables (15m, 30m, 45m, 60m)', () => {
+  assert.equal(getEstimatedEndTime('09:00', 15), '09:15');
+  assert.equal(getEstimatedEndTime('09:00', 30), '09:30');
+  assert.equal(getEstimatedEndTime('09:00', 45), '09:45');
+  assert.equal(getEstimatedEndTime('09:00', 60), '10:00');
+  assert.equal(getEstimatedEndTime('23:30', 45), '00:15');
 });
 
 test('5. Integridad de Items Polimórficos (Tareas vs Eventos)', () => {
@@ -109,4 +110,33 @@ test('5. Integridad de Items Polimórficos (Tareas vs Eventos)', () => {
   assert.equal(unifiedTask.is_completed, false);
   assert.equal(unifiedEvent.type, 'event');
   assert.equal(unifiedEvent.d_day_text, 'D-3');
+});
+
+test('6. Filtro de Fines de Semana para Modo Trabajo (5 columnas vs 7 columnas)', () => {
+  const allDays = [
+    { dayName: 'LUN', isWeekend: false },
+    { dayName: 'MAR', isWeekend: false },
+    { dayName: 'MIÉ', isWeekend: false },
+    { dayName: 'JUE', isWeekend: false },
+    { dayName: 'VIE', isWeekend: false },
+    { dayName: 'SÁB', isWeekend: true },
+    { dayName: 'DOM', isWeekend: true },
+  ];
+
+  const workWeek = allDays.filter((d) => !d.isWeekend);
+  assert.equal(workWeek.length, 5, 'El modo trabajo debe contener exactamente 5 días hábiles');
+  assert.equal(workWeek[0].dayName, 'LUN');
+  assert.equal(workWeek[4].dayName, 'VIE');
+});
+
+test('7. Filtro de Tareas Completadas según Preferencia del Usuario', () => {
+  const tasks = [
+    { id: '1', title: 'Tarea Pendiente 1', is_completed: false },
+    { id: '2', title: 'Tarea Terminada', is_completed: true },
+    { id: '3', title: 'Tarea Pendiente 2', is_completed: false },
+  ];
+
+  const filteredWhenHidden = tasks.filter((t) => !t.is_completed);
+  assert.equal(filteredWhenHidden.length, 2);
+  assert.equal(filteredWhenHidden.some((t) => t.is_completed), false);
 });

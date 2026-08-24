@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Check, Plus, Sliders } from 'lucide-react-native';
 import { IOS_COLORS } from '../../../styles/theme';
 import { GlassContainer } from '../../../components/common/GlassContainer';
-import { CalendarCategoryItem } from '../../../store/useCalendarStore';
+import { CalendarCategoryItem } from '../../../types';
 
 interface CalendarSidebarProps {
   selectedDate: Date;
@@ -11,6 +11,7 @@ interface CalendarSidebarProps {
   categories: CalendarCategoryItem[];
   onToggleCategory: (id: string) => void;
   onAddEvent: () => void;
+  onOpenSettings: () => void;
   isDark?: boolean;
 }
 
@@ -20,11 +21,12 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
   categories,
   onToggleCategory,
   onAddEvent,
+  onOpenSettings,
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  const { monthName, yearNumber, calendarDays, currentDayNumber } = useMemo(() => {
+  const { monthName, yearNumber, calendarDays } = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
     const currentDay = selectedDate.getDate();
@@ -63,7 +65,6 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
       monthName: capitalizedMonth,
       yearNumber: year,
       calendarDays: daysArray.slice(0, 35),
-      currentDayNumber: currentDay,
     };
   }, [selectedDate]);
 
@@ -173,7 +174,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 4 }}>
             {calendarDays.map((item, index) => {
               const isToday =
-                item.date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+                item.date.toISOString().split('T')[0] === '2026-08-24';
 
               return (
                 <Pressable
@@ -215,68 +216,83 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
           </View>
         </View>
 
-        {/* 2. Categorías / Calendarios Visibles */}
+        {/* 2. Categorías / Calendarios Visibles con Botón de Ajustes */}
         <View style={{ gap: 10 }}>
-          <Text
-            style={{
-              fontSize: 11,
-              fontWeight: '800',
-              color: theme.text.secondary,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-              paddingLeft: 2,
-            }}
-          >
-            Mis Calendarios
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '800',
+                color: theme.text.secondary,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}
+            >
+              Mis Calendarios
+            </Text>
+
+            <Pressable
+              onPress={onOpenSettings}
+              style={{
+                padding: 4,
+                borderRadius: 6,
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E5E5EA',
+              }}
+            >
+              <Sliders size={13} color={theme.text.secondary} />
+            </Pressable>
+          </View>
 
           <View style={{ gap: 6 }}>
-            {categories.map((cat) => (
-              <Pressable
-                key={cat.id}
-                onPress={() => onToggleCategory(cat.id)}
-                style={({ pressed }) => ({
-                  opacity: pressed ? 0.75 : 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingVertical: 8,
-                  paddingHorizontal: 10,
-                  borderRadius: 12,
-                  backgroundColor: cat.isVisible
-                    ? isDark
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : '#F2F2F7'
-                    : 'transparent',
-                })}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 6,
-                      backgroundColor: cat.isVisible ? cat.color : 'transparent',
-                      borderWidth: 2,
-                      borderColor: cat.color,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {cat.isVisible && <Check size={11} color="#FFFFFF" strokeWidth={3} />}
+            {categories.map((cat) => {
+              const isVisible = Boolean(cat.is_visible);
+              return (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => onToggleCategory(cat.id)}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.75 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 8,
+                    paddingHorizontal: 10,
+                    borderRadius: 12,
+                    backgroundColor: isVisible
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : '#F2F2F7'
+                      : 'transparent',
+                  })}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 6,
+                        backgroundColor: isVisible ? cat.color : 'transparent',
+                        borderWidth: 2,
+                        borderColor: cat.color,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {isVisible && <Check size={11} color="#FFFFFF" strokeWidth={3} />}
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: isVisible ? '700' : '500',
+                        color: isVisible ? theme.text.primary : theme.text.secondary,
+                      }}
+                    >
+                      {cat.name}
+                    </Text>
                   </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: cat.isVisible ? '700' : '500',
-                      color: cat.isVisible ? theme.text.primary : theme.text.secondary,
-                    }}
-                  >
-                    {cat.name}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       </ScrollView>

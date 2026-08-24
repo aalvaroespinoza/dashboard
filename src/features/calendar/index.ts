@@ -6,3 +6,4 @@ export * from './components/MonthHybridView';
 export * from './components/TimeBlockItem';
 export * from './components/CurrentTimeIndicator';
 export * from './components/EventModal';
+export * from './components/CalendarSettingsModal';

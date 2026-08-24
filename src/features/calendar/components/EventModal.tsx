@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TextInput, Pressable, ScrollView, Switch } from 'react-native';
 import { X, Trash2, Clock, MapPin, Flag, Calendar } from 'lucide-react-native';
-import { CalendarEventItem } from '../../../types';
+import { CalendarEventItem, CalendarCategoryItem } from '../../../types';
 import { IOS_COLORS } from '../../../styles/theme';
-import { CalendarCategoryItem } from '../../../store/useCalendarStore';
 import { createShadow } from '../../../styles/shadows';
 
 interface EventModalProps {

@@ -1,12 +1,25 @@
 {
-  "name": "dashboard",
+  "name": "dashboard-tablet",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "expo": "~57.0.16",
+    "expo": "^57.0.16",
+    "expo-secure-store": "~57.0.1",
+    "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
+    "fast-xml-parser": "^5.11.0",
+    "lucide-react-native": "^1.34.0",
+    "nativewind": "^4.2.6",
     "react": "19.2.3",
-    "react-native": "0.86.2"
+    "react-dom": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "tailwindcss": "^3.4.19",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
@@ -14,9 +27,11 @@
   },
   "scripts": {
     "start": "expo start",
+    "start:lan": "expo start --lan",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
   },
   "private": true
 }

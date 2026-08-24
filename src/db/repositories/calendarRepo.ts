@@ -44,15 +44,17 @@ export const calendarRepo = {
     const now = new Date().toISOString();
     const newEvent: CalendarEventItem = {
       ...event,
+      is_milestone: event.is_milestone ? 1 : 0,
+      d_day_target: event.d_day_target || null,
       created_at: now,
       updated_at: now,
     };
     await db.runAsync(
       `INSERT INTO calendar_events (
         id, title, description, location, start_date, end_date,
-        is_all_day, color, calendar_name, icloud_uid, icloud_href,
+        is_all_day, is_milestone, d_day_target, color, calendar_name, icloud_uid, icloud_href,
         icloud_etag, sync_status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newEvent.id,
         newEvent.title,
@@ -61,6 +63,8 @@ export const calendarRepo = {
         newEvent.start_date,
         newEvent.end_date,
         newEvent.is_all_day ? 1 : 0,
+        newEvent.is_milestone ? 1 : 0,
+        newEvent.d_day_target || null,
         newEvent.color || '#3B82F6',
         newEvent.calendar_name || 'Personal',
         newEvent.icloud_uid || null,
@@ -103,6 +107,14 @@ export const calendarRepo = {
     if (updates.is_all_day !== undefined) {
       fields.push('is_all_day = ?');
       values.push(updates.is_all_day ? 1 : 0);
+    }
+    if (updates.is_milestone !== undefined) {
+      fields.push('is_milestone = ?');
+      values.push(updates.is_milestone ? 1 : 0);
+    }
+    if (updates.d_day_target !== undefined) {
+      fields.push('d_day_target = ?');
+      values.push(updates.d_day_target || null);
     }
     if (updates.color !== undefined) {
       fields.push('color = ?');

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TextInput, Pressable, ScrollView } from 'react-native';
-import { X, Trash2, Clock, MapPin } from 'lucide-react-native';
+import { View, Text, Modal, TextInput, Pressable, ScrollView, Switch } from 'react-native';
+import { X, Trash2, Clock, MapPin, Flag, Calendar } from 'lucide-react-native';
 import { CalendarEventItem } from '../../../types';
 import { IOS_COLORS } from '../../../styles/theme';
-import { CalendarCategory } from './CalendarSidebar';
+import { CalendarCategoryItem } from '../../../store/useCalendarStore';
+import { createShadow } from '../../../styles/shadows';
 
 interface EventModalProps {
   visible: boolean;
   event: CalendarEventItem | null;
   initialDate?: string;
   initialHour?: number;
-  categories: CalendarCategory[];
+  categories: CalendarCategoryItem[];
   onClose: () => void;
   onSave: (eventData: {
     title: string;
@@ -18,6 +19,8 @@ interface EventModalProps {
     location?: string;
     start_date: string;
     end_date: string;
+    is_milestone?: boolean;
+    d_day_target?: string;
     color?: string;
     calendar_name?: string;
   }) => Promise<void>;
@@ -44,6 +47,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [dateStr, setDateStr] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
+  const [isMilestone, setIsMilestone] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Personal');
   const [color, setColor] = useState<string>(IOS_COLORS.blue);
 
@@ -55,10 +59,11 @@ export const EventModal: React.FC<EventModalProps> = ({
       setDateStr(event.start_date.split('T')[0]);
       setStartTime(event.start_date.includes('T') ? event.start_date.split('T')[1].slice(0, 5) : '09:00');
       setEndTime(event.end_date.includes('T') ? event.end_date.split('T')[1].slice(0, 5) : '10:00');
+      setIsMilestone(Boolean(event.is_milestone));
       setSelectedCategory(event.calendar_name || 'Personal');
       setColor(event.color || IOS_COLORS.blue);
     } else {
-      const today = initialDate || new Date().toISOString().split('T')[0];
+      const today = initialDate || '2026-08-24';
       const startH = initialHour !== undefined ? initialHour.toString().padStart(2, '0') : '09';
       const endH = initialHour !== undefined ? (initialHour + 1).toString().padStart(2, '0') : '10';
 
@@ -68,6 +73,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       setDateStr(today);
       setStartTime(`${startH}:00`);
       setEndTime(`${endH}:00`);
+      setIsMilestone(false);
       setSelectedCategory(categories.length > 0 ? categories[0].name : 'Personal');
       setColor(categories.length > 0 ? categories[0].color : IOS_COLORS.blue);
     }
@@ -85,6 +91,8 @@ export const EventModal: React.FC<EventModalProps> = ({
       location: location.trim() || undefined,
       start_date,
       end_date,
+      is_milestone: isMilestone,
+      d_day_target: isMilestone ? dateStr : undefined,
       color,
       calendar_name: selectedCategory,
     });
@@ -97,7 +105,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       <View
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(0,0,0,0.65)',
           alignItems: 'center',
           justifyContent: 'center',
           padding: 20,
@@ -105,231 +113,255 @@ export const EventModal: React.FC<EventModalProps> = ({
       >
         <View
           style={{
-            width: 480,
+            width: '90%',
+            maxWidth: 460,
             backgroundColor: theme.card,
-            borderRadius: 20,
-            padding: 24,
+            borderRadius: 24,
             borderWidth: 1,
-            borderColor: theme.border,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.2,
-            shadowRadius: 10,
+            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.8)',
+            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
+            borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E5E5EA',
+            borderRightColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E5E5EA',
+            padding: 24,
+            gap: 16,
+            ...createShadow('#000000', { width: 0, height: 8 }, 0.3, 16),
           }}
         >
           {/* Header */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text.primary }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.4 }}>
               {event ? 'Editar Evento' : 'Nuevo Evento'}
             </Text>
-            <Pressable onPress={onClose}>
-              <X size={20} color={theme.text.secondary} />
-            </Pressable>
-          </View>
 
-          {/* Título */}
-          <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginBottom: 6 }}>
-            Título
-          </Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Nombre del evento o reunión"
-            placeholderTextColor={theme.text.tertiary}
-            style={{
-              backgroundColor: theme.cardSecondary,
-              borderWidth: 1,
-              borderColor: theme.border,
-              borderRadius: 10,
-              padding: 12,
-              fontSize: 14,
-              color: theme.text.primary,
-              marginBottom: 14,
-            }}
-          />
-
-          {/* Calendario / Categoría */}
-          <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginBottom: 6 }}>
-            Calendario
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-            {categories.map((cat) => (
-              <Pressable
-                key={cat.id}
-                onPress={() => {
-                  setSelectedCategory(cat.name);
-                  setColor(cat.color);
-                }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 8,
-                  backgroundColor: selectedCategory === cat.name ? `${cat.color}20` : theme.cardSecondary,
-                  borderWidth: 1,
-                  borderColor: selectedCategory === cat.name ? cat.color : theme.border,
-                  gap: 6,
-                }}
-              >
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.color }} />
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: '700',
-                    color: selectedCategory === cat.name ? cat.color : theme.text.primary,
-                  }}
-                >
-                  {cat.name}
-                </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              {event && onDelete && (
+                <Pressable onPress={() => onDelete(event.id)}>
+                  <Trash2 size={18} color="#FF3B30" />
+                </Pressable>
+              )}
+              <Pressable onPress={onClose}>
+                <X size={18} color={theme.text.secondary} />
               </Pressable>
-            ))}
-          </View>
-
-          {/* Fecha y Horas */}
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-            <View style={{ flex: 1.2 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginBottom: 6 }}>
-                Fecha
-              </Text>
-              <TextInput
-                value={dateStr}
-                onChangeText={setDateStr}
-                placeholder="2026-08-24"
-                placeholderTextColor={theme.text.tertiary}
-                style={{
-                  backgroundColor: theme.cardSecondary,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  borderRadius: 10,
-                  padding: 10,
-                  fontSize: 13,
-                  color: theme.text.primary,
-                }}
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginBottom: 6 }}>
-                Inicio
-              </Text>
-              <TextInput
-                value={startTime}
-                onChangeText={setStartTime}
-                placeholder="09:00"
-                placeholderTextColor={theme.text.tertiary}
-                style={{
-                  backgroundColor: theme.cardSecondary,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  borderRadius: 10,
-                  padding: 10,
-                  fontSize: 13,
-                  color: theme.text.primary,
-                }}
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginBottom: 6 }}>
-                Fin
-              </Text>
-              <TextInput
-                value={endTime}
-                onChangeText={setEndTime}
-                placeholder="10:00"
-                placeholderTextColor={theme.text.tertiary}
-                style={{
-                  backgroundColor: theme.cardSecondary,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  borderRadius: 10,
-                  padding: 10,
-                  fontSize: 13,
-                  color: theme.text.primary,
-                }}
-              />
             </View>
           </View>
 
-          {/* Ubicación */}
-          <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginBottom: 6 }}>
-            Ubicación / Sala virtual
-          </Text>
-          <TextInput
-            value={location}
-            onChangeText={setLocation}
-            placeholder="Google Meet, Oficina Central, etc."
-            placeholderTextColor={theme.text.tertiary}
-            style={{
-              backgroundColor: theme.cardSecondary,
-              borderWidth: 1,
-              borderColor: theme.border,
-              borderRadius: 10,
-              padding: 10,
-              fontSize: 13,
-              color: theme.text.primary,
-              marginBottom: 20,
-            }}
-          />
-
-          {/* Botones de acción */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            {event && onDelete ? (
-              <Pressable
-                onPress={async () => {
-                  await onDelete(event.id);
-                  onClose();
-                }}
+          <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 14 }}>
+            {/* Título */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                Título
+              </Text>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Nombre del evento..."
+                placeholderTextColor={theme.text.tertiary}
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 8,
-                  backgroundColor: 'rgba(255, 59, 48, 0.1)',
-                  gap: 6,
-                }}
-              >
-                <Trash2 size={15} color={IOS_COLORS.red} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: IOS_COLORS.red }}>
-                  Eliminar
-                </Text>
-              </Pressable>
-            ) : (
-              <View />
-            )}
-
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Pressable
-                onPress={onClose}
-                style={{
+                  backgroundColor: theme.cardSecondary,
                   paddingHorizontal: 14,
-                  paddingVertical: 9,
-                  borderRadius: 10,
-                  backgroundColor: theme.cardSecondary,
+                  paddingVertical: 12,
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontWeight: '700',
+                  color: theme.text.primary,
+                  borderWidth: 1,
+                  borderColor: theme.border,
                 }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text.secondary }}>
-                  Cancelar
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleSave}
-                style={{
-                  paddingHorizontal: 18,
-                  paddingVertical: 9,
-                  borderRadius: 10,
-                  backgroundColor: IOS_COLORS.blue,
-                }}
-              >
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
-                  Guardar
-                </Text>
-              </Pressable>
+              />
             </View>
-          </View>
+
+            {/* Fecha y Horario */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                  Fecha (YYYY-MM-DD)
+                </Text>
+                <TextInput
+                  value={dateStr}
+                  onChangeText={setDateStr}
+                  placeholder="2026-08-24"
+                  placeholderTextColor={theme.text.tertiary}
+                  style={{
+                    backgroundColor: theme.cardSecondary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: theme.text.primary,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  }}
+                />
+              </View>
+
+              <View style={{ width: 85, gap: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                  Inicio
+                </Text>
+                <TextInput
+                  value={startTime}
+                  onChangeText={setStartTime}
+                  placeholder="09:00"
+                  placeholderTextColor={theme.text.tertiary}
+                  style={{
+                    backgroundColor: theme.cardSecondary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: theme.text.primary,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  }}
+                />
+              </View>
+
+              <View style={{ width: 85, gap: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                  Fin
+                </Text>
+                <TextInput
+                  value={endTime}
+                  onChangeText={setEndTime}
+                  placeholder="10:00"
+                  placeholderTextColor={theme.text.tertiary}
+                  style={{
+                    backgroundColor: theme.cardSecondary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: theme.text.primary,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Hito / Examen (D-Day) Switch */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: theme.cardSecondary,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Flag size={16} color={isMilestone ? '#FF3B30' : theme.text.secondary} />
+                <View>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>
+                    Hito / Examen (D-Day)
+                  </Text>
+                  <Text style={{ fontSize: 11, color: theme.text.secondary }}>
+                    Mostrar badge de cuenta regresiva
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={isMilestone}
+                onValueChange={setIsMilestone}
+                trackColor={{ false: theme.border, true: '#FF3B30' }}
+              />
+            </View>
+
+            {/* Ubicación */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                Ubicación / Sala
+              </Text>
+              <TextInput
+                value={location}
+                onChangeText={setLocation}
+                placeholder="ej. Aula 304 - Campus Virtual"
+                placeholderTextColor={theme.text.tertiary}
+                style={{
+                  backgroundColor: theme.cardSecondary,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme.text.primary,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                }}
+              />
+            </View>
+
+            {/* Selector de Categoría / Calendario */}
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                Calendario
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {categories.map((cat) => {
+                  const isSelected = selectedCategory === cat.name;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => {
+                        setSelectedCategory(cat.name);
+                        setColor(cat.color);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: isSelected ? cat.color : theme.cardSecondary,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 10,
+                        gap: 6,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: isSelected ? '#FFFFFF' : cat.color,
+                        }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: '800',
+                          color: isSelected ? '#FFFFFF' : theme.text.primary,
+                        }}
+                      >
+                        {cat.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Botón Guardar */}
+          <Pressable
+            onPress={handleSave}
+            style={{
+              backgroundColor: color || '#007AFF',
+              paddingVertical: 14,
+              borderRadius: 16,
+              alignItems: 'center',
+              marginTop: 4,
+            }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '900', color: '#FFFFFF' }}>
+              Guardar Evento
+            </Text>
+          </Pressable>
         </View>
       </View>
     </Modal>

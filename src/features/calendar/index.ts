@@ -2,5 +2,7 @@ export * from './CalendarScreen';
 export * from './components/CalendarHeader';
 export * from './components/CalendarSidebar';
 export * from './components/WeekGridView';
-export * from './components/MonthGridView';
+export * from './components/MonthHybridView';
+export * from './components/TimeBlockItem';
+export * from './components/CurrentTimeIndicator';
 export * from './components/EventModal';

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Pressable } from 'react-native';
-import { Plus } from 'lucide-react-native';
-import { useCalendarStore, CalendarViewMode } from '../../store/useCalendarStore';
+import { View } from 'react-native';
+import { useCalendarStore } from '../../store/useCalendarStore';
 import { useAppStore } from '../../store/useAppStore';
-import { CalendarEventItem } from '../../types';
+import { useTasksStore } from '../../store/useTasksStore';
+import { CalendarEventItem, CalendarViewMode, UnifiedCalendarItem } from '../../types';
 import { CalendarHeader } from './components/CalendarHeader';
-import { CalendarSidebar, CalendarCategory } from './components/CalendarSidebar';
+import { CalendarSidebar } from './components/CalendarSidebar';
 import { WeekGridView } from './components/WeekGridView';
-import { MonthGridView } from './components/MonthGridView';
+import { MonthHybridView } from './components/MonthHybridView';
 import { EventModal } from './components/EventModal';
 import { IOS_COLORS } from '../../styles/theme';
 
@@ -20,52 +20,40 @@ export const CalendarScreen: React.FC = () => {
     events,
     selectedDate,
     viewMode,
+    categories,
     loadEvents,
     setSelectedDate,
     setViewMode,
     goToToday,
     nextPeriod,
     prevPeriod,
+    toggleCategoryVisibility,
     addEvent,
     updateEvent,
     deleteEvent,
+    getUnifiedItemsForDate,
+    getUnifiedItemsForRange,
   } = useCalendarStore();
+
+  const { loadTasksAndLists } = useTasksStore();
 
   useEffect(() => {
     loadEvents();
+    loadTasksAndLists();
   }, []);
 
-  const [currentDate, setCurrentDate] = useState<Date>(() => new Date(selectedDate));
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
+  const [inspectingItem, setInspectingItem] = useState<CalendarEventItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSlotInfo, setModalSlotInfo] = useState<{ dateStr?: string; hour?: number }>({});
 
-  // Categorías de calendario
-  const [categories, setCategories] = useState<CalendarCategory[]>([
-    { id: 'cat-personal', name: 'Personal', color: IOS_COLORS.purple, isVisible: true },
-    { id: 'cat-work', name: 'Trabajo', color: IOS_COLORS.blue, isVisible: true },
-    { id: 'cat-study', name: 'Estudios', color: IOS_COLORS.orange, isVisible: true },
-    { id: 'cat-bday', name: 'Cumpleaños', color: IOS_COLORS.red, isVisible: true },
-  ]);
+  const currentDateObj = useMemo(() => {
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }, [selectedDate]);
 
-  const handleToggleCategory = (id: string) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isVisible: !c.isVisible } : c))
-    );
-  };
-
-  // Filtrado de eventos por visibilidad de categoría
-  const visibleEvents = useMemo(() => {
-    const visibleNames = categories.filter((c) => c.isVisible).map((c) => c.name.toLowerCase());
-    return events.filter((e) => {
-      const name = (e.calendar_name || 'Personal').toLowerCase();
-      return visibleNames.includes(name) || visibleNames.length === 0;
-    });
-  }, [events, categories]);
-
-  // Label del rango de fechas visible
+  // Label del rango de fechas visible en el Header
   const rangeLabel = useMemo(() => {
-    const curr = new Date(currentDate);
+    const curr = currentDateObj;
     if (viewMode === 'week') {
       const dayOfWeek = (curr.getDay() + 6) % 7;
       const monday = new Date(curr);
@@ -81,165 +69,158 @@ export const CalendarScreen: React.FC = () => {
       return `${monDay} - ${sunDay} de ${monthStr.charAt(0).toUpperCase() + monthStr.slice(1)}, ${year}`;
     }
 
-    if (viewMode === 'month') {
+    if (viewMode === 'month_hybrid') {
       const monthStr = curr.toLocaleDateString('es-ES', { month: 'long' });
       return `${monthStr.charAt(0).toUpperCase() + monthStr.slice(1)} ${curr.getFullYear()}`;
     }
 
     const dayName = curr.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     return dayName.charAt(0).toUpperCase() + dayName.slice(1);
-  }, [currentDate, viewMode]);
+  }, [currentDateObj, viewMode]);
 
-  const handleSelectDate = (date: Date) => {
-    setCurrentDate(date);
-    setSelectedDate(date.toISOString().split('T')[0]);
-  };
+  // Items unificados para el día seleccionado
+  const unifiedItemsForSelectedDate = useMemo(() => {
+    return getUnifiedItemsForDate(selectedDate);
+  }, [selectedDate, events, categories]);
 
-  const handlePrev = () => {
-    const prev = new Date(currentDate);
-    if (viewMode === 'week') {
-      prev.setDate(prev.getDate() - 7);
-    } else if (viewMode === 'month') {
-      prev.setMonth(prev.getMonth() - 1);
-    } else {
-      prev.setDate(prev.getDate() - 1);
-    }
-    handleSelectDate(prev);
-  };
+  // Items unificados para la semana completa
+  const unifiedItemsForWeek = useMemo(() => {
+    const curr = currentDateObj;
+    const dayOfWeek = (curr.getDay() + 6) % 7;
+    const monday = new Date(curr);
+    monday.setDate(curr.getDate() - dayOfWeek);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
 
-  const handleNext = () => {
-    const next = new Date(currentDate);
-    if (viewMode === 'week') {
-      next.setDate(next.getDate() + 7);
-    } else if (viewMode === 'month') {
-      next.setMonth(next.getMonth() + 1);
-    } else {
-      next.setDate(next.getDate() + 1);
-    }
-    handleSelectDate(next);
-  };
+    const startStr = monday.toISOString().split('T')[0];
+    const endStr = sunday.toISOString().split('T')[0];
 
-  const handleToday = () => {
-    const now = new Date();
-    handleSelectDate(now);
-  };
+    return getUnifiedItemsForRange(startStr, endStr);
+  }, [currentDateObj, events, categories]);
 
-  const handleSlotPress = (dateStr: string, hour: number) => {
-    setSelectedEvent(null);
-    setModalSlotInfo({ dateStr, hour });
+  // Metadata de todos los eventos del mes (para los dots de la cuadrícula)
+  const allEventsForMonthMap = useMemo(() => {
+    const curr = currentDateObj;
+    const year = curr.getFullYear();
+    const month = curr.getMonth();
+
+    const firstDay = new Date(year, month - 1, 20).toISOString().split('T')[0];
+    const lastDay = new Date(year, month + 1, 10).toISOString().split('T')[0];
+
+    const monthItems = getUnifiedItemsForRange(firstDay, lastDay);
+    const map: Record<string, { count: number; colors: string[] }> = {};
+
+    monthItems.forEach((item) => {
+      if (!map[item.date]) {
+        map[item.date] = { count: 0, colors: [] };
+      }
+      map[item.date].count++;
+      if (item.color && !map[item.date].colors.includes(item.color)) {
+        map[item.date].colors.push(item.color);
+      }
+    });
+
+    return map;
+  }, [currentDateObj, events, categories]);
+
+  const handleOpenNewEvent = (dateStr?: string, hour?: number) => {
+    setInspectingItem(null);
+    setModalSlotInfo({ dateStr: dateStr || selectedDate, hour });
     setIsModalOpen(true);
   };
 
-  const handleSelectEvent = (evt: CalendarEventItem) => {
-    setSelectedEvent(evt);
-    setModalSlotInfo({});
-    setIsModalOpen(true);
-  };
-
-  const handleSaveEvent = async (eventData: {
-    title: string;
-    description?: string;
-    location?: string;
-    start_date: string;
-    end_date: string;
-    color?: string;
-    calendar_name?: string;
-  }) => {
-    if (selectedEvent) {
-      await updateEvent(selectedEvent.id, eventData);
-    } else {
-      await addEvent(eventData);
+  const handleOpenEditEvent = (item: UnifiedCalendarItem) => {
+    if (item.event_id) {
+      const evt = events.find((e) => e.id === item.event_id);
+      if (evt) {
+        setInspectingItem(evt);
+        setIsModalOpen(true);
+      }
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background, display: 'flex', flexDirection: 'column' }}>
-      {/* 1. Header Superior del Calendario */}
-      <CalendarHeader
-        rangeLabel={rangeLabel}
-        viewMode={viewMode === 'agenda' ? 'week' : viewMode}
-        onViewModeChange={(m) => setViewMode(m)}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onToday={handleToday}
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: isDark ? '#000000' : theme.background }}>
+      {/* 1. Sidebar Fija (~250px) con Mini Mes y Categorías */}
+      <CalendarSidebar
+        selectedDate={currentDateObj}
+        onSelectDate={(date) => {
+          const dateStr = date.toISOString().split('T')[0];
+          setSelectedDate(dateStr);
+        }}
+        categories={categories}
+        onToggleCategory={toggleCategoryVisibility}
+        onAddEvent={() => handleOpenNewEvent(selectedDate)}
         isDark={isDark}
       />
 
-      {/* 2. Cuerpo Principal: Sidebar Filtros + Grilla Horaria */}
-      <View style={{ flex: 1, flexDirection: 'row', position: 'relative' }}>
-        {/* Sidebar Izquierdo */}
-        <CalendarSidebar
-          selectedDate={currentDate}
-          onSelectDate={handleSelectDate}
-          categories={categories}
-          onToggleCategory={handleToggleCategory}
+      {/* 2. Área Central Dinámica */}
+      <View style={{ flex: 1, flexDirection: 'column' }}>
+        {/* Header con Switcher Día / Semana / Mes y Fechas */}
+        <CalendarHeader
+          rangeLabel={rangeLabel}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onPrev={prevPeriod}
+          onNext={nextPeriod}
+          onToday={goToToday}
           isDark={isDark}
         />
 
-        {/* Grilla Principal */}
-        <View style={{ flex: 1 }}>
-          {viewMode === 'month' ? (
-            <MonthGridView
-              selectedDate={currentDate}
-              events={visibleEvents}
-              onSelectEvent={handleSelectEvent}
-              onSelectDay={(dStr) => {
-                handleSelectDate(new Date(dStr));
-                setViewMode('week');
-              }}
+        {/* Contenedor Principal según ViewMode */}
+        <View style={{ flex: 1, padding: 18 }}>
+          {viewMode === 'month_hybrid' ? (
+            // Vista Híbrida 50/50 Samsung One UI
+            <MonthHybridView
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              unifiedItems={unifiedItemsForSelectedDate}
+              allEventsForMonth={allEventsForMonthMap}
+              onOpenNewEvent={handleOpenNewEvent}
+              onOpenEditEvent={handleOpenEditEvent}
+              onPrevMonth={prevPeriod}
+              onNextMonth={nextPeriod}
               isDark={isDark}
             />
           ) : (
+            // Vista Grilla Horaria Semanal / Diaria Apple iPadOS
             <WeekGridView
-              selectedDate={currentDate}
-              events={visibleEvents}
-              onSelectEvent={handleSelectEvent}
-              onSlotPress={handleSlotPress}
+              selectedDate={currentDateObj}
+              unifiedItems={unifiedItemsForWeek}
+              onSelectEvent={handleOpenEditEvent}
+              onSlotPress={(dateStr, hour) => handleOpenNewEvent(dateStr, hour)}
               isDark={isDark}
             />
           )}
         </View>
-
-        {/* Floating Action Button (+) abajo a la derecha */}
-        <Pressable
-          onPress={() => {
-            setSelectedEvent(null);
-            setModalSlotInfo({ dateStr: currentDate.toISOString().split('T')[0], hour: 9 });
-            setIsModalOpen(true);
-          }}
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.85 : 1,
-            position: 'absolute',
-            bottom: 24,
-            right: 24,
-            width: 52,
-            height: 52,
-            borderRadius: 26,
-            backgroundColor: IOS_COLORS.blue,
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: IOS_COLORS.blue,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4,
-            shadowRadius: 8,
-            elevation: 6,
-            zIndex: 100,
-          })}
-        >
-          <Plus size={24} color="#FFFFFF" strokeWidth={3} />
-        </Pressable>
       </View>
 
-      {/* Modal Crear / Editar Evento */}
+      {/* Modal Inspector / Creador de Eventos e Hitos */}
       <EventModal
         visible={isModalOpen}
-        event={selectedEvent}
-        initialDate={modalSlotInfo.dateStr}
+        event={inspectingItem}
+        initialDate={modalSlotInfo.dateStr || selectedDate}
         initialHour={modalSlotInfo.hour}
         categories={categories}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveEvent}
-        onDelete={deleteEvent}
+        onClose={() => {
+          setIsModalOpen(false);
+          setInspectingItem(null);
+        }}
+        onSave={async (eventData) => {
+          if (inspectingItem) {
+            await updateEvent(inspectingItem.id, {
+              ...eventData,
+              is_milestone: eventData.is_milestone ? 1 : 0,
+            });
+          } else {
+            await addEvent(eventData);
+          }
+        }}
+        onDelete={async (id) => {
+          await deleteEvent(id);
+          setIsModalOpen(false);
+          setInspectingItem(null);
+        }}
         isDark={isDark}
       />
     </View>

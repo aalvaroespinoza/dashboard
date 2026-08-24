@@ -70,6 +70,8 @@ export type RemindersViewMode = 'list' | 'columns';
 export type RemindersGroupBy = 'list' | 'date' | 'priority';
 export type SmartListFilter = 'today' | 'scheduled' | 'all' | 'flagged' | 'completed' | 'custom';
 
+export type CalendarViewMode = 'month_hybrid' | 'week' | 'day' | 'agenda';
+
 export interface CalendarEventItem {
   id: string;
   title: string;
@@ -78,6 +80,8 @@ export interface CalendarEventItem {
   start_date: string; // ISO string YYYY-MM-DDTHH:mm:ss
   end_date: string;   // ISO string YYYY-MM-DDTHH:mm:ss
   is_all_day: number; // 0 or 1
+  is_milestone?: number; // 0 or 1 (para cálculo de badges D-Day)
+  d_day_target?: string | null; // YYYY-MM-DD
   color?: string | null;
   calendar_name?: string | null;
   icloud_uid?: string | null;
@@ -86,6 +90,27 @@ export interface CalendarEventItem {
   sync_status: SyncStatus;
   created_at: string;
   updated_at: string;
+}
+
+export interface UnifiedCalendarItem {
+  id: string;
+  type: 'event' | 'task';
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  date: string; // YYYY-MM-DD
+  start_time?: string | null; // HH:mm
+  end_time?: string | null; // HH:mm
+  is_all_day: boolean;
+  color: string;
+  calendar_name: string;
+  is_completed?: boolean;
+  is_milestone?: boolean;
+  d_day_text?: string | null; // e.g. "D-Day", "D-3", "D+1"
+  priority?: Priority;
+  tags?: string[];
+  task_id?: string;
+  event_id?: string;
 }
 
 export type TransactionType = 'income' | 'expense';

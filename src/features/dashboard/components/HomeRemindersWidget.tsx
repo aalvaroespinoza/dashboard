@@ -5,15 +5,14 @@ import {
   ChevronRight,
   ListTodo,
   Calendar,
-  CornerDownRight,
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-reanimated';
 import { useTasksStore } from '../../../store/useTasksStore';
 import { useAppStore } from '../../../store/useAppStore';
 import { ReminderCheckbox } from '../../reminders/components/ReminderCheckbox';
 import { RichLinkPreviewCard } from '../../reminders/components/RichLinkPreviewCard';
+import { SpecularCard } from '../../../components/common/SpecularCard';
 import { IOS_COLORS } from '../../../styles/theme';
-import { createShadow } from '../../../styles/shadows';
 
 interface HomeRemindersWidgetProps {
   isDark?: boolean;
@@ -27,7 +26,6 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
   const toggleTaskComplete = useTasksStore((state) => state.toggleTaskComplete);
   const lists = useTasksStore((state) => state.lists);
 
-  // Filtrar las tareas activas más relevantes para el Dashboard
   const displayTasks = useMemo(() => {
     const active = tasks.filter((t) => !t.is_completed);
     return active.slice(0, 4);
@@ -36,35 +34,30 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
   const pendingCount = tasks.filter((t) => !t.is_completed).length;
 
   return (
-    <View
-      style={{
-        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-        borderRadius: 24,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
-        gap: 14,
-        ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.2 : 0.04, 8),
-      }}
-    >
+    <SpecularCard isDark={isDark} padding={22}>
       {/* Header del Widget */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
+              width: 36,
+              height: 36,
+              borderRadius: 12,
               backgroundColor: 'rgba(0, 122, 255, 0.16)',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <ListTodo size={18} color="#007AFF" strokeWidth={2.5} />
+            <ListTodo size={19} color="#007AFF" strokeWidth={2.5} />
           </View>
-          <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.4 }}>
-            Recordatorios
-          </Text>
+          <View>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.5 }}>
+              Recordatorios
+            </Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text.secondary }}>
+              Prioritarios y de hoy
+            </Text>
+          </View>
           <View
             style={{
               backgroundColor: 'rgba(0, 122, 255, 0.16)',
@@ -81,12 +74,21 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
 
         <Pressable
           onPress={() => setActiveModule('tasks')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.7 : 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 10,
+            gap: 2,
+          })}
         >
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#007AFF' }}>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#007AFF' }}>
             Ver todos
           </Text>
-          <ChevronRight size={15} color="#007AFF" />
+          <ChevronRight size={13} color="#007AFF" />
         </Pressable>
       </View>
 
@@ -95,7 +97,7 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
         {displayTasks.length === 0 ? (
           <View style={{ paddingVertical: 24, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <CheckCircle2 size={32} color={IOS_COLORS.green} />
-            <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary }}>
               ¡Todo al día!
             </Text>
             <Text style={{ fontSize: 12, color: theme.text.secondary }}>
@@ -117,21 +119,24 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   backgroundColor: isDark ? '#242426' : '#F9FAFB',
-                  paddingVertical: 10,
-                  paddingHorizontal: 12,
-                  borderRadius: 14,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  borderRadius: 16,
                   borderWidth: 1,
-                  borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
-                  gap: 10,
+                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.8)',
+                  borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#E5E5EA',
+                  borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
+                  borderRightColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
+                  gap: 12,
                 }}
               >
                 {/* Checkbox Circular */}
-                <View style={{ marginTop: 2 }}>
+                <View style={{ marginTop: 1 }}>
                   <ReminderCheckbox
                     checked={isCompleted}
                     onToggle={() => toggleTaskComplete(task.id)}
                     color={listObj?.color || '#007AFF'}
-                    size={20}
+                    size={22}
                     isDark={isDark}
                   />
                 </View>
@@ -140,19 +145,19 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     {task.priority === 'high' && (
-                      <Text style={{ fontSize: 12, fontWeight: '900', color: '#FF3B30' }}>
+                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FF3B30' }}>
                         !!!
                       </Text>
                     )}
                     {task.priority === 'medium' && (
-                      <Text style={{ fontSize: 12, fontWeight: '900', color: '#FF9500' }}>
+                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FF9500' }}>
                         !!
                       </Text>
                     )}
                     <Text
                       numberOfLines={1}
                       style={{
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: '700',
                         color: isCompleted ? theme.text.tertiary : theme.text.primary,
                         textDecorationLine: isCompleted ? 'line-through' : 'none',
@@ -164,19 +169,19 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
                   </View>
 
                   {/* Metadatos Rápidos */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
                     {task.due_date && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                        <Calendar size={10} color={theme.text.secondary} />
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: theme.text.secondary }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Calendar size={11} color={theme.text.secondary} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.secondary }}>
                           {task.due_date === '2026-08-24' ? 'Hoy' : task.due_date}
-                          {task.due_time ? ` ${task.due_time}` : ''}
+                          {task.due_time ? ` · ${task.due_time}` : ''}
                         </Text>
                       </View>
                     )}
 
                     {(task.tags || []).slice(0, 2).map((tag, idx) => (
-                      <Text key={idx} style={{ fontSize: 10, fontWeight: '700', color: IOS_COLORS.cyan }}>
+                      <Text key={idx} style={{ fontSize: 11, fontWeight: '800', color: IOS_COLORS.cyan }}>
                         #{tag}
                       </Text>
                     ))}
@@ -192,6 +197,6 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
           })
         )}
       </View>
-    </View>
+    </SpecularCard>
   );
 });

@@ -11,7 +11,7 @@ import { useTasksStore } from '../../../store/useTasksStore';
 import { useCalendarStore } from '../../../store/useCalendarStore';
 import { useFinanceStore } from '../../../store/useFinanceStore';
 import { useAppStore } from '../../../store/useAppStore';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, getSpecularCardStyle } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface DashboardTopRowProps {
@@ -22,7 +22,7 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const { setActiveModule } = useAppStore();
 
-  // Selectores de grano fino atómicos para evitar re-renders innecesarios
+  // Selectores atómicos de grano fino
   const pendingTasksCount = useTasksStore(
     (state) => state.tasks.filter((t) => !t.is_completed).length
   );
@@ -77,6 +77,9 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
     },
   ];
 
+  const specularStyle = getSpecularCardStyle(isDark);
+  const shadow = createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.22 : 0.03, 8);
+
   return (
     <View style={{ flexDirection: 'row', gap: 14 }}>
       {METRICS.map((metric) => {
@@ -87,31 +90,29 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
             onPress={metric.onPress}
             style={({ pressed }) => ({
               flex: 1,
-              opacity: pressed ? 0.85 : 1,
-              backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-              borderRadius: 20,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+              opacity: pressed ? 0.9 : 1,
+              ...specularStyle,
+              padding: 18,
               justifyContent: 'space-between',
-              minHeight: 104,
-              ...createShadow('#000000', { width: 0, height: 2 }, isDark ? 0.2 : 0.03, 6),
+              minHeight: 110,
+              ...shadow,
             })}
           >
-            {/* Header: Icono + Título + Flecha */}
+            {/* Header: Icono Squircle + Título + Flecha */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
+                    width: 36,
+                    height: 36,
+                    borderRadius: 12,
                     backgroundColor: metric.bgColor,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Icon size={18} color={metric.color} strokeWidth={2.5} />
+                  <Icon size={19} color={metric.color} strokeWidth={2.5} />
                 </View>
                 <Text
                   numberOfLines={1}
@@ -120,24 +121,35 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
                     fontWeight: '700',
                     color: theme.text.secondary,
                     textTransform: 'uppercase',
-                    letterSpacing: 0.2,
+                    letterSpacing: 0.5,
                   }}
                 >
                   {metric.title}
                 </Text>
               </View>
-              <ArrowUpRight size={14} color={theme.text.tertiary} />
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ArrowUpRight size={13} color={theme.text.tertiary} />
+              </View>
             </View>
 
-            {/* Valor Principal + Subtítulo */}
-            <View style={{ marginTop: 8 }}>
+            {/* Valor Principal Bold Tabular + Subtítulo */}
+            <View style={{ marginTop: 10 }}>
               <Text
                 numberOfLines={1}
                 style={{
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: '900',
                   color: theme.text.primary,
-                  letterSpacing: -0.5,
+                  letterSpacing: -0.8,
                 }}
               >
                 {metric.value}

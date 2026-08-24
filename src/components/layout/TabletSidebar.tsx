@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import {
+  LayoutDashboard,
   CheckSquare,
+  Zap,
   Calendar,
   DollarSign,
   FileText,
@@ -19,6 +21,8 @@ import { useAppStore } from '../../store/useAppStore';
 import { useTasksStore } from '../../store/useTasksStore';
 import { useSyncStore } from '../../store/useSyncStore';
 import { ActiveModule } from '../../types';
+import { IOS_COLORS } from '../../styles/theme';
+import { GlassContainer } from '../common/GlassContainer';
 
 export const TabletSidebar: React.FC = () => {
   const { themeMode, toggleTheme, isSidebarCollapsed, toggleSidebar, activeModule, setActiveModule } = useAppStore();
@@ -26,168 +30,194 @@ export const TabletSidebar: React.FC = () => {
   const { hasCredentials, isSyncing, triggerSync } = useSyncStore();
 
   const isDark = themeMode === 'dark';
+  const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const pendingTasksCount = tasks.filter((t) => !t.is_completed).length;
 
-  const navItems: { id: ActiveModule; label: string; icon: React.ComponentType<any>; badge?: number }[] = [
-    { id: 'tasks', label: 'Recordatorios', icon: CheckSquare, badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
-    { id: 'calendar', label: 'Calendario', icon: Calendar },
-    { id: 'finance', label: 'Finanzas', icon: DollarSign },
-    { id: 'notes', label: 'Notas', icon: FileText },
-    { id: 'bus', label: 'Colectivos', icon: Bus },
-    { id: 'settings', label: 'Ajustes', icon: Settings },
+  const navItems: {
+    id: ActiveModule;
+    label: string;
+    icon: React.ComponentType<any>;
+    color: string;
+    badge?: number;
+  }[] = [
+    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, color: '#5856D6' },
+    { id: 'tasks', label: 'Recordatorios', icon: CheckSquare, color: '#007AFF', badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
+    { id: 'habits', label: 'Hábitos', icon: Zap, color: '#FF9500' },
+    { id: 'calendar', label: 'Calendario', icon: Calendar, color: '#34C759' },
+    { id: 'finance', label: 'Finanzas', icon: DollarSign, color: '#32ADE6' },
+    { id: 'notes', label: 'Notas', icon: FileText, color: '#FFCC00' },
+    { id: 'bus', label: 'Colectivos', icon: Bus, color: '#FF2D55' },
+    { id: 'settings', label: 'Ajustes', icon: Settings, color: '#8E8E93' },
   ];
 
   return (
-    <View
+    <GlassContainer
+      isDark={isDark}
+      intensity={40}
       style={{
-        width: isSidebarCollapsed ? 76 : 240,
-        backgroundColor: isDark ? '#12151B' : '#F1F3F5',
+        width: isSidebarCollapsed ? 78 : 246,
         borderRightWidth: 1,
-        borderRightColor: isDark ? '#232733' : '#E5E7EB',
+        borderRightColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
         height: '100%',
         paddingVertical: 18,
-        paddingHorizontal: isSidebarCollapsed ? 8 : 14,
-        display: 'flex',
+        paddingHorizontal: isSidebarCollapsed ? 8 : 12,
         flexDirection: 'column',
         justifyContent: 'space-between',
       }}
     >
-      {/* Top Header / Brand */}
+      {/* 1. Header de Marca (MiHub) */}
       <View>
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-            marginBottom: 24,
-            paddingHorizontal: isSidebarCollapsed ? 0 : 6,
+            marginBottom: 20,
+            paddingHorizontal: isSidebarCollapsed ? 0 : 8,
           }}
         >
           {!isSidebarCollapsed && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  backgroundColor: '#6366F1',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  backgroundColor: '#007AFF',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginRight: 10,
                 }}
               >
-                <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 }}>G</Text>
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 16 }}>M</Text>
               </View>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: '700',
-                  color: isDark ? '#F3F4F6' : '#111827',
-                  letterSpacing: -0.5,
-                }}
-              >
-                Dashboard
-              </Text>
+              <View>
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: '900',
+                    color: theme.text.primary,
+                    letterSpacing: -0.5,
+                  }}
+                >
+                  MiHub
+                </Text>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: theme.text.tertiary, textTransform: 'uppercase' }}>
+                  iPadOS 18
+                </Text>
+              </View>
             </View>
           )}
 
-          <TouchableOpacity
+          <Pressable
             onPress={toggleSidebar}
-            style={{
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
               padding: 6,
-              borderRadius: 8,
-              backgroundColor: isDark ? '#1E232E' : '#E5E7EB',
-            }}
+              borderRadius: 10,
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+            })}
           >
             {isSidebarCollapsed ? (
-              <ChevronRight size={18} color={isDark ? '#9CA3AF' : '#4B5563'} />
+              <ChevronRight size={16} color={theme.text.secondary} />
             ) : (
-              <ChevronLeft size={18} color={isDark ? '#9CA3AF' : '#4B5563'} />
+              <ChevronLeft size={16} color={theme.text.secondary} />
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
-        {/* Navigation Items */}
+        {/* 2. Lista de Navegación con Squircles y Acentos iPadOS */}
         <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeModule === item.id;
+          <View style={{ gap: 4 }}>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeModule === item.id;
 
-            return (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() => setActiveModule(item.id)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-                  paddingVertical: 10,
-                  paddingHorizontal: isSidebarCollapsed ? 0 : 12,
-                  borderRadius: 10,
-                  marginBottom: 6,
-                  backgroundColor: isActive
-                    ? isDark
-                      ? '#1E232E'
-                      : '#FFFFFF'
-                    : 'transparent',
-                  borderWidth: isActive ? 1 : 0,
-                  borderColor: isDark ? '#2E3544' : '#E2E8F0',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: isActive ? 0.08 : 0,
-                  shadowRadius: 2,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Icon
-                    size={20}
-                    color={isActive ? '#6366F1' : isDark ? '#9CA3AF' : '#6B7280'}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                  {!isSidebarCollapsed && (
-                    <Text
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => setActiveModule(item.id)}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.8 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+                    paddingVertical: 9,
+                    paddingHorizontal: isSidebarCollapsed ? 0 : 10,
+                    borderRadius: 14,
+                    backgroundColor: isActive
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.12)'
+                        : 'rgba(0, 122, 255, 0.12)'
+                      : 'transparent',
+                    borderWidth: 1,
+                    borderColor: isActive
+                      ? isDark
+                        ? 'rgba(255, 255, 255, 0.15)'
+                        : 'rgba(0, 122, 255, 0.2)'
+                      : 'transparent',
+                  })}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    {/* Squircle con Color de Sistema */}
+                    <View
                       style={{
-                        marginLeft: 12,
-                        fontSize: 14,
-                        fontWeight: isActive ? '600' : '500',
-                        color: isActive
-                          ? isDark
-                            ? '#FFFFFF'
-                            : '#111827'
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        backgroundColor: isActive
+                          ? item.color
                           : isDark
-                          ? '#9CA3AF'
-                          : '#6B7280',
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : '#E5E5EA',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      {item.label}
-                    </Text>
-                  )}
-                </View>
+                      <Icon
+                        size={15}
+                        color={isActive ? '#FFFFFF' : item.color}
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
+                    </View>
 
-                {!isSidebarCollapsed && item.badge !== undefined && (
-                  <View
-                    style={{
-                      backgroundColor: '#6366F1',
-                      borderRadius: 12,
-                      paddingHorizontal: 7,
-                      paddingVertical: 2,
-                    }}
-                  >
-                    <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>
-                      {item.badge}
-                    </Text>
+                    {!isSidebarCollapsed && (
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: isActive ? '800' : '600',
+                          color: isActive ? theme.text.primary : theme.text.secondary,
+                        }}
+                      >
+                        {item.label}
+                      </Text>
+                    )}
                   </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+
+                  {!isSidebarCollapsed && item.badge !== undefined && (
+                    <View
+                      style={{
+                        backgroundColor: '#007AFF',
+                        borderRadius: 10,
+                        paddingHorizontal: 7,
+                        paddingVertical: 2,
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>
+                        {item.badge}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
         </ScrollView>
       </View>
 
-      {/* Bottom Controls */}
-      <View style={{ gap: 8 }}>
+      {/* 3. Controles Inferiores (Sincronización iCloud & Tema) */}
+      <View style={{ gap: 6 }}>
         {/* CalDAV Sync Button */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => {
             if (hasCredentials && !isSyncing) {
               triggerSync();
@@ -195,71 +225,77 @@ export const TabletSidebar: React.FC = () => {
               setActiveModule('settings');
             }
           }}
-          style={{
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.8 : 1,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
             paddingVertical: 9,
-            paddingHorizontal: isSidebarCollapsed ? 0 : 12,
-            borderRadius: 8,
-            backgroundColor: isDark ? '#171A21' : '#E5E7EB',
-          }}
+            paddingHorizontal: isSidebarCollapsed ? 0 : 10,
+            borderRadius: 12,
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
+            gap: 8,
+          })}
         >
           {isSyncing ? (
-            <RefreshCw size={16} color="#6366F1" />
+            <RefreshCw size={15} color="#007AFF" />
           ) : hasCredentials ? (
-            <Cloud size={16} color="#10B981" />
+            <Cloud size={15} color="#34C759" />
           ) : (
-            <CloudOff size={16} color={isDark ? '#6B7280' : '#9CA3AF'} />
+            <CloudOff size={15} color={theme.text.tertiary} />
           )}
 
           {!isSidebarCollapsed && (
             <Text
               style={{
-                marginLeft: 10,
                 fontSize: 12,
-                color: isDark ? '#9CA3AF' : '#4B5563',
-                fontWeight: '500',
+                color: theme.text.secondary,
+                fontWeight: '700',
               }}
             >
               {isSyncing ? 'Sincronizando...' : hasCredentials ? 'iCloud Conectado' : 'Conectar iCloud'}
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Dark/Light Mode Toggle */}
-        <TouchableOpacity
+        <Pressable
           onPress={toggleTheme}
-          style={{
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.8 : 1,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
             paddingVertical: 9,
-            paddingHorizontal: isSidebarCollapsed ? 0 : 12,
-            borderRadius: 8,
-            backgroundColor: isDark ? '#171A21' : '#E5E7EB',
-          }}
+            paddingHorizontal: isSidebarCollapsed ? 0 : 10,
+            borderRadius: 12,
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
+            gap: 8,
+          })}
         >
           {isDark ? (
-            <Sun size={16} color="#F59E0B" />
+            <Sun size={15} color="#FF9500" />
           ) : (
-            <Moon size={16} color="#6366F1" />
+            <Moon size={15} color="#5856D6" />
           )}
 
           {!isSidebarCollapsed && (
             <Text
               style={{
-                marginLeft: 10,
                 fontSize: 12,
-                color: isDark ? '#9CA3AF' : '#4B5563',
-                fontWeight: '500',
+                color: theme.text.secondary,
+                fontWeight: '700',
               }}
             >
               {isDark ? 'Modo Claro' : 'Modo Oscuro'}
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
-    </View>
+    </GlassContainer>
   );
 };

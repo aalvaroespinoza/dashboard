@@ -4,6 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "expo": "^57.0.16",
+    "expo-blur": "~57.0.2",
     "expo-secure-store": "~57.0.1",
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",

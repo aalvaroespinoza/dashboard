@@ -3,8 +3,8 @@ import { View, Text, Pressable } from 'react-native';
 import { Calendar as CalendarIcon, ChevronRight, Clock, MapPin } from 'lucide-react-native';
 import { useCalendarStore } from '../../../store/useCalendarStore';
 import { useAppStore } from '../../../store/useAppStore';
+import { SpecularCard } from '../../../components/common/SpecularCard';
 import { IOS_COLORS } from '../../../styles/theme';
-import { createShadow } from '../../../styles/shadows';
 
 interface HomeCalendarWidgetProps {
   isDark?: boolean;
@@ -38,49 +38,53 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
   ];
 
   return (
-    <View
-      style={{
-        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-        borderRadius: 24,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
-        gap: 14,
-        ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.2 : 0.04, 8),
-      }}
-    >
+    <SpecularCard isDark={isDark} padding={22}>
       {/* Header del Widget */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
+              width: 36,
+              height: 36,
+              borderRadius: 12,
               backgroundColor: 'rgba(52, 199, 89, 0.16)',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <CalendarIcon size={18} color="#34C759" strokeWidth={2.5} />
+            <CalendarIcon size={19} color="#34C759" strokeWidth={2.5} />
           </View>
-          <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.4 }}>
-            Agenda de Hoy
-          </Text>
+          <View>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.5 }}>
+              Agenda de Hoy
+            </Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text.secondary }}>
+              Eventos y clases
+            </Text>
+          </View>
         </View>
 
         <Pressable
           onPress={() => setActiveModule('calendar')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.7 : 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 10,
+            gap: 2,
+          })}
         >
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#34C759' }}>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: '#34C759' }}>
             Calendario
           </Text>
-          <ChevronRight size={15} color="#34C759" />
+          <ChevronRight size={13} color="#34C759" />
         </Pressable>
       </View>
 
-      {/* Lista de Eventos con Bloques Pastel */}
+      {/* Lista de Eventos con Bloques Pastel y Bordes Especulares */}
       <View style={{ gap: 10 }}>
         {displayEvents.map((evt) => {
           const startTime = evt.start_date.includes('T') ? evt.start_date.split('T')[1].slice(0, 5) : '14:30';
@@ -92,10 +96,13 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
               key={evt.id}
               style={{
                 flexDirection: 'row',
-                borderRadius: 14,
+                borderRadius: 16,
                 backgroundColor: isDark ? '#242426' : '#F9FAFB',
                 borderWidth: 1,
-                borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.8)',
+                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#E5E5EA',
+                borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
+                borderRightColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
                 overflow: 'hidden',
               }}
             >
@@ -103,7 +110,7 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
               <View style={{ width: 5, backgroundColor: eventColor }} />
 
               {/* Contenido */}
-              <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 12, gap: 3 }}>
+              <View style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 14, gap: 4 }}>
                 <Text
                   numberOfLines={1}
                   style={{
@@ -115,18 +122,18 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
                   {evt.title}
                 </Text>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 2 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Clock size={11} color={theme.text.secondary} />
+                    <Clock size={12} color={theme.text.secondary} />
                     <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.secondary }}>
                       {startTime} - {endTime}
                     </Text>
                   </View>
 
                   {evt.location && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                      <MapPin size={11} color={theme.text.tertiary} />
-                      <Text style={{ fontSize: 11, color: theme.text.tertiary }} numberOfLines={1}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <MapPin size={12} color={theme.text.tertiary} />
+                      <Text style={{ fontSize: 11, color: theme.text.tertiary, fontWeight: '600' }} numberOfLines={1}>
                         {evt.location}
                       </Text>
                     </View>
@@ -137,6 +144,6 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
           );
         })}
       </View>
-    </View>
+    </SpecularCard>
   );
 });

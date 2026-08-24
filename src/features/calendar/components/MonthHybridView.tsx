@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-reanimated';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, CheckCircle2 } from 'lucide-react-native';
 import { UnifiedCalendarItem } from '../../../types';
 import { TimeBlockItem } from './TimeBlockItem';
@@ -267,12 +268,18 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
             </View>
           ) : (
             unifiedItems.map((item) => (
-              <TimeBlockItem
+              <Animated.View
                 key={item.id}
-                item={item}
-                onPress={onOpenEditEvent}
-                isDark={isDark}
-              />
+                entering={FadeInUp.springify().damping(18).stiffness(200)}
+                exiting={FadeOutDown.duration(120)}
+                layout={LinearTransition.springify().damping(20).stiffness(180)}
+              >
+                <TimeBlockItem
+                  item={item}
+                  onPress={onOpenEditEvent}
+                  isDark={isDark}
+                />
+              </Animated.View>
             ))
           )}
         </ScrollView>

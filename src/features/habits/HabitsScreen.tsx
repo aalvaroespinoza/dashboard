@@ -21,6 +21,8 @@ import { GritFloatingTimerBar } from './components/GritFloatingTimerBar';
 import { GritStatsTab } from './components/GritStatsTab';
 import { GritSettingsTab } from './components/GritSettingsTab';
 import { GritHabitEditorModal } from './components/GritHabitEditorModal';
+import { GritPlayerLevelCard } from './components/GritPlayerLevelCard';
+import { GritLevelUpModal } from './components/GritLevelUpModal';
 import { IOS_COLORS } from '../../styles/theme';
 
 export const HabitsScreen: React.FC = () => {
@@ -146,42 +148,43 @@ export const HabitsScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Scrubber / Timeline Horizontal de 10 días */}
-            {!showArchived && <GritDateScrubber isDark={isDark} />}
+            {/* Tarjeta de Nivel RPG del Jugador */}
+            <GritPlayerLevelCard isDark={isDark} />
 
-            {/* Categorías Colapsables & Grid de 2 Columnas */}
-            <View style={{ gap: 14 }}>
-              {categories.map((cat) => {
-                const catHabits = filteredHabits.filter((h) => h.category_id === cat.id);
-                if (catHabits.length === 0) return null;
+            {/* Scrubber de 10 Días */}
+            <GritDateScrubber isDark={isDark} />
 
-                const isCollapsed = collapsedCategories.includes(cat.id);
-                const completedCount = catHabits.filter(
-                  (h) => logsMap[h.id]?.[selectedDate]?.is_completed
+            {/* Categorías y Tarjetas de Hábitos en Grid */}
+            <View style={{ gap: 24, marginTop: 8 }}>
+              {categories.map((category) => {
+                const categoryHabits = filteredHabits.filter((h) => h.category_id === category.id);
+                if (categoryHabits.length === 0) return null;
+
+                const isCollapsed = collapsedCategories.includes(category.id);
+                const completedCount = categoryHabits.filter(
+                  (h) => logsMap[h.id]?.[selectedDate]?.is_completed === 1
                 ).length;
 
                 return (
-                  <View key={cat.id} style={{ gap: 8 }}>
-                    {/* Header de Categoría */}
+                  <View key={category.id} style={{ gap: 12 }}>
                     <GritCategoryHeader
-                      category={cat}
+                      category={category}
                       isOpen={!isCollapsed}
-                      onToggle={() => toggleCategory(cat.id)}
+                      onToggle={() => toggleCategory(category.id)}
                       completedCount={completedCount}
-                      totalCount={catHabits.length}
+                      totalCount={categoryHabits.length}
                       isDark={isDark}
                     />
 
-                    {/* Grid Responsive de 2 Columnas de Tarjetas */}
                     {!isCollapsed && (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                        {catHabits.map((habit) => (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+                        {categoryHabits.map((habit) => (
                           <GritHabitCard
                             key={habit.id}
                             habit={habit}
                             logsForHabit={logsMap[habit.id] || {}}
                             recentDates={recentDates}
-                            onOpenDetail={(h) => openDetailHabit(h)}
+                            onOpenDetail={openDetailHabit}
                             isDark={isDark}
                           />
                         ))}
@@ -195,31 +198,26 @@ export const HabitsScreen: React.FC = () => {
         )}
 
         {currentTab === 'stats' && <GritStatsTab isDark={isDark} />}
-
         {currentTab === 'settings' && <GritSettingsTab isDark={isDark} />}
 
-        {/* 3. Mini Reproductor Flotante Inferior */}
+        {/* Floating Mini Timer Bar si hay cronómetro corriendo */}
         <GritFloatingTimerBar
           onPressHabit={() => {
-            const running = useHabitsStore.getState().getActiveRunningTimer();
-            if (running) {
-              openDetailHabit(running.habit);
-            }
+            const active = useHabitsStore.getState().getActiveRunningTimer();
+            if (active) openDetailHabit(active.habit);
           }}
           isDark={isDark}
         />
-
-        {/* 4. Side Sheet Animado de Detalle de Hábito */}
-        {selectedDetailHabit && (
-          <GritDetailSideSheet
-            habit={selectedDetailHabit}
-            onClose={closeDetailHabit}
-            isDark={isDark}
-          />
-        )}
       </View>
 
-      {/* Modal Creador / Editor Completo de Hábitos */}
+      {/* Slide-out Detail Side Sheet */}
+      <GritDetailSideSheet
+        habit={selectedDetailHabit}
+        onClose={closeDetailHabit}
+        isDark={isDark}
+      />
+
+      {/* Editor Modal de Hábitos */}
       <GritHabitEditorModal
         visible={isEditorModalOpen || Boolean(editingHabit)}
         initialHabit={editingHabit}
@@ -229,6 +227,9 @@ export const HabitsScreen: React.FC = () => {
         }}
         isDark={isDark}
       />
+
+      {/* Modal Celebración Level Up */}
+      <GritLevelUpModal isDark={isDark} />
     </View>
   );
 };

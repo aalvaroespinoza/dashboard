@@ -15,6 +15,7 @@ import {
   Zap,
   Flame,
   Coffee,
+  Sparkles,
 } from 'lucide-react-native';
 import { HabitItem, HabitLogItem } from '../../../types';
 import { useHabitsStore, ActiveTimerState } from '../stores/useHabitsStore';
@@ -48,6 +49,7 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
     getTimerSeconds,
     isRestDay,
     setEditingHabit,
+    lastExpGain,
   } = useHabitsStore();
 
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
@@ -213,12 +215,30 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
             )}
           </View>
 
-          {/* Badge de Puntos */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Zap size={11} color={cardAccent} fill={cardAccent} />
-            <Text style={{ fontSize: 11, fontWeight: '800', color: cardAccent }}>
-              +{habit.points} pts
-            </Text>
+          {/* Badge de Puntos / EXP & Nivel de Maestría */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {/* Badge de Maestría */}
+            <View
+              style={{
+                backgroundColor: isDark ? '#242426' : '#F2F2F7',
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 6,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: '800', color: theme.text.primary }}>
+                Nv. {habit.mastery_level || 1} {habit.mastery_level && habit.mastery_level >= 7 ? '🥇' : habit.mastery_level && habit.mastery_level >= 4 ? '🥈' : '🥉'}
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Zap size={11} color={cardAccent} fill={cardAccent} />
+              <Text style={{ fontSize: 11, fontWeight: '800', color: cardAccent }}>
+                +{habit.points} EXP
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -396,6 +416,31 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
             })}
           </View>
         </View>
+
+        {/* Píldora Flotante de EXP Ganada ✨ */}
+        {lastExpGain?.habitId === habit.id && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 14,
+              right: 14,
+              backgroundColor: '#FF9500',
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              zIndex: 30,
+              ...createShadow('#FF9500', { width: 0, height: 4 }, 0.4, 8),
+            }}
+          >
+            <Sparkles size={12} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>
+              +{lastExpGain.amount} EXP ✨
+            </Text>
+          </View>
+        )}
       </Pressable>
 
       {/* Menú de Opciones por Long Press */}

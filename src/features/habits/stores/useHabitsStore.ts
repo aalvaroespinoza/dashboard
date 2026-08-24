@@ -4,8 +4,11 @@ import {
   HabitItem,
   HabitLogItem,
   GritNavigationTab,
+  UserRPGProfile,
 } from '../../../types';
 import { habitsRepo } from '../../../db/repositories/habitsRepo';
+import { gamificationRepo } from '../../../db/repositories/gamificationRepo';
+import { calculateActionExp, calculateMasteryBadge } from '../utils/gamificationUtils';
 
 export interface ActiveTimerState {
   habitId: string;
@@ -33,6 +36,11 @@ interface HabitsStoreState {
   editingHabit: HabitItem | null;
   isStatsUnlocked: boolean;
 
+  // Gamificación RPG
+  rpgProfile: UserRPGProfile;
+  lastExpGain: { habitId: string; amount: number; message: string } | null;
+  levelUpCelebration: { oldLevel: number; newLevel: number; rankTitle: string } | null;
+
   // Datos
   categories: HabitCategory[];
   habits: HabitItem[];
@@ -49,6 +57,7 @@ interface HabitsStoreState {
   closeDetailHabit: () => void;
   setEditingHabit: (habit: HabitItem | null) => void;
   unlockStats: () => void;
+  dismissLevelUpCelebration: () => void;
 
   // Acciones de Datos
   loadHabitsData: () => Promise<void>;
@@ -101,6 +110,20 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   editingHabit: null,
   isStatsUnlocked: true,
 
+  rpgProfile: {
+    level: 1,
+    current_exp: 0,
+    next_level_exp: 100,
+    rank_title: 'Novato de la Rutina 🥉',
+    strength_exp: 0,
+    intelligence_exp: 0,
+    focus_exp: 0,
+    perfect_days_count: 0,
+    total_exp_earned: 0,
+  },
+  lastExpGain: null,
+  levelUpCelebration: null,
+
   categories: [],
   habits: [],
   logsMap: {},
@@ -115,19 +138,22 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   closeDetailHabit: () => set({ selectedDetailHabit: null }),
   setEditingHabit: (habit) => set({ editingHabit: habit }),
   unlockStats: () => set({ isStatsUnlocked: true }),
+  dismissLevelUpCelebration: () => set({ levelUpCelebration: null }),
 
   loadHabitsData: async () => {
     set({ isLoading: true });
     try {
-      const [cats, habs, logs] = await Promise.all([
+      const [cats, habs, logs, profile] = await Promise.all([
         habitsRepo.getAllCategories(),
         habitsRepo.getAllHabits(),
         habitsRepo.getRecentLogsMap(),
+        gamificationRepo.getProfile(),
       ]);
       set({
         categories: cats,
         habits: habs,
         logsMap: logs,
+        rpgProfile: profile,
         recentDates: generateGritRecentDates(),
         isLoading: false,
       });
@@ -164,6 +190,36 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
         },
       },
     }));
+
+    // Otorgar EXP y progresión RPG si se completó
+    if (isNowCompleted === 1) {
+      const category = get().categories.find((c) => c.id === habit.category_id);
+      const expGained = calculateActionExp('check', 1, habit.streak_count || 0);
+
+      const { profile, didLevelUp, oldLevel, newLevel } = await gamificationRepo.addExp(
+        expGained,
+        category?.name || ''
+      );
+      const totalCompletions = await gamificationRepo.incrementHabitCompletions(habitId);
+      const mastery = calculateMasteryBadge(totalCompletions);
+
+      set((state) => ({
+        rpgProfile: profile,
+        lastExpGain: { habitId, amount: expGained, message: `+${expGained} EXP ✨` },
+        habits: state.habits.map((h) =>
+          h.id === habitId
+            ? { ...h, total_completions: totalCompletions, mastery_level: mastery.level }
+            : h
+        ),
+        levelUpCelebration: didLevelUp
+          ? { oldLevel, newLevel, rankTitle: profile.rank_title }
+          : state.levelUpCelebration,
+      }));
+
+      setTimeout(() => {
+        set((s) => (s.lastExpGain?.habitId === habitId ? { lastExpGain: null } : s));
+      }, 2500);
+    }
   },
 
   incrementCounter: async (habitId: string, amount: number = 1, date?: string) => {
@@ -174,6 +230,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     const currentLog = get().logsMap[habitId]?.[targetDate];
     const currentVal = currentLog?.completed_value || 0;
     const nextVal = Math.max(0, currentVal + amount);
+    const wasCompleted = currentLog?.is_completed === 1;
     const isCompleted = nextVal >= habit.target_value ? 1 : 0;
 
     const savedLog = await habitsRepo.upsertLog(
@@ -194,6 +251,36 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
         },
       },
     }));
+
+    // Otorgar EXP cuando pasa de no completado a completado
+    if (!wasCompleted && isCompleted === 1) {
+      const category = get().categories.find((c) => c.id === habit.category_id);
+      const expGained = calculateActionExp('counter', nextVal, habit.streak_count || 0);
+
+      const { profile, didLevelUp, oldLevel, newLevel } = await gamificationRepo.addExp(
+        expGained,
+        category?.name || ''
+      );
+      const totalCompletions = await gamificationRepo.incrementHabitCompletions(habitId);
+      const mastery = calculateMasteryBadge(totalCompletions);
+
+      set((state) => ({
+        rpgProfile: profile,
+        lastExpGain: { habitId, amount: expGained, message: `+${expGained} EXP ✨` },
+        habits: state.habits.map((h) =>
+          h.id === habitId
+            ? { ...h, total_completions: totalCompletions, mastery_level: mastery.level }
+            : h
+        ),
+        levelUpCelebration: didLevelUp
+          ? { oldLevel, newLevel, rankTitle: profile.rank_title }
+          : state.levelUpCelebration,
+      }));
+
+      setTimeout(() => {
+        set((s) => (s.lastExpGain?.habitId === habitId ? { lastExpGain: null } : s));
+      }, 2500);
+    }
   },
 
   decrementCounter: async (habitId: string, amount: number = 1, date?: string) => {
@@ -227,16 +314,16 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   },
 
   startTimer: (habitId: string) => {
-    const now = Date.now();
-    const existing = get().activeTimers[habitId];
+    const active = get().activeTimers[habitId];
+    const accumulated = active?.accumulatedSeconds || 0;
 
     set((state) => ({
       activeTimers: {
         ...state.activeTimers,
         [habitId]: {
           habitId,
-          startTimestamp: now,
-          accumulatedSeconds: existing ? existing.accumulatedSeconds : 0,
+          startTimestamp: Date.now(),
+          accumulatedSeconds: accumulated,
           isRunning: true,
         },
       },
@@ -244,18 +331,18 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   },
 
   pauseTimer: (habitId: string) => {
-    const timer = get().activeTimers[habitId];
-    if (!timer || !timer.isRunning) return;
+    const active = get().activeTimers[habitId];
+    if (!active || !active.isRunning) return;
 
-    const elapsedNow = Math.floor((Date.now() - timer.startTimestamp) / 1000);
-    const totalAccumulated = timer.accumulatedSeconds + elapsedNow;
+    const elapsed = Math.floor((Date.now() - active.startTimestamp) / 1000);
+    const total = active.accumulatedSeconds + elapsed;
 
     set((state) => ({
       activeTimers: {
         ...state.activeTimers,
         [habitId]: {
-          ...timer,
-          accumulatedSeconds: totalAccumulated,
+          ...active,
+          accumulatedSeconds: total,
           isRunning: false,
         },
       },
@@ -263,6 +350,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   },
 
   setTimerElapsed: (habitId: string, seconds: number) => {
+    const active = get().activeTimers[habitId];
     set((state) => ({
       activeTimers: {
         ...state.activeTimers,
@@ -270,7 +358,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
           habitId,
           startTimestamp: Date.now(),
           accumulatedSeconds: Math.max(0, seconds),
-          isRunning: false,
+          isRunning: active?.isRunning || false,
         },
       },
     }));
@@ -281,35 +369,32 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     const habit = get().habits.find((h) => h.id === habitId);
     if (!habit) return;
 
-    const timer = get().activeTimers[habitId];
-    let totalSeconds = 0;
-    if (timer) {
-      const elapsedNow = timer.isRunning
-        ? Math.floor((Date.now() - timer.startTimestamp) / 1000)
-        : 0;
-      totalSeconds = timer.accumulatedSeconds + elapsedNow;
+    const active = get().activeTimers[habitId];
+    let totalSec = active?.accumulatedSeconds || 0;
+    if (active?.isRunning) {
+      totalSec += Math.floor((Date.now() - active.startTimestamp) / 1000);
     }
 
-    const elapsedMinutes = Math.round(totalSeconds / 60);
     const currentLog = get().logsMap[habitId]?.[targetDate];
-    const prevMinutes = currentLog?.completed_value || 0;
-    const totalMinutes = prevMinutes + (elapsedMinutes || 1); // mínimo 1 min si corrió
-    const isCompleted = totalMinutes >= habit.target_value ? 1 : 0;
+    const previousSaved = currentLog?.completed_value || 0;
+    const finalValue = previousSaved + totalSec;
+    const targetSeconds = habit.target_value * 60; // target_value en minutos
+    const isCompleted = finalValue >= targetSeconds ? 1 : 0;
 
     const savedLog = await habitsRepo.upsertLog(
       habitId,
       targetDate,
-      totalMinutes,
+      finalValue,
       isCompleted,
       0,
       currentLog?.notes
     );
 
     set((state) => {
-      const copy = { ...state.activeTimers };
-      delete copy[habitId];
+      const nextTimers = { ...state.activeTimers };
+      delete nextTimers[habitId];
+
       return {
-        activeTimers: copy,
         logsMap: {
           ...state.logsMap,
           [habitId]: {
@@ -317,8 +402,38 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
             [targetDate]: savedLog,
           },
         },
+        activeTimers: nextTimers,
       };
     });
+
+    if (isCompleted === 1 && currentLog?.is_completed !== 1) {
+      const category = get().categories.find((c) => c.id === habit.category_id);
+      const expGained = calculateActionExp('timer', finalValue, habit.streak_count || 0);
+
+      const { profile, didLevelUp, oldLevel, newLevel } = await gamificationRepo.addExp(
+        expGained,
+        category?.name || ''
+      );
+      const totalCompletions = await gamificationRepo.incrementHabitCompletions(habitId);
+      const mastery = calculateMasteryBadge(totalCompletions);
+
+      set((state) => ({
+        rpgProfile: profile,
+        lastExpGain: { habitId, amount: expGained, message: `+${expGained} EXP ✨` },
+        habits: state.habits.map((h) =>
+          h.id === habitId
+            ? { ...h, total_completions: totalCompletions, mastery_level: mastery.level }
+            : h
+        ),
+        levelUpCelebration: didLevelUp
+          ? { oldLevel, newLevel, rankTitle: profile.rank_title }
+          : state.levelUpCelebration,
+      }));
+
+      setTimeout(() => {
+        set((s) => (s.lastExpGain?.habitId === habitId ? { lastExpGain: null } : s));
+      }, 2500);
+    }
   },
 
   skipToday: async (habitId: string, date?: string) => {
@@ -353,7 +468,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
       habitId,
       targetDate,
       currentLog?.completed_value || 0,
-      currentLog?.is_completed || 0,
+      0,
       0, // is_skipped = 0
       currentLog?.notes
     );
@@ -372,6 +487,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   saveHabitNote: async (habitId: string, note: string, date?: string) => {
     const targetDate = date || get().selectedDate;
     const currentLog = get().logsMap[habitId]?.[targetDate];
+
     const savedLog = await habitsRepo.upsertLog(
       habitId,
       targetDate,
@@ -392,14 +508,14 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     }));
   },
 
-  createHabit: async (habit) => {
-    const created = await habitsRepo.createHabit(habit);
+  createHabit: async (data) => {
+    const created = await habitsRepo.createHabit(data);
     set((state) => ({
       habits: [...state.habits, created],
     }));
   },
 
-  updateHabit: async (id, updates) => {
+  updateHabit: async (id: string, updates: Partial<HabitItem>) => {
     await habitsRepo.updateHabit(id, updates);
     set((state) => ({
       habits: state.habits.map((h) => (h.id === id ? { ...h, ...updates } : h)),
@@ -410,46 +526,40 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     }));
   },
 
-  archiveHabit: async (id, isArchived = true) => {
+  archiveHabit: async (id: string, isArchived: boolean = true) => {
     await habitsRepo.archiveHabit(id, isArchived);
     set((state) => ({
-      habits: state.habits.map((h) => (h.id === id ? { ...h, is_archived: isArchived ? 1 : 0 } : h)),
-      selectedDetailHabit: state.selectedDetailHabit?.id === id ? null : state.selectedDetailHabit,
+      habits: state.habits.map((h) =>
+        h.id === id ? { ...h, is_archived: isArchived ? 1 : 0 } : h
+      ),
     }));
   },
 
-  resetStreak: async (id) => {
+  resetStreak: async (id: string) => {
     await habitsRepo.resetStreak(id);
     set((state) => ({
       habits: state.habits.map((h) => (h.id === id ? { ...h, streak_count: 0 } : h)),
-      selectedDetailHabit:
-        state.selectedDetailHabit?.id === id
-          ? { ...state.selectedDetailHabit, streak_count: 0 }
-          : state.selectedDetailHabit,
     }));
   },
 
-  deleteHabit: async (id) => {
+  deleteHabit: async (id: string) => {
     await habitsRepo.deleteHabit(id);
     set((state) => ({
       habits: state.habits.filter((h) => h.id !== id),
-      selectedDetailHabit: state.selectedDetailHabit?.id === id ? null : state.selectedDetailHabit,
+      selectedDetailHabit:
+        state.selectedDetailHabit?.id === id ? null : state.selectedDetailHabit,
     }));
   },
 
-  createCategory: async (name, emoji, color) => {
-    const newCat: HabitCategory = {
-      id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      name,
-      emoji,
-      color,
-      position: get().categories.length,
-    };
-    const saved = await habitsRepo.createCategory(newCat);
+  createCategory: async (name: string, emoji: string, color: string) => {
+    const id = `cat-${Date.now()}`;
+    const position = get().categories.length;
+    const newCat: HabitCategory = { id, name, emoji, color, position };
+    const created = await habitsRepo.createCategory(newCat);
     set((state) => ({
-      categories: [...state.categories, saved],
+      categories: [...state.categories, created],
     }));
-    return saved;
+    return created;
   },
 
   resetAllData: async () => {
@@ -458,110 +568,95 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   },
 
   getTimerSeconds: (habitId: string) => {
-    const timer = get().activeTimers[habitId];
-    if (!timer) return 0;
-    if (!timer.isRunning) return timer.accumulatedSeconds;
-    const elapsed = Math.floor((Date.now() - timer.startTimestamp) / 1000);
-    return timer.accumulatedSeconds + elapsed;
+    const active = get().activeTimers[habitId];
+    if (!active) return 0;
+    let sec = active.accumulatedSeconds;
+    if (active.isRunning) {
+      sec += Math.floor((Date.now() - active.startTimestamp) / 1000);
+    }
+    return sec;
   },
 
   getActiveRunningTimer: () => {
-    const timers = get().activeTimers;
-    const habits = get().habits;
-    for (const habitId in timers) {
-      const t = timers[habitId];
-      if (t && t.isRunning) {
-        const habit = habits.find((h) => h.id === habitId);
-        if (habit) {
-          const liveSecs = get().getTimerSeconds(habitId);
-          return { habit, timer: t, liveSeconds: liveSecs };
-        }
-      }
-    }
-    return null;
+    const activeEntry = Object.values(get().activeTimers).find((t) => t.isRunning);
+    if (!activeEntry) return null;
+    const habit = get().habits.find((h) => h.id === activeEntry.habitId);
+    if (!habit) return null;
+    const liveSec =
+      activeEntry.accumulatedSeconds +
+      Math.floor((Date.now() - activeEntry.startTimestamp) / 1000);
+    return { habit, timer: activeEntry, liveSeconds: liveSec };
   },
 
   getAugustHeatmap: () => {
     const { habits, logsMap } = get();
-    const activeHabits = habits.filter((h) => !h.is_archived);
-    const daysInAugust = 31;
-    const items: DayHeatmapItem[] = [];
+    const days: DayHeatmapItem[] = [];
+    const totalHabitsCount = habits.filter((h) => !h.is_archived).length;
 
-    for (let day = 1; day <= daysInAugust; day++) {
-      const dateStr = `2026-08-${day.toString().padStart(2, '0')}`;
-      const isToday = day === 24;
+    for (let day = 1; day <= 31; day++) {
+      const dayStr = day.toString().padStart(2, '0');
+      const dateStr = `2026-08-${dayStr}`;
+      const isToday = dateStr === '2026-08-24';
       const isFuture = day > 24;
 
       let completedCount = 0;
-      activeHabits.forEach((h) => {
-        if (logsMap[h.id]?.[dateStr]?.is_completed) {
-          completedCount++;
-        }
-      });
+      if (!isFuture) {
+        habits.forEach((h) => {
+          if (logsMap[h.id]?.[dateStr]?.is_completed) {
+            completedCount++;
+          }
+        });
+      }
 
-      const totalCount = activeHabits.length || 1;
-      const rate = isFuture ? 0 : completedCount / totalCount;
+      const rate = totalHabitsCount > 0 ? completedCount / totalHabitsCount : 0;
 
-      items.push({
+      days.push({
         dayNumber: day,
         dateStr,
-        completionRate: rate,
+        completionRate: Math.min(1, Math.max(0, rate)),
         completedCount,
-        totalCount: activeHabits.length,
+        totalCount: totalHabitsCount,
         isToday,
         isFuture,
       });
     }
 
-    return items;
+    return days;
   },
 
   getStreaksSummary: () => {
-    const { habits, logsMap } = get();
+    const { habits, logsMap, rpgProfile } = get();
     const activeHabits = habits.filter((h) => !h.is_archived);
 
-    let best = { title: 'Estudio enfocado', count: 14, icon: '🎯' };
-    let totalFocusMins = 0;
-    let perfectDays = 0;
-    let totalPoints = 0;
-
+    let bestStreak = { title: 'Meditación Matutina', count: 14, icon: '🧘' };
     activeHabits.forEach((h) => {
-      if ((h.streak_count || 0) > best.count) {
-        best = { title: h.title, count: h.streak_count || 0, icon: h.icon };
-      }
-      if (h.type === 'timer') {
-        const logs = logsMap[h.id] || {};
-        for (const date in logs) {
-          totalFocusMins += logs[date]?.completed_value || 0;
-        }
+      const streak = h.streak_count || 0;
+      if (streak > bestStreak.count) {
+        bestStreak = { title: h.title, count: streak, icon: h.icon };
       }
     });
 
-    for (let d = 1; d <= 24; d++) {
-      const dateStr = `2026-08-${d.toString().padStart(2, '0')}`;
-      const completedOnDay = activeHabits.filter((h) => logsMap[h.id]?.[dateStr]?.is_completed).length;
-      if (completedOnDay >= 4) {
-        perfectDays++;
-        totalPoints += completedOnDay * 20;
-      }
-    }
+    let totalSec = 0;
+    Object.values(logsMap).forEach((datesObj) => {
+      Object.values(datesObj).forEach((log) => {
+        if (log.is_completed) {
+          totalSec += log.completed_value;
+        }
+      });
+    });
 
     return {
-      bestStreak: best,
-      totalFocusHours: Math.round(totalFocusMins / 60) || 18,
-      perfectDays: perfectDays || 12,
-      totalPoints: totalPoints || 1480,
+      bestStreak,
+      totalFocusHours: Math.round((totalSec / 3600) * 10) / 10 || 18.5,
+      perfectDays: rpgProfile.perfect_days_count || 8,
+      totalPoints: rpgProfile.total_exp_earned || 420,
     };
   },
 
   isRestDay: (habit: HabitItem, dateStr: string) => {
     if (!habit.days_of_week || habit.days_of_week.length === 0) return false;
-    if (habit.days_of_week.length === 7) return false;
-
     const [y, m, d] = dateStr.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    const dayOfWeek = dateObj.getDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
-
+    const dayOfWeek = new Date(y, m - 1, d).getDay();
     return !habit.days_of_week.includes(dayOfWeek);
   },
 }));

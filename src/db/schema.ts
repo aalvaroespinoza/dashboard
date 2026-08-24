@@ -209,6 +209,9 @@ export const CREATE_TABLES_SQL = `
     days_of_week TEXT,
     reminder_time TEXT,
     motivation TEXT,
+    mastery_level INTEGER DEFAULT 1,
+    mastery_exp INTEGER DEFAULT 0,
+    total_completions INTEGER DEFAULT 0,
     is_archived INTEGER DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -228,7 +231,20 @@ export const CREATE_TABLES_SQL = `
     created_at TEXT NOT NULL,
     FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
   );
-  CREATE INDEX IF NOT EXISTS idx_habit_logs_habit_date ON habit_logs(habit_id, date);
+  CREATE INDEX IF NOT EXISTS idx_habit_logs ON habit_logs(habit_id, date);
+
+  -- Gamificación RPG: Perfil del Jugador
+  CREATE TABLE IF NOT EXISTS habit_gamification_profile (
+    id TEXT PRIMARY KEY,
+    level INTEGER DEFAULT 1,
+    current_exp INTEGER DEFAULT 0,
+    strength_exp INTEGER DEFAULT 0,
+    intelligence_exp INTEGER DEFAULT 0,
+    focus_exp INTEGER DEFAULT 0,
+    perfect_days_count INTEGER DEFAULT 0,
+    total_exp_earned INTEGER DEFAULT 0,
+    updated_at TEXT NOT NULL
+  );
 `;
 
 /**
@@ -252,6 +268,9 @@ export async function runMigrations(db: any) {
     { table: 'habits', column: 'days_of_week TEXT' },
     { table: 'habits', column: 'reminder_time TEXT' },
     { table: 'habits', column: 'motivation TEXT' },
+    { table: 'habits', column: 'mastery_level INTEGER DEFAULT 1' },
+    { table: 'habits', column: 'mastery_exp INTEGER DEFAULT 0' },
+    { table: 'habits', column: 'total_completions INTEGER DEFAULT 0' },
     { table: 'habits', column: 'is_archived INTEGER DEFAULT 0' },
     { table: 'habit_logs', column: 'is_skipped INTEGER DEFAULT 0' },
   ];

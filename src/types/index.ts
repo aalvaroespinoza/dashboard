@@ -212,6 +212,18 @@ export interface HabitCategory {
   position: number;
 }
 
+export interface UserRPGProfile {
+  level: number;
+  current_exp: number;
+  next_level_exp: number;
+  rank_title: string; // "Novato", "Aprendiz", "Guerrero", "Adepto", "Maestro", "Monarca Legendario"
+  strength_exp: number; // Salud / Cuerpo
+  intelligence_exp: number; // Mente / Estudio
+  focus_exp: number; // Productividad / Hábitos diarios
+  perfect_days_count: number;
+  total_exp_earned: number;
+}
+
 export interface HabitItem {
   id: string;
   category_id: string;
@@ -227,6 +239,9 @@ export interface HabitItem {
   days_of_week?: number[]; // [0, 1, 2, 3, 4, 5, 6]
   reminder_time?: string | null; // HH:mm
   motivation?: string | null;
+  mastery_level?: number; // 1 a 10 (Bronce, Plata, Oro, Diamante)
+  mastery_exp?: number;
+  total_completions?: number;
   is_archived?: number; // 0 or 1
   created_at: string;
   updated_at: string;

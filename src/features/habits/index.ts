@@ -10,4 +10,7 @@ export * from './components/GritSettingsTab';
 export * from './components/GritHabitEditorModal';
 export * from './components/GritHabitOptionsMenu';
 export * from './components/GritNewCategoryModal';
+export * from './components/GritPlayerLevelCard';
+export * from './components/GritLevelUpModal';
+export * from './utils/gamificationUtils';
 export * from './stores/useHabitsStore';

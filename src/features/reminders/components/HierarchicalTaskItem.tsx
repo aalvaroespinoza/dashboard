@@ -1,21 +1,19 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import {
-  Clock,
   Calendar,
   Flag,
   ChevronDown,
   ChevronRight,
   Repeat,
   CornerDownRight,
-  MoreHorizontal,
-  Trash2,
-  Edit2,
   Plus,
 } from 'lucide-react-native';
 import { TaskItem, Priority } from '../../../types';
 import { ReminderCheckbox } from './ReminderCheckbox';
+import { RichLinkPreviewCard } from './RichLinkPreviewCard';
 import { IOS_COLORS } from '../../../styles/theme';
+import { createShadow } from '../../../styles/shadows';
 import { getHumanReadableRRule } from '../../../services/recurrenceService';
 
 interface HierarchicalTaskItemProps {
@@ -37,7 +35,6 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
   onToggleCollapse,
   onAddSubtask,
   onPress,
-  onDelete,
   onToggleFlag,
   isDark = true,
 }) => {
@@ -45,19 +42,18 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
   const level = task.level || 0;
-  const isOverdue =
-    !isCompleted &&
-    task.due_date &&
-    task.due_date < new Date().toISOString().split('T')[0];
+  const todayStr = '2026-08-24';
+  const isToday = task.due_date === todayStr;
+  const isOverdue = !isCompleted && task.due_date && task.due_date < todayStr;
 
   const getPriorityInfo = (p: Priority) => {
     switch (p) {
       case 'high':
-        return { label: '1', color: IOS_COLORS.red, bg: isDark ? 'rgba(255, 59, 48, 0.2)' : '#FEE2E2' };
+        return { label: '!!!', color: '#FF3B30', bg: 'rgba(255, 59, 48, 0.16)' };
       case 'medium':
-        return { label: '5', color: IOS_COLORS.orange, bg: isDark ? 'rgba(255, 149, 0, 0.2)' : '#FEF3C7' };
+        return { label: '!!', color: '#FF9500', bg: 'rgba(255, 149, 0, 0.16)' };
       case 'low':
-        return { label: '9', color: IOS_COLORS.blue, bg: isDark ? 'rgba(0, 122, 255, 0.2)' : '#DBEAFE' };
+        return { label: '!', color: '#007AFF', bg: 'rgba(0, 122, 255, 0.16)' };
       default:
         return null;
     }
@@ -70,18 +66,19 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
       onPress={() => onPress?.(task)}
       style={({ pressed }) => ({
         opacity: pressed ? 0.85 : 1,
-        backgroundColor: theme.cardSecondary,
-        borderRadius: 14,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        marginBottom: 6,
+        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+        borderRadius: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        marginBottom: 8,
         borderWidth: 1,
-        borderColor: isCompleted ? theme.borderSubtle : theme.border,
+        borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
         marginLeft: level * 20, // Indentación visual de subtareas
         position: 'relative',
+        ...createShadow('#000000', { width: 0, height: 2 }, isDark ? 0.2 : 0.03, 4),
       })}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
         {/* Indicador de jerarquía para subtareas */}
         {level > 0 && (
           <View style={{ marginTop: 4, marginRight: -4 }}>
@@ -102,35 +99,47 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
 
         {/* Contenido Principal */}
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-              {/* Color Dot de la Lista (solo en raíces) */}
-              {level === 0 && (
-                <View
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: listColor,
-                  }}
-                />
-              )}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, paddingRight: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {/* Indicador de Prioridad Exclamation */}
+                {priorityInfo && (
+                  <Text style={{ fontSize: 13, fontWeight: '900', color: priorityInfo.color }}>
+                    {priorityInfo.label}
+                  </Text>
+                )}
 
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: isCompleted ? theme.text.tertiary : theme.text.primary,
-                  textDecorationLine: isCompleted ? 'line-through' : 'none',
-                  flex: 1,
-                  lineHeight: 18,
-                }}
-              >
-                {task.title}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: '700',
+                    color: isCompleted ? theme.text.tertiary : theme.text.primary,
+                    textDecorationLine: isCompleted ? 'line-through' : 'none',
+                    lineHeight: 20,
+                    flex: 1,
+                  }}
+                >
+                  {task.title}
+                </Text>
+              </View>
+
+              {/* Notas */}
+              {task.notes && (
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    fontSize: 12,
+                    color: theme.text.secondary,
+                    marginTop: 3,
+                    lineHeight: 16,
+                  }}
+                >
+                  {task.notes}
+                </Text>
+              )}
             </View>
 
-            {/* Acciones Rápidas (Subtareas / Flag / Opciones) */}
+            {/* Acciones Rápidas (Subtareas / Flag / Plus) */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               {/* Botón de Colapso de Subtareas si tiene hijos */}
               {task.has_subtasks && (
@@ -142,16 +151,14 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 6,
-                    borderWidth: 1,
-                    borderColor: theme.border,
+                    backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                    paddingHorizontal: 7,
+                    paddingVertical: 3,
+                    borderRadius: 8,
                     gap: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: theme.text.secondary }}>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
                     {task.subtasks_completed_count}/{task.subtasks_count}
                   </Text>
                   {task.is_collapsed ? (
@@ -168,12 +175,12 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
                   e.stopPropagation();
                   onToggleFlag?.(task.id);
                 }}
-                style={{ padding: 2 }}
+                style={{ padding: 3 }}
               >
                 <Flag
-                  size={13}
-                  color={task.flagged ? IOS_COLORS.orange : theme.text.tertiary}
-                  fill={task.flagged ? IOS_COLORS.orange : 'none'}
+                  size={14}
+                  color={task.flagged ? '#FF9500' : theme.text.tertiary}
+                  fill={task.flagged ? '#FF9500' : 'none'}
                 />
               </Pressable>
 
@@ -184,61 +191,56 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
                     e.stopPropagation();
                     onAddSubtask(task.id);
                   }}
-                  style={{ padding: 2 }}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  <Plus size={14} color={theme.text.secondary} />
+                  <Plus size={13} color={theme.text.secondary} strokeWidth={2.5} />
                 </Pressable>
               )}
             </View>
           </View>
 
-          {/* Notas */}
-          {task.notes && (
-            <Text
-              numberOfLines={2}
-              style={{
-                fontSize: 12,
-                color: theme.text.secondary,
-                marginTop: 3,
-                lineHeight: 16,
-              }}
-            >
-              {task.notes}
-            </Text>
+          {/* Tarjeta Enriquecida de Link Preview (si la tarea contiene URL o video) */}
+          {task.link_preview && (
+            <RichLinkPreviewCard preview={task.link_preview} isDark={isDark} />
           )}
 
           {/* Fila de Badges y Metadatos */}
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-            {/* Fecha / Hora */}
+            {/* Fecha / Hora Relativa */}
             {task.due_date && (
               <View
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: isOverdue
-                    ? isDark
-                      ? 'rgba(255, 59, 48, 0.2)'
-                      : '#FEE2E2'
+                  backgroundColor: isOverdue || isToday
+                    ? 'rgba(255, 59, 48, 0.15)'
                     : isDark
-                    ? '#1C1C1E'
-                    : '#FFFFFF',
-                  paddingHorizontal: 7,
-                  paddingVertical: 2,
-                  borderRadius: 6,
+                    ? '#2C2C2E'
+                    : '#E5E5EA',
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: isOverdue ? IOS_COLORS.red : theme.border,
+                  borderColor: isOverdue || isToday ? 'rgba(255, 59, 48, 0.3)' : theme.border,
                   gap: 4,
                 }}
               >
-                <Calendar size={10} color={isOverdue ? IOS_COLORS.red : theme.text.secondary} />
+                <Calendar size={11} color={isOverdue || isToday ? '#FF3B30' : IOS_COLORS.blue} />
                 <Text
                   style={{
-                    fontSize: 10,
-                    fontWeight: '700',
-                    color: isOverdue ? IOS_COLORS.red : theme.text.secondary,
+                    fontSize: 11,
+                    fontWeight: '800',
+                    color: isOverdue || isToday ? '#FF3B30' : IOS_COLORS.blue,
                   }}
                 >
-                  {task.due_date} {task.due_time ? `· ${task.due_time}` : ''}
+                  {isToday ? 'Hoy' : task.due_date} {task.due_time ? `· ${task.due_time}` : ''}
                 </Text>
               </View>
             )}
@@ -249,34 +251,16 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: theme.border,
+                  backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                  paddingHorizontal: 7,
+                  paddingVertical: 3,
+                  borderRadius: 8,
                   gap: 4,
                 }}
               >
-                <Repeat size={10} color={IOS_COLORS.purple} />
-                <Text style={{ fontSize: 10, fontWeight: '700', color: IOS_COLORS.purple }}>
+                <Repeat size={11} color={IOS_COLORS.purple} />
+                <Text style={{ fontSize: 11, fontWeight: '800', color: IOS_COLORS.purple }}>
                   {getHumanReadableRRule(task.rrule)}
-                </Text>
-              </View>
-            )}
-
-            {/* Prioridad */}
-            {priorityInfo && (
-              <View
-                style={{
-                  backgroundColor: priorityInfo.bg,
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 6,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '800', color: priorityInfo.color }}>
-                  P{priorityInfo.label}
                 </Text>
               </View>
             )}
@@ -286,15 +270,13 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
               <View
                 key={idx}
                 style={{
-                  backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: theme.border,
+                  backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 8,
                 }}
               >
-                <Text style={{ fontSize: 10, color: IOS_COLORS.cyan, fontWeight: '600' }}>
+                <Text style={{ fontSize: 11, color: IOS_COLORS.cyan, fontWeight: '700' }}>
                   #{tag}
                 </Text>
               </View>

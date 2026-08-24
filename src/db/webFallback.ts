@@ -327,6 +327,10 @@ class WebSQLiteFallback {
       if (trimmed.includes('WHERE') && params.length > 0) {
         if (trimmed.includes('list_id = ?')) {
           items = items.filter((r) => r.list_id === params[0]);
+        } else if (trimmed.includes('section_id = ?')) {
+          items = items.filter((r) => r.section_id === params[0]);
+        } else if (trimmed.includes('url = ?')) {
+          items = items.filter((r) => r.url === params[0]);
         } else if (trimmed.includes('parent_id = ?')) {
           items = items.filter((r) => r.parent_id === params[0]);
         } else if (trimmed.includes('habit_id = ? AND date = ?')) {

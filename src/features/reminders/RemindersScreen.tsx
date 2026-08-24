@@ -19,6 +19,9 @@ import {
   FolderPlus,
   Inbox,
   CheckCircle2,
+  Folder,
+  Layers,
+  ChevronLeft,
 } from 'lucide-react-native';
 import Animated, {
   FadeInUp,
@@ -29,12 +32,15 @@ import { useTasksStore } from '../../store/useTasksStore';
 import { useAppStore } from '../../store/useAppStore';
 import { TaskItem, TaskList } from '../../types';
 import { SmartListCards } from './components/SmartListCards';
+import { MasterListView } from './components/MasterListView';
 import { RemindersViewToggle } from './components/RemindersViewToggle';
 import { HierarchicalTaskItem } from './components/HierarchicalTaskItem';
+import { ReminderSectionHeader } from './components/ReminderSectionHeader';
 import { GritColumnBoard } from './components/GritColumnBoard';
 import { QuickTaskToolbar } from './components/QuickTaskToolbar';
 import { ReminderDetailSheet } from './components/ReminderDetailSheet';
 import { IOS_COLORS } from '../../styles/theme';
+import { createShadow } from '../../styles/shadows';
 
 export const RemindersScreen: React.FC = () => {
   const { themeMode } = useAppStore();
@@ -43,6 +49,7 @@ export const RemindersScreen: React.FC = () => {
 
   const {
     lists,
+    sections,
     tasks,
     selectedListId,
     activeSmartFilter,
@@ -65,7 +72,9 @@ export const RemindersScreen: React.FC = () => {
     deleteTask,
     toggleTaskComplete,
     addList,
+    addSection,
     getFlattenedTasks,
+    getTasksGroupedBySection,
     getGritColumns,
     getSmartCounts,
   } = useTasksStore();
@@ -80,15 +89,27 @@ export const RemindersScreen: React.FC = () => {
   const [newListName, setNewListName] = useState('');
   const [newListColor, setNewListColor] = useState(IOS_COLORS.blue);
 
+  const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [newSectionName, setNewSectionName] = useState('');
+  const [targetSectionForNewTask, setTargetSectionForNewTask] = useState<string | null>(null);
+
   const smartCounts = getSmartCounts();
   const flattenedTasks = getFlattenedTasks();
   const gritColumns = getGritColumns();
 
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
-    await addList(newListName.trim(), newListColor);
+    const created = await addList(newListName.trim(), newListColor);
     setNewListName('');
     setIsAddListModalOpen(false);
+    setSelectedListId(created.id);
+  };
+
+  const handleCreateSection = async () => {
+    if (!selectedListId || !newSectionName.trim()) return;
+    await addSection(selectedListId, newSectionName.trim());
+    setNewSectionName('');
+    setIsAddSectionModalOpen(false);
   };
 
   // Subtareas de la tarea en inspección
@@ -98,21 +119,55 @@ export const RemindersScreen: React.FC = () => {
 
   const activeListObj = lists.find((l) => l.id === selectedListId);
 
+  // Determinar si mostramos la lista agrupada por secciones
+  const groupedSections = selectedListId ? getTasksGroupedBySection(selectedListId) : [];
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: theme.background }}
+      style={{
+        flex: 1,
+        backgroundColor: isDark ? '#000000' : theme.background,
+      }}
     >
       <View style={{ flex: 1, padding: 24, gap: 16 }}>
         {/* 1. Header General con Buscador y Acción Nueva Lista */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View>
-            <Text style={{ fontSize: 28, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.8 }}>
-              {activeListObj ? activeListObj.title : 'Recordatorios'}
-            </Text>
-            <Text style={{ fontSize: 13, color: theme.text.secondary, marginTop: 2 }}>
-              {flattenedTasks.filter((t) => !t.is_completed).length} pendientes
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {selectedListId && (
+              <Pressable
+                onPress={() => setSelectedListId(null)}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ChevronLeft size={20} color={theme.text.primary} />
+              </Pressable>
+            )}
+
+            <View>
+              <Text style={{ fontSize: 28, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.8 }}>
+                {activeListObj
+                  ? activeListObj.title
+                  : activeSmartFilter === 'today'
+                  ? 'Hoy'
+                  : activeSmartFilter === 'scheduled'
+                  ? 'Programados'
+                  : activeSmartFilter === 'flagged'
+                  ? 'Con marca'
+                  : activeSmartFilter === 'completed'
+                  ? 'Completados'
+                  : 'Recordatorios'}
+              </Text>
+              <Text style={{ fontSize: 13, color: theme.text.secondary, marginTop: 2 }}>
+                {flattenedTasks.filter((t) => !t.is_completed).length} pendientes
+              </Text>
+            </View>
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -121,12 +176,12 @@ export const RemindersScreen: React.FC = () => {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: theme.card,
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor: isDark ? '#2C2C2E' : theme.border,
                 width: 220,
                 gap: 8,
               }}
@@ -146,6 +201,30 @@ export const RemindersScreen: React.FC = () => {
               )}
             </View>
 
+            {/* Botón + Nueva Sección (si hay lista seleccionada) */}
+            {selectedListId && (
+              <Pressable
+                onPress={() => setIsAddSectionModalOpen(true)}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.85 : 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                  paddingHorizontal: 12,
+                  paddingVertical: 9,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? '#2C2C2E' : theme.border,
+                  gap: 6,
+                })}
+              >
+                <Layers size={15} color={IOS_COLORS.blue} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text.primary }}>
+                  Nueva sección
+                </Text>
+              </Pressable>
+            )}
+
             {/* Botón + Nueva Lista */}
             <Pressable
               onPress={() => setIsAddListModalOpen(true)}
@@ -153,12 +232,12 @@ export const RemindersScreen: React.FC = () => {
                 opacity: pressed ? 0.85 : 1,
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: theme.card,
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
                 paddingHorizontal: 14,
                 paddingVertical: 9,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor: isDark ? '#2C2C2E' : theme.border,
                 gap: 6,
               })}
             >
@@ -171,12 +250,14 @@ export const RemindersScreen: React.FC = () => {
         </View>
 
         {/* 2. Tarjetas Inteligentes de Apple Reminders (Hoy, Programados, Todos, Con Marca, Completados) */}
-        <SmartListCards
-          activeFilter={activeSmartFilter}
-          onSelectFilter={setActiveSmartFilter}
-          counts={smartCounts}
-          isDark={isDark}
-        />
+        {!selectedListId && (
+          <SmartListCards
+            activeFilter={activeSmartFilter}
+            onSelectFilter={setActiveSmartFilter}
+            counts={smartCounts}
+            isDark={isDark}
+          />
+        )}
 
         {/* 3. Toggle de Vistas Duales (Lista vs Columnas Grit) y Filtros */}
         <RemindersViewToggle
@@ -189,7 +270,7 @@ export const RemindersScreen: React.FC = () => {
           isDark={isDark}
         />
 
-        {/* 4. Contenido Principal (Lista Virtualizada o Tablero Columnas) */}
+        {/* 4. Contenido Principal */}
         <View style={{ flex: 1 }}>
           {viewMode === 'columns' ? (
             <GritColumnBoard
@@ -198,15 +279,34 @@ export const RemindersScreen: React.FC = () => {
               onToggleCollapse={toggleTaskCollapse}
               onAddSubtask={(parentId) => addSubtask(parentId, 'Nueva subtarea')}
               onOpenNewTask={(listId) => {
-                // Focus quick toolbar with list
                 if (listId) setSelectedListId(listId);
               }}
               onOpenEditTask={(task) => setInspectingTask(task)}
               onToggleFlag={toggleFlag}
               isDark={isDark}
             />
+          ) : !selectedListId && activeSmartFilter === 'all' && searchFilter.length === 0 ? (
+            // Vista Master (Mis Listas & Tags)
+            <MasterListView
+              lists={lists}
+              tasks={tasks}
+              onSelectList={(id) => setSelectedListId(id)}
+              onOpenNewList={() => setIsAddListModalOpen(true)}
+              onSelectTag={(tag) => setSearchFilter(tag)}
+              isDark={isDark}
+            />
           ) : (
-            <View style={{ flex: 1, backgroundColor: theme.card, borderRadius: 20, borderWidth: 1, borderColor: theme.border, padding: 16 }}>
+            // Vista Lista Detalle (con secciones si hay lista seleccionada)
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: isDark ? '#141416' : theme.card,
+                borderRadius: 24,
+                borderWidth: 1,
+                borderColor: isDark ? '#242426' : theme.border,
+                padding: 16,
+              }}
+            >
               {flattenedTasks.length === 0 ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 10 }}>
                   <Inbox size={36} color={theme.text.tertiary} />
@@ -217,13 +317,63 @@ export const RemindersScreen: React.FC = () => {
                     Usa la barra rápida inferior para crear tu primer recordatorio.
                   </Text>
                 </View>
+              ) : selectedListId && groupedSections.length > 0 ? (
+                // Lista agrupada por secciones
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+                  {groupedSections.map((group, gIdx) => {
+                    const secTasks = group.tasks;
+                    const compCount = secTasks.filter((t) => t.is_completed).length;
+
+                    return (
+                      <View key={group.section?.id || `unsec-${gIdx}`} style={{ marginBottom: 12 }}>
+                        {group.section && (
+                          <ReminderSectionHeader
+                            section={group.section}
+                            listId={selectedListId}
+                            tasksCount={secTasks.length}
+                            completedCount={compCount}
+                            onAddTaskInSection={(secId) => {
+                              setTargetSectionForNewTask(secId || null);
+                            }}
+                            isDark={isDark}
+                          />
+                        )}
+
+                        {secTasks.map((item) => {
+                          const listObj = lists.find((l) => l.id === item.list_id);
+                          return (
+                            <Animated.View
+                              key={item.id}
+                              entering={FadeInUp.springify().damping(18).stiffness(180)}
+                              exiting={FadeOutDown.duration(120)}
+                              layout={LinearTransition.springify().damping(20).stiffness(160)}
+                            >
+                              <HierarchicalTaskItem
+                                task={item}
+                                listColor={listObj?.color || IOS_COLORS.blue}
+                                onToggleComplete={toggleTaskComplete}
+                                onToggleCollapse={toggleTaskCollapse}
+                                onAddSubtask={(parentId) => addSubtask(parentId, 'Nueva subtarea')}
+                                onPress={(t) => setInspectingTask(t)}
+                                onDelete={deleteTask}
+                                onToggleFlag={toggleFlag}
+                                isDark={isDark}
+                              />
+                            </Animated.View>
+                          );
+                        })}
+                      </View>
+                    );
+                  })}
+                </ScrollView>
               ) : (
+                // Lista plana de tareas
                 <FlatList
                   data={flattenedTasks}
                   keyExtractor={(item) => item.id}
                   showsVerticalScrollIndicator={false}
                   removeClippedSubviews
-                  contentContainerStyle={{ paddingBottom: 20 }}
+                  contentContainerStyle={{ paddingBottom: 24 }}
                   renderItem={({ item }) => {
                     const listObj = lists.find((l) => l.id === item.list_id);
 
@@ -258,7 +408,11 @@ export const RemindersScreen: React.FC = () => {
           lists={lists}
           activeListId={selectedListId}
           onAddTask={async (t) => {
-            await addTask(t);
+            await addTask({
+              ...t,
+              section_id: targetSectionForNewTask,
+            });
+            setTargetSectionForNewTask(null);
           }}
           isDark={isDark}
         />
@@ -290,24 +444,18 @@ export const RemindersScreen: React.FC = () => {
 
       {/* Modal Crear Nueva Lista */}
       <Modal visible={isAddListModalOpen} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20,
-          }}
-        >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <View
             style={{
-              width: 400,
+              width: '90%',
+              maxWidth: 420,
               backgroundColor: theme.card,
-              borderRadius: 20,
+              borderRadius: 24,
               padding: 24,
               borderWidth: 1,
               borderColor: theme.border,
               gap: 16,
+              ...createShadow('#000000', { width: 0, height: 6 }, 0.25, 16),
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -322,13 +470,14 @@ export const RemindersScreen: React.FC = () => {
             <TextInput
               value={newListName}
               onChangeText={setNewListName}
-              placeholder="Nombre de la lista"
+              placeholder="Nombre de la lista (ej. Universidad)"
               placeholderTextColor={theme.text.tertiary}
               style={{
                 backgroundColor: theme.cardSecondary,
-                padding: 12,
-                borderRadius: 12,
-                fontSize: 14,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                borderRadius: 14,
+                fontSize: 15,
                 fontWeight: '700',
                 color: theme.text.primary,
                 borderWidth: 1,
@@ -338,26 +487,28 @@ export const RemindersScreen: React.FC = () => {
 
             {/* Selector de Color */}
             <View style={{ gap: 8 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary }}>Color</Text>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary }}>
+                Color Temático
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                 {[
                   IOS_COLORS.blue,
-                  IOS_COLORS.green,
-                  IOS_COLORS.red,
-                  IOS_COLORS.orange,
-                  IOS_COLORS.purple,
-                  IOS_COLORS.cyan,
+                  '#FF9500',
+                  '#34C759',
+                  '#AF52DE',
+                  '#FF3B30',
+                  '#32ADE6',
+                  '#FF2D55',
+                  '#FFCC00',
                 ].map((c) => (
                   <Pressable
                     key={c}
                     onPress={() => setNewListColor(c)}
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
                       backgroundColor: c,
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       borderWidth: newListColor === c ? 3 : 0,
                       borderColor: '#FFFFFF',
                     }}
@@ -369,15 +520,75 @@ export const RemindersScreen: React.FC = () => {
             <Pressable
               onPress={handleCreateList}
               style={{
-                backgroundColor: IOS_COLORS.blue,
-                paddingVertical: 12,
-                borderRadius: 12,
+                backgroundColor: newListColor,
+                paddingVertical: 14,
+                borderRadius: 16,
                 alignItems: 'center',
-                marginTop: 8,
+                marginTop: 6,
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }}>
+              <Text style={{ fontSize: 14, fontWeight: '900', color: '#FFFFFF' }}>
                 Crear Lista
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Crear Nueva Sección */}
+      <Modal visible={isAddSectionModalOpen} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <View
+            style={{
+              width: '90%',
+              maxWidth: 420,
+              backgroundColor: theme.card,
+              borderRadius: 24,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: theme.border,
+              gap: 16,
+              ...createShadow('#000000', { width: 0, height: 6 }, 0.25, 16),
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary }}>
+                Nueva Sección en {activeListObj?.title}
+              </Text>
+              <Pressable onPress={() => setIsAddSectionModalOpen(false)}>
+                <X size={18} color={theme.text.secondary} />
+              </Pressable>
+            </View>
+
+            <TextInput
+              value={newSectionName}
+              onChangeText={setNewSectionName}
+              placeholder="Nombre (ej. Salud, Trabajo, Otros)"
+              placeholderTextColor={theme.text.tertiary}
+              style={{
+                backgroundColor: theme.cardSecondary,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                borderRadius: 14,
+                fontSize: 15,
+                fontWeight: '700',
+                color: theme.text.primary,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            />
+
+            <Pressable
+              onPress={handleCreateSection}
+              style={{
+                backgroundColor: activeListObj?.color || IOS_COLORS.blue,
+                paddingVertical: 14,
+                borderRadius: 16,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '900', color: '#FFFFFF' }}>
+                Guardar Sección
               </Text>
             </Pressable>
           </View>

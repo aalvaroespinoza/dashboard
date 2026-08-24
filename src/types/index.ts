@@ -13,12 +13,32 @@ export interface TaskList {
   updated_at: string;
 }
 
+export interface ListSection {
+  id: string;
+  list_id: string;
+  name: string;
+  position: number;
+  created_at: string;
+}
+
+export interface LinkPreviewData {
+  url: string;
+  title: string;
+  description?: string | null;
+  image_url?: string | null;
+  domain: string;
+  created_at?: string;
+}
+
 export interface TaskItem {
   id: string;
   list_id: string;
+  section_id?: string | null; // ID de la sección dentro de la lista
   parent_id?: string | null; // ID de la tarea padre para subtareas
   title: string;
   notes?: string | null;
+  url?: string | null; // URL detectada o ingresada
+  link_preview?: LinkPreviewData | null; // Metadata de previsualización
   due_date?: string | null; // YYYY-MM-DD
   due_time?: string | null; // HH:mm
   is_completed: number; // 0 or 1

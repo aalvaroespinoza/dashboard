@@ -14,13 +14,36 @@ export const CREATE_TABLES_SQL = `
     updated_at TEXT NOT NULL
   );
 
-  -- Tareas / Recordatorios con soporte de subtareas y CalDAV VTODO
+  -- Secciones dentro de una lista de recordatorios (ej. Salud, Universidad, Otros)
+  CREATE TABLE IF NOT EXISTS list_sections (
+    id TEXT PRIMARY KEY,
+    list_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    position INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_list_sections_list ON list_sections(list_id);
+
+  -- Metadatos de Link Previews (URLs y videos enriquecidos)
+  CREATE TABLE IF NOT EXISTS link_previews (
+    url TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT,
+    domain TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+
+  -- Tareas / Recordatorios con soporte de subtareas, secciones y URLs
   CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
     list_id TEXT NOT NULL,
+    section_id TEXT,
     parent_id TEXT,
     title TEXT NOT NULL,
     notes TEXT,
+    url TEXT,
     due_date TEXT,
     due_time TEXT,
     is_completed INTEGER DEFAULT 0,
@@ -40,9 +63,11 @@ export const CREATE_TABLES_SQL = `
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+    FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    FOREIGN KEY (section_id) REFERENCES list_sections(id) ON DELETE SET NULL
   );
   CREATE INDEX IF NOT EXISTS idx_tasks_list_id ON tasks(list_id);
+  CREATE INDEX IF NOT EXISTS idx_tasks_section_id ON tasks(section_id);
   CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id);
   CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
   CREATE INDEX IF NOT EXISTS idx_tasks_is_completed ON tasks(is_completed);
@@ -202,6 +227,8 @@ export const CREATE_TABLES_SQL = `
 export async function runMigrations(db: any) {
   const columnsToAdd = [
     { table: 'tasks', column: 'parent_id TEXT' },
+    { table: 'tasks', column: 'section_id TEXT' },
+    { table: 'tasks', column: 'url TEXT' },
     { table: 'tasks', column: 'completed_at TEXT' },
     { table: 'tasks', column: 'priority_num INTEGER DEFAULT 0' },
     { table: 'tasks', column: 'flagged INTEGER DEFAULT 0' },

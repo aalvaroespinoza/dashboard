@@ -160,6 +160,10 @@ export interface HabitItem {
   icon: string;
   points: number;
   streak_count?: number; // ej. -20 o +14
+  days_of_week?: number[]; // [0, 1, 2, 3, 4, 5, 6]
+  reminder_time?: string | null; // HH:mm
+  motivation?: string | null;
+  is_archived?: number; // 0 or 1
   created_at: string;
   updated_at: string;
 }

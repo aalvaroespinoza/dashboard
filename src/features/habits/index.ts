@@ -7,5 +7,7 @@ export * from './components/GritDetailSideSheet';
 export * from './components/GritFloatingTimerBar';
 export * from './components/GritStatsTab';
 export * from './components/GritSettingsTab';
-export * from './components/GritNewHabitModal';
+export * from './components/GritHabitEditorModal';
+export * from './components/GritHabitOptionsMenu';
+export * from './components/GritNewCategoryModal';
 export * from './stores/useHabitsStore';

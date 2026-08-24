@@ -171,6 +171,10 @@ export const CREATE_TABLES_SQL = `
     icon TEXT NOT NULL DEFAULT '⚡',
     points INTEGER DEFAULT 10,
     streak_count INTEGER DEFAULT 0,
+    days_of_week TEXT,
+    reminder_time TEXT,
+    motivation TEXT,
+    is_archived INTEGER DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (category_id) REFERENCES habit_categories(id) ON DELETE CASCADE
@@ -206,6 +210,10 @@ export async function runMigrations(db: any) {
     { table: 'tasks', column: 'sequence INTEGER DEFAULT 0' },
     { table: 'lists', column: 'is_pinned INTEGER DEFAULT 0' },
     { table: 'habits', column: 'streak_count INTEGER DEFAULT 0' },
+    { table: 'habits', column: 'days_of_week TEXT' },
+    { table: 'habits', column: 'reminder_time TEXT' },
+    { table: 'habits', column: 'motivation TEXT' },
+    { table: 'habits', column: 'is_archived INTEGER DEFAULT 0' },
     { table: 'habit_logs', column: 'is_skipped INTEGER DEFAULT 0' },
   ];
 

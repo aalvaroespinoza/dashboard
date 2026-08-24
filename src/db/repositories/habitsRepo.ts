@@ -45,6 +45,8 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '🧖‍♂️',
     points: 15,
     streak_count: -20,
+    days_of_week: [0, 1, 2, 3, 4, 5, 6],
+    motivation: 'Mantener mi higiene y bienestar diario',
   },
   {
     id: 'habit-room',
@@ -58,6 +60,8 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '🧹',
     points: 15,
     streak_count: -20,
+    days_of_week: [0, 1, 2, 3, 4, 5, 6],
+    motivation: 'Un entorno ordenado genera claridad mental',
   },
   {
     id: 'habit-bike',
@@ -71,6 +75,8 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '🚴‍♂️',
     points: 35,
     streak_count: 3,
+    days_of_week: [1, 3, 5],
+    motivation: 'Entrenamiento cardiovascular al aire libre',
   },
   {
     id: 'habit-water',
@@ -84,6 +90,8 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '💧',
     points: 20,
     streak_count: 12,
+    days_of_week: [0, 1, 2, 3, 4, 5, 6],
+    motivation: 'Hidratación constante para energía y foco',
   },
   {
     id: 'habit-girlfriend',
@@ -97,6 +105,8 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '💑',
     points: 30,
     streak_count: 6,
+    days_of_week: [5, 6, 0],
+    motivation: 'Tiempo de calidad en pareja',
   },
   {
     id: 'habit-friends',
@@ -110,6 +120,8 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '🍕',
     points: 25,
     streak_count: 4,
+    days_of_week: [5, 6],
+    motivation: 'Conexión social y distensión',
   },
   {
     id: 'habit-study',
@@ -123,13 +135,14 @@ export const GRIT_HABITS: Omit<HabitItem, 'created_at' | 'updated_at'>[] = [
     icon: '🎯',
     points: 50,
     streak_count: 14,
+    days_of_week: [1, 2, 3, 4, 5],
+    motivation: 'Avanzar en materias de UTN y certificaciones',
   },
 ];
 
 // Genera logs iniciales históricos para agosto 2026 (del 14 al 23 de agosto)
 function generateSeedLogs(): { habit_id: string; date: string; completed_value: number; is_completed: number; notes: string | null }[] {
   const logs: { habit_id: string; date: string; completed_value: number; is_completed: number; notes: string | null }[] = [];
-  const baseDate = new Date(2026, 7, 24); // 24 de agosto de 2026
 
   for (let i = 10; i >= 1; i--) {
     const d = new Date(2026, 7, 24 - i);
@@ -208,9 +221,50 @@ export const habitsRepo = {
     return rows;
   },
 
+  async createCategory(cat: HabitCategory): Promise<HabitCategory> {
+    const db = await getDatabase();
+    await db.runAsync(
+      'INSERT INTO habit_categories (id, name, emoji, color, position) VALUES (?, ?, ?, ?, ?)',
+      [cat.id, cat.name, cat.emoji, cat.color, cat.position]
+    );
+    return cat;
+  },
+
+  async updateCategory(id: string, updates: Partial<HabitCategory>): Promise<void> {
+    const db = await getDatabase();
+    const fields: string[] = [];
+    const values: any[] = [];
+    if (updates.name !== undefined) {
+      fields.push('name = ?');
+      values.push(updates.name);
+    }
+    if (updates.emoji !== undefined) {
+      fields.push('emoji = ?');
+      values.push(updates.emoji);
+    }
+    if (updates.color !== undefined) {
+      fields.push('color = ?');
+      values.push(updates.color);
+    }
+    if (updates.position !== undefined) {
+      fields.push('position = ?');
+      values.push(updates.position);
+    }
+    if (fields.length > 0) {
+      values.push(id);
+      await db.runAsync(`UPDATE habit_categories SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync('DELETE FROM habit_categories WHERE id = ?', [id]);
+    await db.runAsync('DELETE FROM habits WHERE category_id = ?', [id]);
+  },
+
   async getAllHabits(): Promise<HabitItem[]> {
     const db = await getDatabase();
-    const rows = await db.getAllAsync<HabitItem>(
+    const rows = await db.getAllAsync<any>(
       'SELECT * FROM habits ORDER BY created_at ASC'
     );
     if (rows.length === 0) {
@@ -219,8 +273,9 @@ export const habitsRepo = {
         await db.runAsync(
           `INSERT INTO habits (
             id, category_id, title, type, target_value, target_unit,
-            frequency, color, icon, points, streak_count, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            frequency, color, icon, points, streak_count, days_of_week,
+            reminder_time, motivation, is_archived, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             h.id,
             h.category_id,
@@ -233,6 +288,10 @@ export const habitsRepo = {
             h.icon,
             h.points,
             h.streak_count ?? 0,
+            h.days_of_week ? JSON.stringify(h.days_of_week) : null,
+            h.reminder_time || null,
+            h.motivation || null,
+            h.is_archived ?? 0,
             now,
             now,
           ]
@@ -260,7 +319,12 @@ export const habitsRepo = {
 
       return GRIT_HABITS.map((h) => ({ ...h, created_at: now, updated_at: now }));
     }
-    return rows;
+
+    return rows.map((r: any) => ({
+      ...r,
+      days_of_week: r.days_of_week ? JSON.parse(r.days_of_week) : [0, 1, 2, 3, 4, 5, 6],
+      is_archived: r.is_archived ?? 0,
+    }));
   },
 
   async getLogsByDate(date: string): Promise<HabitLogItem[]> {
@@ -355,8 +419,9 @@ export const habitsRepo = {
     await db.runAsync(
       `INSERT INTO habits (
         id, category_id, title, type, target_value, target_unit,
-        frequency, color, icon, points, streak_count, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        frequency, color, icon, points, streak_count, days_of_week,
+        reminder_time, motivation, is_archived, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newHabit.id,
         newHabit.category_id,
@@ -369,6 +434,10 @@ export const habitsRepo = {
         newHabit.icon,
         newHabit.points,
         newHabit.streak_count ?? 0,
+        newHabit.days_of_week ? JSON.stringify(newHabit.days_of_week) : JSON.stringify([0, 1, 2, 3, 4, 5, 6]),
+        newHabit.reminder_time || null,
+        newHabit.motivation || null,
+        newHabit.is_archived ?? 0,
         now,
         now,
       ]
@@ -382,9 +451,17 @@ export const habitsRepo = {
     const fields: string[] = ['updated_at = ?'];
     const values: any[] = [now];
 
+    if (updates.category_id !== undefined) {
+      fields.push('category_id = ?');
+      values.push(updates.category_id);
+    }
     if (updates.title !== undefined) {
       fields.push('title = ?');
       values.push(updates.title);
+    }
+    if (updates.type !== undefined) {
+      fields.push('type = ?');
+      values.push(updates.type);
     }
     if (updates.target_value !== undefined) {
       fields.push('target_value = ?');
@@ -414,9 +491,35 @@ export const habitsRepo = {
       fields.push('streak_count = ?');
       values.push(updates.streak_count);
     }
+    if (updates.days_of_week !== undefined) {
+      fields.push('days_of_week = ?');
+      values.push(JSON.stringify(updates.days_of_week));
+    }
+    if (updates.reminder_time !== undefined) {
+      fields.push('reminder_time = ?');
+      values.push(updates.reminder_time || null);
+    }
+    if (updates.motivation !== undefined) {
+      fields.push('motivation = ?');
+      values.push(updates.motivation || null);
+    }
+    if (updates.is_archived !== undefined) {
+      fields.push('is_archived = ?');
+      values.push(updates.is_archived);
+    }
 
     values.push(id);
     await db.runAsync(`UPDATE habits SET ${fields.join(', ')} WHERE id = ?`, values);
+  },
+
+  async archiveHabit(id: string, isArchived: boolean = true): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync('UPDATE habits SET is_archived = ? WHERE id = ?', [isArchived ? 1 : 0, id]);
+  },
+
+  async resetStreak(id: string): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync('UPDATE habits SET streak_count = 0 WHERE id = ?', [id]);
   },
 
   async deleteHabit(id: string): Promise<void> {

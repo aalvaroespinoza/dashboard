@@ -30,6 +30,7 @@ interface HabitsStoreState {
   selectedDate: string; // 'YYYY-MM-DD', default '2026-08-24'
   searchQuery: string;
   selectedDetailHabit: HabitItem | null;
+  editingHabit: HabitItem | null;
   isStatsUnlocked: boolean;
 
   // Datos
@@ -46,6 +47,7 @@ interface HabitsStoreState {
   setSearchQuery: (q: string) => void;
   openDetailHabit: (habit: HabitItem | null) => void;
   closeDetailHabit: () => void;
+  setEditingHabit: (habit: HabitItem | null) => void;
   unlockStats: () => void;
 
   // Acciones de Datos
@@ -62,7 +64,10 @@ interface HabitsStoreState {
   saveHabitNote: (habitId: string, note: string, date?: string) => Promise<void>;
   createHabit: (habit: Omit<HabitItem, 'created_at' | 'updated_at'>) => Promise<void>;
   updateHabit: (id: string, updates: Partial<HabitItem>) => Promise<void>;
+  archiveHabit: (id: string, isArchived?: boolean) => Promise<void>;
+  resetStreak: (id: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
+  createCategory: (name: string, emoji: string, color: string) => Promise<HabitCategory>;
   resetAllData: () => Promise<void>;
 
   // Selectores y Helpers
@@ -75,6 +80,7 @@ interface HabitsStoreState {
     perfectDays: number;
     totalPoints: number;
   };
+  isRestDay: (habit: HabitItem, dateStr: string) => boolean;
 }
 
 // Genera los 10 días desde el 14 al 24 de agosto de 2026
@@ -92,6 +98,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   selectedDate: '2026-08-24',
   searchQuery: '',
   selectedDetailHabit: null,
+  editingHabit: null,
   isStatsUnlocked: true,
 
   categories: [],
@@ -106,6 +113,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   setSearchQuery: (q) => set({ searchQuery: q }),
   openDetailHabit: (habit) => set({ selectedDetailHabit: habit }),
   closeDetailHabit: () => set({ selectedDetailHabit: null }),
+  setEditingHabit: (habit) => set({ editingHabit: habit }),
   unlockStats: () => set({ isStatsUnlocked: true }),
 
   loadHabitsData: async () => {
@@ -402,12 +410,46 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     }));
   },
 
+  archiveHabit: async (id, isArchived = true) => {
+    await habitsRepo.archiveHabit(id, isArchived);
+    set((state) => ({
+      habits: state.habits.map((h) => (h.id === id ? { ...h, is_archived: isArchived ? 1 : 0 } : h)),
+      selectedDetailHabit: state.selectedDetailHabit?.id === id ? null : state.selectedDetailHabit,
+    }));
+  },
+
+  resetStreak: async (id) => {
+    await habitsRepo.resetStreak(id);
+    set((state) => ({
+      habits: state.habits.map((h) => (h.id === id ? { ...h, streak_count: 0 } : h)),
+      selectedDetailHabit:
+        state.selectedDetailHabit?.id === id
+          ? { ...state.selectedDetailHabit, streak_count: 0 }
+          : state.selectedDetailHabit,
+    }));
+  },
+
   deleteHabit: async (id) => {
     await habitsRepo.deleteHabit(id);
     set((state) => ({
       habits: state.habits.filter((h) => h.id !== id),
       selectedDetailHabit: state.selectedDetailHabit?.id === id ? null : state.selectedDetailHabit,
     }));
+  },
+
+  createCategory: async (name, emoji, color) => {
+    const newCat: HabitCategory = {
+      id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      name,
+      emoji,
+      color,
+      position: get().categories.length,
+    };
+    const saved = await habitsRepo.createCategory(newCat);
+    set((state) => ({
+      categories: [...state.categories, saved],
+    }));
+    return saved;
   },
 
   resetAllData: async () => {
@@ -441,6 +483,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
 
   getAugustHeatmap: () => {
     const { habits, logsMap } = get();
+    const activeHabits = habits.filter((h) => !h.is_archived);
     const daysInAugust = 31;
     const items: DayHeatmapItem[] = [];
 
@@ -450,13 +493,13 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
       const isFuture = day > 24;
 
       let completedCount = 0;
-      habits.forEach((h) => {
+      activeHabits.forEach((h) => {
         if (logsMap[h.id]?.[dateStr]?.is_completed) {
           completedCount++;
         }
       });
 
-      const totalCount = habits.length || 1;
+      const totalCount = activeHabits.length || 1;
       const rate = isFuture ? 0 : completedCount / totalCount;
 
       items.push({
@@ -464,7 +507,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
         dateStr,
         completionRate: rate,
         completedCount,
-        totalCount: habits.length,
+        totalCount: activeHabits.length,
         isToday,
         isFuture,
       });
@@ -475,14 +518,14 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
 
   getStreaksSummary: () => {
     const { habits, logsMap } = get();
+    const activeHabits = habits.filter((h) => !h.is_archived);
 
-    // Mejor racha
     let best = { title: 'Estudio enfocado', count: 14, icon: '🎯' };
     let totalFocusMins = 0;
     let perfectDays = 0;
     let totalPoints = 0;
 
-    habits.forEach((h) => {
+    activeHabits.forEach((h) => {
       if ((h.streak_count || 0) > best.count) {
         best = { title: h.title, count: h.streak_count || 0, icon: h.icon };
       }
@@ -494,10 +537,9 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
       }
     });
 
-    // Calcular días perfectos en agosto
     for (let d = 1; d <= 24; d++) {
       const dateStr = `2026-08-${d.toString().padStart(2, '0')}`;
-      const completedOnDay = habits.filter((h) => logsMap[h.id]?.[dateStr]?.is_completed).length;
+      const completedOnDay = activeHabits.filter((h) => logsMap[h.id]?.[dateStr]?.is_completed).length;
       if (completedOnDay >= 4) {
         perfectDays++;
         totalPoints += completedOnDay * 20;
@@ -510,5 +552,16 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
       perfectDays: perfectDays || 12,
       totalPoints: totalPoints || 1480,
     };
+  },
+
+  isRestDay: (habit: HabitItem, dateStr: string) => {
+    if (!habit.days_of_week || habit.days_of_week.length === 0) return false;
+    if (habit.days_of_week.length === 7) return false;
+
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayOfWeek = dateObj.getDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
+
+    return !habit.days_of_week.includes(dayOfWeek);
   },
 }));

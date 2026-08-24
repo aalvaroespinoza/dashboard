@@ -23,6 +23,7 @@ import { HomeRemindersWidget } from './components/HomeRemindersWidget';
 import { HomeFinanceWidget } from './components/HomeFinanceWidget';
 import { HomeBusWidget } from './components/HomeBusWidget';
 import { HomeCalendarWidget } from './components/HomeCalendarWidget';
+import { AppleEmoji } from '../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../styles/theme';
 import { createShadow } from '../../styles/shadows';
 
@@ -67,11 +68,11 @@ export const HomeScreen: React.FC = () => {
       {/* 1. Header General con Saludo y Fecha */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ fontSize: 32, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.8 }}>
               Hola, Álvaro
             </Text>
-            <Text style={{ fontSize: 26 }}>👋</Text>
+            <AppleEmoji emoji="👋" size={30} />
           </View>
           <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text.secondary, marginTop: 3 }}>
             {formattedDate} · Despeñaderos, Córdoba

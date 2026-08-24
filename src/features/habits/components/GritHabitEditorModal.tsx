@@ -23,6 +23,8 @@ import {
 import { HabitCategory, HabitItem, HabitType } from '../../../types';
 import { useHabitsStore } from '../stores/useHabitsStore';
 import { GritNewCategoryModal, GRIT_COLOR_PALETTE } from './GritNewCategoryModal';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
+import { AppleEmojiPickerModal } from '../../../components/ui/AppleEmojiPickerModal';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -93,6 +95,7 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
   const [motivation, setMotivation] = useState('');
 
   const [isNewCategoryModalOpen, setIsNewCategoryModalOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   // Load habit when editing or reset when creating
   useEffect(() => {
@@ -253,7 +256,8 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
 
               {/* Nombre y Emoji */}
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View
+                <Pressable
+                  onPress={() => setIsEmojiPickerOpen(true)}
                   style={{
                     width: 54,
                     height: 54,
@@ -265,8 +269,8 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
                     justifyContent: 'center',
                   }}
                 >
-                  <Text style={{ fontSize: 28 }}>{emoji}</Text>
-                </View>
+                  <AppleEmoji emoji={emoji} size={30} />
+                </Pressable>
 
                 <TextInput
                   value={title}
@@ -289,9 +293,28 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
 
               {/* Selector de Emojis Agrupados */}
               <View style={{ backgroundColor: theme.cardSecondary, borderRadius: 16, padding: 12, gap: 8, borderWidth: 1, borderColor: theme.border }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.secondary }}>
-                  Elige un icono temático:
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.secondary }}>
+                    Elige un icono temático:
+                  </Text>
+                  <Pressable
+                    onPress={() => setIsEmojiPickerOpen(true)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: 'rgba(255, 149, 0, 0.16)',
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 8,
+                      gap: 4,
+                    }}
+                  >
+                    <Sparkles size={11} color="#FF9500" />
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF9500' }}>
+                      Más Emojis
+                    </Text>
+                  </Pressable>
+                </View>
                 {HABIT_EMOJI_GROUPS.map((grp) => (
                   <View key={grp.title} style={{ gap: 4 }}>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: theme.text.tertiary }}>
@@ -313,7 +336,7 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
                             justifyContent: 'center',
                           }}
                         >
-                          <Text style={{ fontSize: 18 }}>{em}</Text>
+                          <AppleEmoji emoji={em} size={20} />
                         </Pressable>
                       ))}
                     </ScrollView>
@@ -785,6 +808,14 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
         visible={isNewCategoryModalOpen}
         onClose={() => setIsNewCategoryModalOpen(false)}
         onCategoryCreated={(catId) => setSelectedCategoryId(catId)}
+        isDark={isDark}
+      />
+
+      {/* Modal para Seleccionar Cualquier Emoji Apple */}
+      <AppleEmojiPickerModal
+        visible={isEmojiPickerOpen}
+        onClose={() => setIsEmojiPickerOpen(false)}
+        onSelectEmoji={(selected) => setEmoji(selected)}
         isDark={isDark}
       />
     </Modal>

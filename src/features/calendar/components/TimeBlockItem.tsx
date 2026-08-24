@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Clock, MapPin, CheckCircle2, Flag } from 'lucide-react-native';
 import { UnifiedCalendarItem } from '../../../types';
 import { ReminderCheckbox } from '../../reminders/components/ReminderCheckbox';
+import { AppleEmojiText } from '../../../components/ui/AppleEmojiText';
 import { useTasksStore } from '../../../store/useTasksStore';
 import { IOS_COLORS, getTintStyle } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
@@ -73,8 +74,7 @@ export const TimeBlockItem: React.FC<TimeBlockItemProps> = ({
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-              <Text
-                numberOfLines={1}
+              <AppleEmojiText
                 style={{
                   fontSize: isCompact ? 12 : 14,
                   fontWeight: '800',
@@ -84,7 +84,7 @@ export const TimeBlockItem: React.FC<TimeBlockItemProps> = ({
                 }}
               >
                 {item.title}
-              </Text>
+              </AppleEmojiText>
             </View>
 
             {/* Badge D-Day / Milestone */}

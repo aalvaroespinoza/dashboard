@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { ChevronRight, Plus, Folder, Hash, Tag } from 'lucide-react-native';
 import { TaskList, TaskItem } from '../../../types';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -88,7 +89,11 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
                       justifyContent: 'center',
                     }}
                   >
-                    <Folder size={16} color="#FFFFFF" />
+                    {list.icon ? (
+                      <AppleEmoji emoji={list.icon} size={18} />
+                    ) : (
+                      <Folder size={16} color="#FFFFFF" />
+                    )}
                   </View>
 
                   <Text

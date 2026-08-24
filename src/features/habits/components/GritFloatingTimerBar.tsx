@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import { Square, Play, Pause, ChevronUp } from 'lucide-react-native';
 import { useHabitsStore } from '../stores/useHabitsStore';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -72,7 +73,7 @@ export const GritFloatingTimerBar: React.FC<GritFloatingTimerBarProps> = ({
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 20 }}>{habit.icon}</Text>
+          <AppleEmoji emoji={habit.icon} size={20} />
         </View>
 
         <View>

@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ChevronDown } from 'lucide-react-native';
 import { HabitCategory } from '../../../types';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
 import { IOS_SPRINGS } from '../../../styles/animations';
 
@@ -62,7 +63,7 @@ export const GritCategoryHeader: React.FC<GritCategoryHeaderProps> = ({
     >
       {/* Izquierda: Emoji + Nombre de Categoría */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Text style={{ fontSize: 24 }}>{category.emoji}</Text>
+        <AppleEmoji emoji={category.emoji} size={24} />
         <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.4 }}>
           {category.name}
         </Text>

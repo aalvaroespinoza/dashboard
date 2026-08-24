@@ -17,6 +17,7 @@ import {
 } from 'lucide-react-native';
 import { HabitItem } from '../../../types';
 import { useHabitsStore } from '../stores/useHabitsStore';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -98,7 +99,7 @@ export const GritHabitOptionsMenu: React.FC<GritHabitOptionsMenuProps> = ({
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ fontSize: 20 }}>{habit.icon}</Text>
+                <AppleEmoji emoji={habit.icon} size={22} />
                 <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '900', color: theme.text.primary, maxWidth: 220 }}>
                   {habit.title}
                 </Text>

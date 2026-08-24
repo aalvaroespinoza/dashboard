@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { X, Plus, Sparkles } from 'lucide-react-native';
 import { useHabitsStore } from '../stores/useHabitsStore';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
+import { AppleEmojiPickerModal } from '../../../components/ui/AppleEmojiPickerModal';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -48,6 +50,7 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🌿');
   const [color, setColor] = useState(GRIT_COLOR_PALETTE[0]);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -88,7 +91,8 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
 
           {/* Emoji + Nombre */}
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View
+            <Pressable
+              onPress={() => setIsEmojiPickerOpen(true)}
               style={{
                 width: 50,
                 height: 50,
@@ -100,8 +104,8 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 24 }}>{emoji}</Text>
-            </View>
+              <AppleEmoji emoji={emoji} size={28} />
+            </Pressable>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -123,9 +127,20 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
 
           {/* Selector de Emoji */}
           <View style={{ gap: 6 }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
-              Elige un Emoji
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                Elige un Emoji
+              </Text>
+              <Pressable
+                onPress={() => setIsEmojiPickerOpen(true)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              >
+                <Sparkles size={11} color="#FF9500" />
+                <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF9500' }}>
+                  Más Emojis
+                </Text>
+              </Pressable>
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {CATEGORY_EMOJIS.map((em) => (
                 <Pressable
@@ -142,7 +157,7 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
                     justifyContent: 'center',
                   }}
                 >
-                  <Text style={{ fontSize: 18 }}>{em}</Text>
+                  <AppleEmoji emoji={em} size={20} />
                 </Pressable>
               ))}
             </ScrollView>
@@ -163,7 +178,7 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
                     height: 32,
                     borderRadius: 16,
                     backgroundColor: c,
-                    borderWidth: color === c ? 3 : 0,
+                    borderWidth: color === c ? 2.5 : 0,
                     borderColor: '#FFFFFF',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -184,12 +199,20 @@ export const GritNewCategoryModal: React.FC<GritNewCategoryModalProps> = ({
               ...createShadow(color, { width: 0, height: 4 }, 0.3, 8),
             }}
           >
-            <Text style={{ fontSize: 14, fontWeight: '900', color: '#FFFFFF' }}>
-              Guardar Categoría
+            <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900' }}>
+              Crear Categoría
             </Text>
           </Pressable>
         </View>
       </View>
+
+      {/* Selector Universal de Emojis de Apple */}
+      <AppleEmojiPickerModal
+        visible={isEmojiPickerOpen}
+        onClose={() => setIsEmojiPickerOpen(false)}
+        onSelectEmoji={(selected) => setEmoji(selected)}
+        isDark={isDark}
+      />
     </Modal>
   );
 };

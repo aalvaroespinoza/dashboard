@@ -20,6 +20,7 @@ import {
 import { HabitItem, HabitLogItem } from '../../../types';
 import { useHabitsStore, ActiveTimerState } from '../stores/useHabitsStore';
 import { GritHabitOptionsMenu } from './GritHabitOptionsMenu';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -256,7 +257,7 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 22 }}>{habit.icon}</Text>
+              <AppleEmoji emoji={habit.icon} size={24} />
             </View>
 
             {/* Título & Frecuencia */}

@@ -26,6 +26,7 @@ import {
 import { HabitItem } from '../../../types';
 import { useHabitsStore } from '../stores/useHabitsStore';
 import { GritHabitOptionsMenu } from './GritHabitOptionsMenu';
+import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
@@ -265,7 +266,7 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 30 }}>{habit.icon}</Text>
+              <AppleEmoji emoji={habit.icon} size={32} />
             </View>
 
             <Text style={{ fontSize: 22, fontWeight: '900', color: theme.text.primary, textAlign: 'center' }}>

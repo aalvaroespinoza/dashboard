@@ -128,20 +128,16 @@ export const CREATE_TABLES_SQL = `
   CREATE INDEX IF NOT EXISTS idx_trans_date ON transactions(transaction_date);
   CREATE INDEX IF NOT EXISTS idx_trans_cat ON transactions(category_id);
 
-  -- Notas en Markdown
-  CREATE TABLE IF NOT EXISTS notes (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    folder TEXT NOT NULL DEFAULT 'General',
-    tags TEXT DEFAULT '[]',
-    is_pinned INTEGER DEFAULT 0,
-    is_favorite INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+  -- Timers activos de hábitos (persistencia entre sesiones)
+  CREATE TABLE IF NOT EXISTS active_timers (
+    habit_id TEXT PRIMARY KEY,
+    start_timestamp INTEGER NOT NULL,
+    accumulated_seconds INTEGER DEFAULT 0,
+    is_running INTEGER DEFAULT 1,
+    saved_at TEXT NOT NULL,
+    FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
   );
-  CREATE INDEX IF NOT EXISTS idx_notes_folder ON notes(folder);
-  CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(is_pinned);
+
 
   -- Colectivos: Líneas / Recorridos
   CREATE TABLE IF NOT EXISTS bus_routes (
@@ -251,6 +247,18 @@ export const CREATE_TABLES_SQL = `
  * Script de migración idempotente para agregar columnas a bases de datos existentes
  */
 export async function runMigrations(db: any) {
+  const run = async (sql: string) => {
+    try {
+      if (typeof db.runAsync === 'function') {
+        await db.runAsync(sql);
+      } else if (typeof db.execAsync === 'function') {
+        await db.execAsync(sql + ';');
+      }
+    } catch {
+      // Ignorar errores de "ya existe" / "ya tiene esa columna"
+    }
+  };
+
   const columnsToAdd = [
     { table: 'tasks', column: 'parent_id TEXT' },
     { table: 'tasks', column: 'section_id TEXT' },
@@ -273,17 +281,43 @@ export async function runMigrations(db: any) {
     { table: 'habits', column: 'total_completions INTEGER DEFAULT 0' },
     { table: 'habits', column: 'is_archived INTEGER DEFAULT 0' },
     { table: 'habit_logs', column: 'is_skipped INTEGER DEFAULT 0' },
+    // Finanzas v2: multi-cuenta
+    { table: 'transactions', column: 'account_id TEXT' },
+    { table: 'transactions', column: 'installments INTEGER DEFAULT 1' },
+    { table: 'transactions', column: 'installment_current INTEGER DEFAULT 1' },
+    { table: 'transactions', column: 'is_recurring INTEGER DEFAULT 0' },
+    { table: 'transactions', column: 'recurring_day INTEGER' },
+    { table: 'transactions', column: 'next_due_date TEXT' },
+    { table: 'transactions', column: 'notes TEXT' },
   ];
 
   for (const item of columnsToAdd) {
-    try {
-      if (typeof db.runAsync === 'function') {
-        await db.runAsync(`ALTER TABLE ${item.table} ADD COLUMN ${item.column}`);
-      } else if (typeof db.execAsync === 'function') {
-        await db.execAsync(`ALTER TABLE ${item.table} ADD COLUMN ${item.column};`);
-      }
-    } catch {
-      // La columna ya existe o tabla no creada aún, ignorar de forma segura
-    }
+    await run(`ALTER TABLE ${item.table} ADD COLUMN ${item.column}`);
   }
+
+  // Crear tabla accounts si no existe (Finanzas v2)
+  await run(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'debit' CHECK(type IN ('cash', 'debit', 'credit', 'savings')),
+      color TEXT NOT NULL DEFAULT '#007AFF',
+      icon TEXT NOT NULL DEFAULT '💳',
+      initial_balance REAL DEFAULT 0,
+      position INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    )
+  `);
+
+  // Crear tabla active_timers si no existe (Timer persistence)
+  await run(`
+    CREATE TABLE IF NOT EXISTS active_timers (
+      habit_id TEXT PRIMARY KEY,
+      start_timestamp INTEGER NOT NULL,
+      accumulated_seconds INTEGER DEFAULT 0,
+      is_running INTEGER DEFAULT 1,
+      saved_at TEXT NOT NULL
+    )
+  `);
 }
+

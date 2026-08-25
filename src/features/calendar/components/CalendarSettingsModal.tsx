@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, Pressable, ScrollView, Switch, TextInput } from 'react-native';
-import { X, Sliders, Calendar, Clock, Plus, Trash2, Check } from 'lucide-react-native';
+import { View, Text, Modal, Pressable, ScrollView, Switch, TextInput, Alert } from 'react-native';
+import { X, Sliders, Calendar, Clock, Plus, Trash2, Check, Pencil } from 'lucide-react-native';
 import { useCalendarStore } from '../../../store/useCalendarStore';
 import { IOSSegmentedControl, SegmentTab } from '../../../components/ui/IOSSegmentedControl';
 import { IOS_COLORS } from '../../../styles/theme';
@@ -47,6 +47,7 @@ export const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
     categories,
     updateSettings,
     createCategory,
+    updateCategory,
     deleteCategory,
   } = useCalendarStore();
 
@@ -56,10 +57,46 @@ export const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
   const [newCalName, setNewCalName] = useState('');
   const [selectedColor, setSelectedColor] = useState(PRO_COLORS[0]);
 
+  // Edición de calendario existente
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [editingColor, setEditingColor] = useState(PRO_COLORS[0]);
+
   const handleCreateCategory = async () => {
     if (!newCalName.trim()) return;
     await createCategory(newCalName.trim(), selectedColor);
     setNewCalName('');
+  };
+
+  const handleStartEdit = (cat: { id: string; name: string; color: string }) => {
+    setEditingCatId(cat.id);
+    setEditingName(cat.name);
+    setEditingColor(cat.color);
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingCatId && editingName.trim()) {
+      await updateCategory(editingCatId, {
+        name: editingName.trim(),
+        color: editingColor,
+      });
+      setEditingCatId(null);
+    }
+  };
+
+  const handleDeleteWithConfirm = (id: string, name: string) => {
+    Alert.alert(
+      'Eliminar Calendario',
+      `¿Estás seguro de eliminar el calendario "${name}"? Se borrarán todos los eventos asociados a este calendario.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => deleteCategory(id),
+        },
+      ]
+    );
   };
 
   return (
@@ -304,46 +341,144 @@ export const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
                     Calendarios Activos
                   </Text>
                   <View style={{ gap: 6 }}>
-                    {categories.map((cat) => (
-                      <View
-                        key={cat.id}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          backgroundColor: theme.cardSecondary,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          borderRadius: 12,
-                          borderWidth: 1,
-                          borderColor: theme.border,
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                          <View
-                            style={{
-                              width: 14,
-                              height: 14,
-                              borderRadius: 7,
-                              backgroundColor: cat.color,
-                            }}
-                          />
-                          <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>
-                            {cat.name}
-                          </Text>
-                        </View>
+                    {categories.map((cat) => {
+                      const isEditing = editingCatId === cat.id;
 
-                        {/* Botón Eliminar si no es default */}
-                        {!cat.is_default && (
-                          <Pressable
-                            onPress={() => deleteCategory(cat.id)}
-                            style={{ padding: 4 }}
+                      if (isEditing) {
+                        return (
+                          <View
+                            key={cat.id}
+                            style={{
+                              backgroundColor: theme.cardSecondary,
+                              padding: 12,
+                              borderRadius: 12,
+                              borderWidth: 1.5,
+                              borderColor: editingColor,
+                              gap: 10,
+                            }}
                           >
-                            <Trash2 size={15} color="#FF3B30" />
-                          </Pressable>
-                        )}
-                      </View>
-                    ))}
+                            <TextInput
+                              value={editingName}
+                              onChangeText={setEditingName}
+                              placeholder="Nombre del calendario..."
+                              placeholderTextColor={theme.text.tertiary}
+                              style={{
+                                backgroundColor: theme.card,
+                                paddingHorizontal: 10,
+                                paddingVertical: 8,
+                                borderRadius: 8,
+                                fontSize: 13,
+                                fontWeight: '700',
+                                color: theme.text.primary,
+                                borderWidth: 1,
+                                borderColor: theme.border,
+                              }}
+                            />
+
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                              {PRO_COLORS.map((c) => (
+                                <Pressable
+                                  key={c}
+                                  onPress={() => setEditingColor(c)}
+                                  style={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: 11,
+                                    backgroundColor: c,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderWidth: editingColor === c ? 2 : 0,
+                                    borderColor: '#FFFFFF',
+                                  }}
+                                >
+                                  {editingColor === c && <Check size={11} color="#FFFFFF" strokeWidth={3} />}
+                                </Pressable>
+                              ))}
+                            </View>
+
+                            <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'flex-end' }}>
+                              <Pressable
+                                onPress={() => setEditingCatId(null)}
+                                style={{
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 6,
+                                  borderRadius: 8,
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+                                }}
+                              >
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary }}>
+                                  Cancelar
+                                </Text>
+                              </Pressable>
+                              <Pressable
+                                onPress={handleSaveEdit}
+                                style={{
+                                  paddingHorizontal: 14,
+                                  paddingVertical: 6,
+                                  borderRadius: 8,
+                                  backgroundColor: editingColor,
+                                }}
+                              >
+                                <Text style={{ fontSize: 12, fontWeight: '900', color: '#FFFFFF' }}>
+                                  Guardar
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        );
+                      }
+
+                      return (
+                        <View
+                          key={cat.id}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: theme.cardSecondary,
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: theme.border,
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                            <View
+                              style={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: 7,
+                                backgroundColor: cat.color,
+                              }}
+                            />
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>
+                              {cat.name}
+                            </Text>
+                          </View>
+
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            {/* Botón Editar */}
+                            <Pressable
+                              onPress={() => handleStartEdit(cat)}
+                              style={{ padding: 4 }}
+                            >
+                              <Pencil size={14} color={theme.text.secondary} />
+                            </Pressable>
+
+                            {/* Botón Eliminar si no es default */}
+                            {!cat.is_default && (
+                              <Pressable
+                                onPress={() => handleDeleteWithConfirm(cat.id, cat.name)}
+                                style={{ padding: 4 }}
+                              >
+                                <Trash2 size={15} color="#FF3B30" />
+                              </Pressable>
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })}
                   </View>
                 </View>
 

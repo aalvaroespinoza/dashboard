@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
-import { Square, Play, Pause, ChevronUp } from 'lucide-react-native';
+import { Square } from 'lucide-react-native';
 import { useHabitsStore } from '../stores/useHabitsStore';
 import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 import { IOS_COLORS } from '../../../styles/theme';
@@ -16,28 +16,33 @@ export const GritFloatingTimerBar: React.FC<GritFloatingTimerBarProps> = ({
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
-  const { getActiveRunningTimer, stopAndSaveTimer, pauseTimer, selectedDate } = useHabitsStore();
+  const { getActiveRunningTimer, stopAndSaveTimer, selectedDate } = useHabitsStore();
 
-  const activeInfo = getActiveRunningTimer();
-  const [liveSecs, setLiveSecs] = useState(activeInfo?.liveSeconds || 0);
+  const [liveSecs, setLiveSecs] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Interval GLOBAL que vive mientras el FloatingTimerBar esté montado.
+  // Siempre activo: calcula liveSeconds leyendo delta Date.now() en cada tick.
   useEffect(() => {
-    if (!activeInfo) return;
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       const info = getActiveRunningTimer();
       if (info) {
         setLiveSecs(info.liveSeconds);
       }
-    }, 400);
-    return () => clearInterval(interval);
-  }, [activeInfo]);
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []); // [] → solo se monta/desmonta una vez — sobrevive cambios de pantalla
 
+  const activeInfo = getActiveRunningTimer();
   if (!activeInfo) return null;
 
   const { habit } = activeInfo;
   const m = Math.floor(liveSecs / 60);
   const s = liveSecs % 60;
   const timeFormatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
 
   return (
     <Pressable

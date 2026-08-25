@@ -136,9 +136,11 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 
   deleteCategory: async (id) => {
+    const cat = get().categories.find((c) => c.id === id);
     await calendarCategoriesRepo.delete(id);
     set((state) => ({
       categories: state.categories.filter((c) => c.id !== id),
+      events: cat ? state.events.filter((e) => e.calendar_name !== cat.name) : state.events,
     }));
   },
 

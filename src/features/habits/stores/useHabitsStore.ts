@@ -8,6 +8,7 @@ import {
 } from '../../../types';
 import { habitsRepo } from '../../../db/repositories/habitsRepo';
 import { gamificationRepo } from '../../../db/repositories/gamificationRepo';
+import { activeTimersRepo } from '../../../db/repositories/activeTimersRepo';
 import { calculateActionExp, calculateMasteryBadge } from '../utils/gamificationUtils';
 
 export interface ActiveTimerState {
@@ -66,6 +67,7 @@ interface HabitsStoreState {
   decrementCounter: (habitId: string, amount?: number, date?: string) => Promise<void>;
   startTimer: (habitId: string) => void;
   pauseTimer: (habitId: string) => void;
+  resetTimer: (habitId: string) => Promise<void>;
   setTimerElapsed: (habitId: string, seconds: number) => void;
   stopAndSaveTimer: (habitId: string, date?: string) => Promise<void>;
   skipToday: (habitId: string, date?: string) => Promise<void>;
@@ -143,18 +145,32 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   loadHabitsData: async () => {
     set({ isLoading: true });
     try {
-      const [cats, habs, logs, profile] = await Promise.all([
+      const [cats, habs, logs, profile, persistedTimers] = await Promise.all([
         habitsRepo.getAllCategories(),
         habitsRepo.getAllHabits(),
         habitsRepo.getRecentLogsMap(),
         gamificationRepo.getProfile(),
+        activeTimersRepo.getAll(),
       ]);
+
+      // Restaurar timers activos desde SQLite
+      const restoredTimers: Record<string, ActiveTimerState> = {};
+      for (const pt of persistedTimers) {
+        restoredTimers[pt.habit_id] = {
+          habitId: pt.habit_id,
+          startTimestamp: pt.start_timestamp,
+          accumulatedSeconds: pt.accumulated_seconds,
+          isRunning: pt.is_running,
+        };
+      }
+
       set({
         categories: cats,
         habits: habs,
         logsMap: logs,
         rpgProfile: profile,
         recentDates: generateGritRecentDates(),
+        activeTimers: restoredTimers,
         isLoading: false,
       });
     } catch (e) {
@@ -316,18 +332,27 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
   startTimer: (habitId: string) => {
     const active = get().activeTimers[habitId];
     const accumulated = active?.accumulatedSeconds || 0;
+    const now = Date.now();
+
+    const newState: ActiveTimerState = {
+      habitId,
+      startTimestamp: now,
+      accumulatedSeconds: accumulated,
+      isRunning: true,
+    };
 
     set((state) => ({
-      activeTimers: {
-        ...state.activeTimers,
-        [habitId]: {
-          habitId,
-          startTimestamp: Date.now(),
-          accumulatedSeconds: accumulated,
-          isRunning: true,
-        },
-      },
+      activeTimers: { ...state.activeTimers, [habitId]: newState },
     }));
+
+    // Persistir en SQLite para sobrevivir cierres de app
+    activeTimersRepo.upsert({
+      habit_id: habitId,
+      start_timestamp: now,
+      accumulated_seconds: accumulated,
+      is_running: true,
+      saved_at: new Date().toISOString(),
+    });
   },
 
   pauseTimer: (habitId: string) => {
@@ -340,28 +365,54 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     set((state) => ({
       activeTimers: {
         ...state.activeTimers,
-        [habitId]: {
-          ...active,
-          accumulatedSeconds: total,
-          isRunning: false,
-        },
+        [habitId]: { ...active, accumulatedSeconds: total, isRunning: false },
       },
     }));
+
+    // Actualizar SQLite con accumulated acumulado
+    activeTimersRepo.upsert({
+      habit_id: habitId,
+      start_timestamp: active.startTimestamp,
+      accumulated_seconds: total,
+      is_running: false,
+      saved_at: new Date().toISOString(),
+    });
+  },
+
+  resetTimer: async (habitId: string) => {
+    set((state) => {
+      const nextTimers = { ...state.activeTimers };
+      delete nextTimers[habitId];
+      return { activeTimers: nextTimers };
+    });
+    await activeTimersRepo.delete(habitId);
   },
 
   setTimerElapsed: (habitId: string, seconds: number) => {
     const active = get().activeTimers[habitId];
+    const newSec = Math.max(0, seconds);
+    const now = Date.now();
+    const isRunning = active?.isRunning || false;
+
     set((state) => ({
       activeTimers: {
         ...state.activeTimers,
         [habitId]: {
           habitId,
-          startTimestamp: Date.now(),
-          accumulatedSeconds: Math.max(0, seconds),
-          isRunning: active?.isRunning || false,
+          startTimestamp: now,
+          accumulatedSeconds: newSec,
+          isRunning,
         },
       },
     }));
+
+    activeTimersRepo.upsert({
+      habit_id: habitId,
+      start_timestamp: now,
+      accumulated_seconds: newSec,
+      is_running: isRunning,
+      saved_at: new Date().toISOString(),
+    });
   },
 
   stopAndSaveTimer: async (habitId: string, date?: string) => {
@@ -405,6 +456,9 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
         activeTimers: nextTimers,
       };
     });
+
+    // Eliminar timer de SQLite
+    await activeTimersRepo.delete(habitId);
 
     if (isCompleted === 1 && currentLog?.is_completed !== 1) {
       const category = get().categories.find((c) => c.id === habit.category_id);

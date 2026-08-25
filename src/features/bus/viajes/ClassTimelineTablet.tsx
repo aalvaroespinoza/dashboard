@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Pressable, Modal } from 'react-native';
 import {
   Clock,
   MapPin,
-  FileText,
   CheckCircle2,
   Sparkles,
-  Info,
   User,
   X,
   GraduationCap,
+  Calendar,
 } from 'lucide-react-native';
 import { ClassItem } from '../hooks/useTodaySchedule';
 import { IOS_COLORS } from '../../../styles/theme';
 import { useAppStore } from '../../../store/useAppStore';
-import { useNotesStore } from '../../../store/useNotesStore';
 
 interface ClassTimelineTabletProps {
   materiasDelDia: ClassItem[];
@@ -31,7 +29,6 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
   materiasDelDia,
   isToday,
   horaActualHHMM,
-  linePosition,
   activeIndex,
   attendedClasses,
   onToggleAttendance,
@@ -39,14 +36,8 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const { setActiveModule } = useAppStore();
-  const { setSelectedFolder } = useNotesStore();
 
   const [selectedMateriaDetail, setSelectedMateriaDetail] = useState<ClassItem | null>(null);
-
-  const handleOpenNotes = () => {
-    setSelectedFolder('Estudios');
-    setActiveModule('notes');
-  };
 
   if (materiasDelDia.length === 0) {
     return (
@@ -54,20 +45,20 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
         style={{
           backgroundColor: theme.card,
           borderRadius: 24,
-          padding: 30,
+          padding: 36,
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: 1,
           borderColor: theme.border,
-          gap: 10,
+          gap: 12,
         }}
       >
-        <GraduationCap size={32} color={theme.text.tertiary} />
-        <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text.primary }}>
+        <GraduationCap size={36} color={theme.text.tertiary} />
+        <Text style={{ fontSize: 17, fontWeight: '800', color: theme.text.primary }}>
           Sin materias programadas para hoy 🏠
         </Text>
-        <Text style={{ fontSize: 12, color: theme.text.secondary }}>
-          Día libre de cursado académico en la facultad.
+        <Text style={{ fontSize: 13, color: theme.text.secondary, textAlign: 'center' }}>
+          Día libre de cursado académico en la facultad. Podés aprovechar para estudiar o descansar.
         </Text>
       </View>
     );
@@ -81,17 +72,13 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
         padding: 20,
         borderWidth: 1,
         borderColor: theme.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 6,
         gap: 16,
       }}
     >
       {/* Header del Cursado */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Clock size={16} color={IOS_COLORS.purple} />
+          <Clock size={18} color={IOS_COLORS.purple} />
           <Text
             style={{
               fontSize: 13,
@@ -108,19 +95,19 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
         <View
           style={{
             backgroundColor: theme.cardSecondary,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
             borderRadius: 10,
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: theme.text.secondary }}>
             {materiasDelDia.length} {materiasDelDia.length === 1 ? 'materia' : 'materias'}
           </Text>
         </View>
       </View>
 
       {/* Timeline Vertical de Materias */}
-      <View style={{ gap: 16 }}>
+      <View style={{ gap: 14 }}>
         {materiasDelDia.map((materia, idx) => {
           const isAttended = Boolean(attendedClasses[`class-${idx}`]);
 
@@ -137,6 +124,20 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
 
           const accentColor = materia.color || (idx === 0 ? '#34C759' : idx === 1 ? '#AF52DE' : '#007AFF');
 
+          // Cálculo del porcentaje de progreso de la clase en vivo
+          let progressPercent = 0;
+          if (isCurrentClass) {
+            const [sh, sm] = materia.horaInicio.split(':').map(Number);
+            const [eh, em] = materia.horaFin.split(':').map(Number);
+            const [ch, cm] = horaActualHHMM.split(':').map(Number);
+            const start = sh * 60 + sm;
+            const end = eh * 60 + em;
+            const curr = ch * 60 + cm;
+            if (end > start) {
+              progressPercent = Math.min(100, Math.max(0, Math.round(((curr - start) / (end - start)) * 100)));
+            }
+          }
+
           return (
             <View
               key={idx}
@@ -147,7 +148,7 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
                 borderLeftWidth: 4,
                 borderLeftColor: accentColor,
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor: isCurrentClass ? accentColor : theme.border,
                 gap: 12,
               }}
             >
@@ -157,7 +158,7 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
                   <Text style={{ fontSize: 16, fontWeight: '900', color: theme.text.primary, lineHeight: 20 }}>
                     {materia.nombre}
                   </Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary, marginTop: 4 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text.secondary, marginTop: 4 }}>
                     {materia.horaInicio} - {materia.horaFin} hs
                   </Text>
                 </View>
@@ -166,7 +167,7 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
                   style={{
                     backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
                     paddingHorizontal: 8,
-                    paddingVertical: 3,
+                    paddingVertical: 4,
                     borderRadius: 8,
                     borderWidth: 1,
                     borderColor: theme.border,
@@ -178,31 +179,49 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
                 </View>
               </View>
 
-              {/* Status en Vivo (En curso ahora / Próxima) */}
+              {/* Status en Vivo con Barra de Progreso */}
               {isCurrentClass && (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(52, 199, 89, 0.15)',
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 8,
-                    alignSelf: 'flex-start',
-                    gap: 6,
-                  }}
-                >
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#34C759' }} />
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#34C759' }}>
-                    En curso ahora
-                  </Text>
+                <View style={{ gap: 6 }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#34C759' }} />
+                      <Text style={{ fontSize: 12, fontWeight: '800', color: '#34C759' }}>
+                        En curso ahora · {progressPercent}%
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Barra de Progreso Dinámica */}
+                  <View
+                    style={{
+                      height: 6,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E5E5EA',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: `${progressPercent}%`,
+                        height: '100%',
+                        backgroundColor: '#34C759',
+                        borderRadius: 3,
+                      }}
+                    />
+                  </View>
                 </View>
               )}
 
               {/* Info: Aula y Docente */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <MapPin size={13} color={theme.text.tertiary} />
+                  <MapPin size={14} color={theme.text.tertiary} />
                   <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary }}>
                     Aula: {materia.aula}
                   </Text>
@@ -210,7 +229,7 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
 
                 {materia.docente && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <User size={13} color={theme.text.tertiary} />
+                    <User size={14} color={theme.text.tertiary} />
                     <Text style={{ fontSize: 12, color: theme.text.secondary, fontWeight: '500' }}>
                       {materia.docente}
                     </Text>
@@ -218,86 +237,91 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
                 )}
               </View>
 
-              {/* Botones de Acción: Ver Detalle, Notas, Asistencia */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 4 }}>
+              {/* Botones de Acción Táctiles iPadOS (44px min touch target) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 4 }}>
                 {/* 1. Ver Detalle */}
                 <Pressable
                   onPress={() => setSelectedMateriaDetail(materia)}
                   style={({ pressed }) => ({
                     opacity: pressed ? 0.8 : 1,
+                    flex: 1,
+                    minHeight: 44,
                     flexDirection: 'row',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
                     borderWidth: 1,
                     borderColor: theme.border,
-                    gap: 4,
+                    gap: 6,
                   })}
                 >
-                  <Sparkles size={12} color={IOS_COLORS.cyan} />
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.primary }}>
+                  <Sparkles size={14} color={IOS_COLORS.cyan} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.primary }}>
                     Ver Detalle
                   </Text>
                 </Pressable>
 
-                {/* 2. Notas */}
+                {/* 2. Ir a Calendario */}
                 <Pressable
-                  onPress={handleOpenNotes}
+                  onPress={() => setActiveModule('calendar')}
                   style={({ pressed }) => ({
                     opacity: pressed ? 0.8 : 1,
+                    minHeight: 44,
+                    paddingHorizontal: 14,
                     flexDirection: 'row',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 8,
+                    borderRadius: 12,
                     borderWidth: 1,
                     borderColor: theme.border,
-                    gap: 4,
+                    gap: 6,
                   })}
                 >
-                  <FileText size={12} color={IOS_COLORS.orange} />
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.primary }}>
-                    Notas
+                  <Calendar size={14} color={IOS_COLORS.orange} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.primary }}>
+                    Calendario
                   </Text>
                 </Pressable>
 
-                {/* 3. Asistencia */}
+                {/* 3. Botón Táctil de Asistencia (Pill Grande) */}
                 <Pressable
                   onPress={() => onToggleAttendance(idx)}
                   style={({ pressed }) => ({
-                    opacity: pressed ? 0.8 : 1,
+                    opacity: pressed ? 0.85 : 1,
+                    flex: 1.2,
+                    minHeight: 44,
                     flexDirection: 'row',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     backgroundColor: isAttended
                       ? isDark
-                        ? 'rgba(52, 199, 89, 0.2)'
+                        ? 'rgba(52, 199, 89, 0.25)'
                         : '#ECFDF5'
                       : isDark
                       ? '#1C1C1E'
                       : '#FFFFFF',
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 8,
-                    borderWidth: 1,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
+                    borderWidth: 1.5,
                     borderColor: isAttended ? IOS_COLORS.green : theme.border,
-                    gap: 4,
+                    gap: 6,
                   })}
                 >
                   <CheckCircle2
-                    size={13}
+                    size={16}
                     color={isAttended ? IOS_COLORS.green : theme.text.tertiary}
                   />
                   <Text
                     style={{
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: '800',
                       color: isAttended ? IOS_COLORS.green : theme.text.secondary,
                     }}
                   >
-                    {isAttended ? 'Presente' : 'Asistencia'}
+                    {isAttended ? 'Presente ✓' : 'Marcar Asistencia'}
                   </Text>
                 </Pressable>
               </View>
@@ -321,7 +345,7 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
             style={{
               width: 440,
               backgroundColor: theme.card,
-              borderRadius: 20,
+              borderRadius: 24,
               padding: 24,
               borderWidth: 1,
               borderColor: theme.border,
@@ -332,13 +356,13 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
               <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary }}>
                 Detalle de Cursada
               </Text>
-              <Pressable onPress={() => setSelectedMateriaDetail(null)}>
+              <Pressable onPress={() => setSelectedMateriaDetail(null)} style={{ padding: 4 }}>
                 <X size={20} color={theme.text.secondary} />
               </Pressable>
             </View>
 
             {selectedMateriaDetail && (
-              <View style={{ gap: 10 }}>
+              <View style={{ gap: 12 }}>
                 <View>
                   <Text style={{ fontSize: 12, color: theme.text.secondary }}>Materia</Text>
                   <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text.primary }}>
@@ -389,13 +413,13 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
               onPress={() => setSelectedMateriaDetail(null)}
               style={{
                 backgroundColor: IOS_COLORS.blue,
-                paddingVertical: 10,
-                borderRadius: 12,
+                paddingVertical: 12,
+                borderRadius: 14,
                 alignItems: 'center',
                 marginTop: 6,
               }}
             >
-              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }}>
                 Cerrar
               </Text>
             </Pressable>

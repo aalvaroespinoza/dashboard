@@ -81,6 +81,10 @@ export const calendarCategoriesRepo = {
 
   async delete(id: string): Promise<void> {
     const db = await getDatabase();
+    const row = await db.getFirstAsync<CalendarCategoryItem>('SELECT name FROM calendar_categories WHERE id = ?', [id]);
+    if (row?.name) {
+      await db.runAsync('DELETE FROM calendar_events WHERE calendar_name = ?', [row.name]);
+    }
     await db.runAsync('DELETE FROM calendar_categories WHERE id = ? AND is_default = 0', [id]);
   },
 };

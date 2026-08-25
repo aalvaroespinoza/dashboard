@@ -185,11 +185,12 @@ export const HorarioCardViaje: React.FC<HorarioCardViajeProps> = ({
           onPress={onToggleBec}
           style={({ pressed }) => ({
             opacity: pressed ? 0.8 : 1,
+            minHeight: 44,
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 10,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 12,
             backgroundColor: becUsado
               ? isDark
                 ? 'rgba(52, 199, 89, 0.2)'
@@ -197,7 +198,7 @@ export const HorarioCardViaje: React.FC<HorarioCardViajeProps> = ({
               : theme.cardSecondary,
             borderWidth: 1,
             borderColor: becUsado ? IOS_COLORS.green : theme.border,
-            gap: 6,
+            gap: 8,
           })}
         >
           {becUsado ? (

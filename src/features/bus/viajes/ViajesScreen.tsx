@@ -58,57 +58,111 @@ export const ViajesScreen: React.FC = () => {
         isDark={isDark}
       />
 
-      {/* 2. Controles Contextuales (Martes / Viernes) */}
+      {/* 2. Controles Contextuales (Martes / Viernes) - Botones Táctiles Interactivos */}
       {(diaSeleccionado === 'martes' || diaSeleccionado === 'viernes') && (
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: theme.card,
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderRadius: 16,
+            paddingHorizontal: 18,
+            paddingVertical: 14,
+            borderRadius: 18,
             borderWidth: 1,
             borderColor: theme.border,
             justifyContent: 'space-between',
-            gap: 14,
+            gap: 16,
           }}
         >
           {diaSeleccionado === 'martes' && (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-              <View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: theme.text.primary }}>
                   ¿Cursás Arquitectura hoy?
                 </Text>
-                <Text style={{ fontSize: 11, color: theme.text.secondary }}>
-                  Ajusta el horario de salida a las 06:30 o a la tarde
+                <Text style={{ fontSize: 12, color: theme.text.secondary, marginTop: 2 }}>
+                  Ajusta el colectivo de salida a las 06:30 (mañana) o a la tarde
                 </Text>
               </View>
-              <Switch
-                value={cursaArquitectura}
-                onValueChange={setCursaArquitectura}
-                trackColor={{ false: theme.border, true: IOS_COLORS.blue }}
-                thumbColor="#FFFFFF"
-              />
+
+              <Pressable
+                onPress={() => setCursaArquitectura(!cursaArquitectura)}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  minHeight: 44,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: cursaArquitectura ? IOS_COLORS.blue : (isDark ? '#2C2C2E' : '#E5E5EA'),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                })}
+              >
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: cursaArquitectura ? '#FFFFFF' : theme.text.tertiary,
+                  }}
+                />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '900',
+                    color: cursaArquitectura ? '#FFFFFF' : theme.text.secondary,
+                  }}
+                >
+                  {cursaArquitectura ? 'Sí, curso' : 'No curso'}
+                </Text>
+              </Pressable>
             </View>
           )}
 
           {diaSeleccionado === 'viernes' && (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-              <View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: theme.text.primary }}>
                   ¿Dormís en Córdoba hoy?
                 </Text>
-                <Text style={{ fontSize: 11, color: theme.text.secondary }}>
+                <Text style={{ fontSize: 12, color: theme.text.secondary, marginTop: 2 }}>
                   Oculta la recomendación de vuelta hacia Despeñaderos
                 </Text>
               </View>
-              <Switch
-                value={duermeEnCordoba}
-                onValueChange={setDuermeEnCordoba}
-                trackColor={{ false: theme.border, true: IOS_COLORS.purple }}
-                thumbColor="#FFFFFF"
-              />
+
+              <Pressable
+                onPress={() => setDuermeEnCordoba(!duermeEnCordoba)}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  minHeight: 44,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: duermeEnCordoba ? IOS_COLORS.purple : (isDark ? '#2C2C2E' : '#E5E5EA'),
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                })}
+              >
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: duermeEnCordoba ? '#FFFFFF' : theme.text.tertiary,
+                  }}
+                />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '900',
+                    color: duermeEnCordoba ? '#FFFFFF' : theme.text.secondary,
+                  }}
+                >
+                  {duermeEnCordoba ? 'Sí, duermo allá' : 'Vuelvo hoy'}
+                </Text>
+              </Pressable>
             </View>
           )}
         </View>

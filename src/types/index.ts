@@ -145,30 +145,40 @@ export interface FinanceCategory {
   budget_limit?: number | null;
 }
 
+export type AccountType = 'cash' | 'debit' | 'credit' | 'savings';
+
+export interface FinanceAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  color: string;
+  icon: string;
+  initial_balance: number;
+  current_balance?: number;
+  position: number;
+  created_at: string;
+}
+
 export interface FinanceTransaction {
   id: string;
   category_id: string;
   category_name?: string;
   category_icon?: string;
   category_color?: string;
+  account_id?: string | null;
+  account_name?: string;
   type: TransactionType;
   amount: number;
   description: string;
   payment_method: PaymentMethod;
   transaction_date: string; // YYYY-MM-DD
+  installments?: number; // Cantidad de cuotas
+  installment_current?: number; // Cuota actual
+  is_recurring?: number; // 0 or 1
+  recurring_day?: number | null; // Día del mes para recurrencia
+  next_due_date?: string | null; // Próximo vencimiento
+  notes?: string | null;
   created_at: string;
-}
-
-export interface NoteItem {
-  id: string;
-  title: string;
-  content: string; // Markdown
-  folder: string;
-  tags: string[];
-  is_pinned: number; // 0 or 1
-  is_favorite: number; // 0 or 1
-  created_at: string;
-  updated_at: string;
 }
 
 export interface BusRouteItem {
@@ -267,4 +277,4 @@ export interface CalDAVConfig {
   calendarsUrl?: string | null;
 }
 
-export type ActiveModule = 'dashboard' | 'tasks' | 'habits' | 'calendar' | 'bus' | 'finance' | 'notes' | 'settings';
+export type ActiveModule = 'dashboard' | 'tasks' | 'habits' | 'calendar' | 'bus' | 'finance' | 'settings';

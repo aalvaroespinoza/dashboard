@@ -15,7 +15,6 @@ import { TasksScreen } from './src/screens/TasksScreen';
 import { HabitsScreen } from './src/features/habits/HabitsScreen';
 import { CalendarScreen } from './src/screens/CalendarScreen';
 import { FinanceScreen } from './src/screens/FinanceScreen';
-import { NotesScreen } from './src/screens/NotesScreen';
 import { BusRoutesScreen } from './src/screens/BusRoutesScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { IOS_COLORS } from './src/styles/theme';
@@ -100,8 +99,6 @@ export default function App() {
         return <BusRoutesScreen />;
       case 'finance':
         return <FinanceScreen />;
-      case 'notes':
-        return <NotesScreen />;
       case 'settings':
         return <SettingsScreen />;
       default:

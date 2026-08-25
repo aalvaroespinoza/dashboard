@@ -8,6 +8,7 @@ import { CalendarHeader } from './components/CalendarHeader';
 import { CalendarSidebar } from './components/CalendarSidebar';
 import { WeekGridView } from './components/WeekGridView';
 import { MonthHybridView } from './components/MonthHybridView';
+import { DayTimelineView } from './components/DayTimelineView';
 import { EventModal } from './components/EventModal';
 import { CalendarSettingsModal } from './components/CalendarSettingsModal';
 import { IOS_COLORS } from '../../styles/theme';
@@ -150,6 +151,9 @@ export const CalendarScreen: React.FC = () => {
         onSelectDate={(date) => {
           const dateStr = date.toISOString().split('T')[0];
           setSelectedDate(dateStr);
+          if (viewMode !== 'month_hybrid') {
+            setViewMode('day');
+          }
         }}
         categories={categories}
         onToggleCategory={toggleCategoryVisibility}
@@ -186,8 +190,17 @@ export const CalendarScreen: React.FC = () => {
               onNextMonth={nextPeriod}
               isDark={isDark}
             />
+          ) : viewMode === 'day' ? (
+            // Vista Línea de Tiempo Diaria Detallada
+            <DayTimelineView
+              date={selectedDate}
+              items={unifiedItemsForSelectedDate}
+              onPressItem={handleOpenEditEvent}
+              isDark={isDark}
+              slotHeight={settings.slotDensity === 'compact' ? 48 : settings.slotDensity === 'spacious' ? 76 : 64}
+            />
           ) : (
-            // Vista Grilla Horaria Semanal / Diaria Apple iPadOS
+            // Vista Grilla Horaria Semanal Apple iPadOS
             <WeekGridView
               selectedDate={currentDateObj}
               unifiedItems={unifiedItemsForWeek}

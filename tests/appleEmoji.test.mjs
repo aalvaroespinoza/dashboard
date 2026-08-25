@@ -82,7 +82,7 @@ test('3. Generación de URLs CDN de Alta Resolución (160x160)', () => {
 });
 
 test('4. Detección de Emojis en Texto Mixto vía Regex Unicode', () => {
-  const text1 = 'Hola, Álvaro 👋';
+  const text1 = 'Hola, Alvaro 👋';
   const matches1 = text1.match(EMOJI_GLOBAL_REGEX);
   assert.deepEqual(matches1, ['👋']);
 

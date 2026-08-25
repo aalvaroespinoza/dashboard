@@ -70,7 +70,7 @@ export const HomeScreen: React.FC = () => {
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ fontSize: 32, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.8 }}>
-              Hola, Álvaro
+              Hola, Alvaro
             </Text>
             <AppleEmoji emoji="👋" size={30} />
           </View>

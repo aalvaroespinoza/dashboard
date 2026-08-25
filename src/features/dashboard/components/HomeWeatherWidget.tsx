@@ -20,6 +20,7 @@ import {
 import { useWeatherStore } from '../../../store/useWeatherStore';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
+import { openHuaweiWeatherApp } from '../../../utils/nativeAppLauncher';
 
 interface HomeWeatherWidgetProps {
   onPress?: () => void;
@@ -63,9 +64,13 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
     return <Sun size={30} color={color} strokeWidth={2.3} />;
   };
 
+  const handleCardPress = () => {
+    openHuaweiWeatherApp(onPress);
+  };
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handleCardPress}
       style={({ pressed }) => ({
         transform: [{ scale: pressed ? 0.99 : 1 }],
         opacity: pressed ? 0.9 : 1,

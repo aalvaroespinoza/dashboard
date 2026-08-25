@@ -5,7 +5,6 @@ import { useAppStore } from '../../store/useAppStore';
 import { useTasksStore } from '../../store/useTasksStore';
 import { CalendarEventItem, CalendarViewMode, UnifiedCalendarItem } from '../../types';
 import { CalendarHeader } from './components/CalendarHeader';
-import { CalendarSidebar } from './components/CalendarSidebar';
 import { WeekGridView } from './components/WeekGridView';
 import { MonthHybridView } from './components/MonthHybridView';
 import { DayTimelineView } from './components/DayTimelineView';
@@ -144,17 +143,15 @@ export const CalendarScreen: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: isDark ? '#000000' : theme.background }}>
-      {/* 1. Sidebar Fija (~250px) con Mini Mes y Categorías */}
-      <CalendarSidebar
-        selectedDate={currentDateObj}
-        onSelectDate={(date) => {
-          const dateStr = date.toISOString().split('T')[0];
-          setSelectedDate(dateStr);
-          if (viewMode !== 'month_hybrid') {
-            setViewMode('day');
-          }
-        }}
+    <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : theme.background }}>
+      {/* 1. Header con Switcher Día / Semana / Mes, Fechas, Categorías y Acciones */}
+      <CalendarHeader
+        rangeLabel={rangeLabel}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onPrev={prevPeriod}
+        onNext={nextPeriod}
+        onToday={goToToday}
         categories={categories}
         onToggleCategory={toggleCategoryVisibility}
         onAddEvent={() => handleOpenNewEvent(selectedDate)}
@@ -162,55 +159,41 @@ export const CalendarScreen: React.FC = () => {
         isDark={isDark}
       />
 
-      {/* 2. Área Central Dinámica */}
-      <View style={{ flex: 1, flexDirection: 'column' }}>
-        {/* Header con Switcher Día / Semana / Mes y Fechas */}
-        <CalendarHeader
-          rangeLabel={rangeLabel}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onPrev={prevPeriod}
-          onNext={nextPeriod}
-          onToday={goToToday}
-          isDark={isDark}
-        />
-
-        {/* Contenedor Principal según ViewMode */}
-        <View style={{ flex: 1, padding: 18 }}>
-          {viewMode === 'month_hybrid' ? (
-            // Vista Híbrida 50/50 Samsung One UI
-            <MonthHybridView
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-              unifiedItems={unifiedItemsForSelectedDate}
-              allEventsForMonth={allEventsForMonthMap}
-              onOpenNewEvent={handleOpenNewEvent}
-              onOpenEditEvent={handleOpenEditEvent}
-              onPrevMonth={prevPeriod}
-              onNextMonth={nextPeriod}
-              isDark={isDark}
-            />
-          ) : viewMode === 'day' ? (
-            // Vista Línea de Tiempo Diaria Detallada
-            <DayTimelineView
-              date={selectedDate}
-              items={unifiedItemsForSelectedDate}
-              onPressItem={handleOpenEditEvent}
-              isDark={isDark}
-              slotHeight={settings.slotDensity === 'compact' ? 48 : settings.slotDensity === 'spacious' ? 76 : 64}
-            />
-          ) : (
-            // Vista Grilla Horaria Semanal Apple iPadOS
-            <WeekGridView
-              selectedDate={currentDateObj}
-              unifiedItems={unifiedItemsForWeek}
-              settings={settings}
-              onSelectEvent={handleOpenEditEvent}
-              onSlotPress={(dateStr, hour) => handleOpenNewEvent(dateStr, hour)}
-              isDark={isDark}
-            />
-          )}
-        </View>
+      {/* 2. Área Central al 100% de Ancho según ViewMode */}
+      <View style={{ flex: 1, padding: 18 }}>
+        {viewMode === 'month_hybrid' ? (
+          // Vista Híbrida 50/50 Samsung One UI
+          <MonthHybridView
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            unifiedItems={unifiedItemsForSelectedDate}
+            allEventsForMonth={allEventsForMonthMap}
+            onOpenNewEvent={handleOpenNewEvent}
+            onOpenEditEvent={handleOpenEditEvent}
+            onPrevMonth={prevPeriod}
+            onNextMonth={nextPeriod}
+            isDark={isDark}
+          />
+        ) : viewMode === 'day' ? (
+          // Vista Línea de Tiempo Diaria Detallada
+          <DayTimelineView
+            date={selectedDate}
+            items={unifiedItemsForSelectedDate}
+            onPressItem={handleOpenEditEvent}
+            isDark={isDark}
+            slotHeight={settings.slotDensity === 'compact' ? 48 : settings.slotDensity === 'spacious' ? 76 : 64}
+          />
+        ) : (
+          // Vista Grilla Horaria Semanal Apple iPadOS
+          <WeekGridView
+            selectedDate={currentDateObj}
+            unifiedItems={unifiedItemsForWeek}
+            settings={settings}
+            onSelectEvent={handleOpenEditEvent}
+            onSlotPress={(dateStr, hour) => handleOpenNewEvent(dateStr, hour)}
+            isDark={isDark}
+          />
+        )}
       </View>
 
       {/* Modal Inspector / Creador de Eventos e Hitos */}

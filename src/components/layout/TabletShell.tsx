@@ -19,7 +19,7 @@ export const TabletShell: React.FC<TabletShellProps> = ({ children }) => {
       <TabletSidebar />
 
       {/* Contenido Principal */}
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, backgroundColor: theme.background, overflow: 'hidden' }}>
         {children}
       </View>
     </View>

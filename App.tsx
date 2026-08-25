@@ -45,10 +45,8 @@ export default function App() {
       try {
         // 1. Inicializar base de datos SQLite y esquema
         await getDatabase();
-        // 2. Inicializar ajustes y tema
-        await initApp();
-        // 3. Cargar credenciales guardadas en SecureStore
-        await loadCredentials();
+        // 2. Inicializar ajustes y credenciales de forma asíncrona no bloqueante
+        await Promise.allSettled([initApp(), loadCredentials()]);
 
         setIsDbReady(true);
       } catch (err: any) {
@@ -74,29 +72,29 @@ export default function App() {
       <View
         style={{
           flex: 1,
-          backgroundColor: isDark ? '#000000' : '#F2F2F7',
+          backgroundColor: '#000000',
           alignItems: 'center',
           justifyContent: 'center',
           padding: 24,
         }}
       >
-        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <StatusBar style="light" />
         {initError ? (
           <View style={{ alignItems: 'center' }}>
             <Text style={{ color: '#FF3B30', fontSize: 16, fontWeight: '700', marginBottom: 8 }}>
               Error al inicializar
             </Text>
-            <Text style={{ color: theme.text.secondary, fontSize: 13, textAlign: 'center' }}>
+            <Text style={{ color: '#8E8E93', fontSize: 13, textAlign: 'center' }}>
               {initError}
             </Text>
           </View>
         ) : (
           <View style={{ alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={{ color: theme.text.primary, fontSize: 18, fontWeight: '800', marginTop: 16 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginTop: 16 }}>
               MiHub
             </Text>
-            <Text style={{ color: theme.text.secondary, fontSize: 12, marginTop: 4 }}>
+            <Text style={{ color: '#8E8E93', fontSize: 12, marginTop: 4 }}>
               Cargando tu vida organizada...
             </Text>
           </View>

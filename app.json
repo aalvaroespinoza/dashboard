@@ -7,11 +7,14 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#000000",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.alvaroespinoza.mihub"
+      "bundleIdentifier": "com.alvaroespinoza.mihub",
+      "backgroundColor": "#000000"
     },
     "android": {
+      "backgroundColor": "#000000",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",

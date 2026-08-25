@@ -44,8 +44,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "prebuild": "expo prebuild",
-    "build:apk": "eas build -p android --profile preview",
-    "build:apk:local": "eas build -p android --profile preview --local"
+    "build:apk": "npx expo prebuild --clean && cd android && ./gradlew assembleRelease --no-daemon --build-cache --parallel",
+    "build:apk:win": "npx expo prebuild --clean && cd android && .\\gradlew.bat assembleRelease --no-daemon --build-cache --parallel",
+    "build:apk:local": "powershell -ExecutionPolicy Bypass -File ./scripts/build_local_apk.ps1",
+    "build:eas": "eas build -p android --profile preview"
   },
   "private": true
 }

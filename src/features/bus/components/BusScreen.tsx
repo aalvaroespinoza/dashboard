@@ -76,7 +76,9 @@ export const BusScreen: React.FC = () => {
       {/* Columna Izquierda: Controles Contextuales + Widget Hero Próximo Colectivo */}
       <View
         style={{
-          width: 400,
+          flex: 1,
+          maxWidth: 440,
+          minWidth: 320,
           backgroundColor: isDark ? '#12151B' : '#F1F3F5',
           borderRightWidth: 1,
           borderRightColor: isDark ? '#232733' : '#E5E7EB',
@@ -123,7 +125,7 @@ export const BusScreen: React.FC = () => {
       {/* Columna Derecha: Grid / Lista Cronológica de Salidas */}
       <View
         style={{
-          flex: 1,
+          flex: 1.3,
           backgroundColor: isDark ? '#0F1115' : '#F8F9FA',
           padding: 20,
           display: 'flex',

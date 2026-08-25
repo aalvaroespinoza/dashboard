@@ -41,6 +41,7 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { ActiveModule } from '../../types';
 import { IOS_COLORS, IOS_FONTS } from '../../styles/theme';
 import { GlassContainer } from '../common/GlassContainer';
+import { AppLogo } from '../ui/AppLogo';
 
 const RAIL_COLLAPSED_WIDTH = 68;
 const RAIL_EXPANDED_WIDTH = 220;
@@ -146,10 +147,10 @@ export const TabletSidebar: React.FC = () => {
     ),
   }));
 
-  // Estilo animado del título "MiHub" en la cabecera
+  // Estilo animado del título "MiHub" y subtítulo "Life OS" en la cabecera
   const animatedHeaderStyle = useAnimatedStyle(() => ({
     opacity: interpolate(expandProgress.value, [0.2, 0.8], [0, 1], Extrapolation.CLAMP),
-    width: interpolate(expandProgress.value, [0, 1], [0, 95], Extrapolation.CLAMP),
+    width: interpolate(expandProgress.value, [0, 1], [0, 105], Extrapolation.CLAMP),
     transform: [
       {
         translateX: interpolate(expandProgress.value, [0, 1], [-12, 0], Extrapolation.CLAMP),
@@ -291,31 +292,37 @@ export const TabletSidebar: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: 16,
-                height: 38,
+                height: 42,
                 overflow: 'hidden',
               }}
             >
               {/* Logo e Icono */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Image
-                  source={require('../../../assets/icon.png')}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 9,
-                  }}
-                />
+                <AppLogo size={36} />
                 <Animated.View style={animatedHeaderStyle}>
                   <Text
                     style={{
-                      fontSize: 17,
+                      fontSize: 16,
                       fontFamily: IOS_FONTS.bold,
-                      color: theme.text.primary,
+                      color: isDark ? '#FFFFFF' : theme.text.primary,
                       letterSpacing: -0.5,
+                      lineHeight: 18,
                     }}
                     numberOfLines={1}
                   >
                     MiHub
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10.5,
+                      fontFamily: IOS_FONTS.semibold,
+                      color: isDark ? '#9CA3AF' : '#8E8E93',
+                      letterSpacing: 0.2,
+                      lineHeight: 13,
+                    }}
+                    numberOfLines={1}
+                  >
+                    Life OS
                   </Text>
                 </Animated.View>
               </View>

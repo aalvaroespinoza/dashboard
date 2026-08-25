@@ -31,6 +31,7 @@ import { useCalendarStore } from '../../store/useCalendarStore';
 import { useFinanceStore } from '../../store/useFinanceStore';
 import { useHabitsStore } from '../habits/stores/useHabitsStore';
 import { useWeatherStore } from '../../store/useWeatherStore';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { HomeWeatherWidget } from './components/HomeWeatherWidget';
 import { HomeRemindersWidget } from './components/HomeRemindersWidget';
 import { HomeCalendarWidget } from './components/HomeCalendarWidget';
@@ -95,6 +96,8 @@ export const HomeScreen: React.FC = () => {
     return `${dayName}, ${dayNum} de ${monthName} · Despeñaderos, Córdoba`;
   }, []);
 
+  const { isLandscape, contentPadding } = useResponsiveLayout();
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -103,9 +106,9 @@ export const HomeScreen: React.FC = () => {
         backgroundColor: isDark ? '#000000' : theme.canvas,
       }}
       contentContainerStyle={{
-        padding: 24,
-        paddingBottom: 48,
-        gap: 18,
+        padding: contentPadding,
+        paddingBottom: 64,
+        gap: isLandscape ? 18 : 14,
       }}
     >
       {/* 1. Header Bar Superior */}
@@ -115,7 +118,7 @@ export const HomeScreen: React.FC = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text
               style={{
-                fontSize: 32,
+                fontSize: isLandscape ? 32 : 26,
                 fontFamily: IOS_FONTS.bold,
                 color: theme.text.primary,
                 letterSpacing: -0.8,
@@ -123,7 +126,7 @@ export const HomeScreen: React.FC = () => {
             >
               Hola, {userName || 'Álvaro'}
             </Text>
-            <AppleEmoji emoji="👋" size={28} />
+            <AppleEmoji emoji="👋" size={isLandscape ? 28 : 24} />
           </View>
           <Text
             style={{
@@ -205,8 +208,8 @@ export const HomeScreen: React.FC = () => {
       />
 
       {/* 3. Nivel Central: 2 Columnas Principales (Recordatorios vs Calendario Split) */}
-      <View style={{ flexDirection: 'row', gap: 18, alignItems: 'stretch' }}>
-        {/* Columna Izquierda (~48%): Recordatorios Inteligentes */}
+      <View style={{ flexDirection: isLandscape ? 'row' : 'column', gap: 16, alignItems: 'stretch' }}>
+        {/* Columna Izquierda: Recordatorios Inteligentes */}
         <View style={{ flex: 1 }}>
           <HomeRemindersWidget
             onQuickTaskPress={() => setIsCreateTaskModalOpen(true)}
@@ -215,8 +218,8 @@ export const HomeScreen: React.FC = () => {
           />
         </View>
 
-        {/* Columna Derecha (~52%): Próximos Eventos + Mini Grilla Semanal */}
-        <View style={{ flex: 1.15 }}>
+        {/* Columna Derecha: Próximos Eventos + Mini Grilla Semanal */}
+        <View style={{ flex: isLandscape ? 1.15 : 1 }}>
           <HomeCalendarWidget
             onEventPress={(event) => {
               setSelectedEventForModal(event);
@@ -227,8 +230,8 @@ export const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* 4. Nivel Inferior: 3 Widgets Horizontales (Colectivos, Finanzas, Hábitos) */}
-      <View style={{ flexDirection: 'row', gap: 18, alignItems: 'stretch' }}>
+      {/* 4. Nivel Inferior: Widgets de Colectivos, Finanzas, Hábitos */}
+      <View style={{ flexDirection: isLandscape ? 'row' : 'column', gap: 16, alignItems: 'stretch' }}>
         {/* Widget 1: Recorridos / Colectivos */}
         <HomeBusWidget
           onPress={() => setIsAllSchedulesModalOpen(true)}

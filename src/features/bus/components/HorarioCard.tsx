@@ -23,7 +23,7 @@ interface HorarioCardProps {
   isDark?: boolean;
 }
 
-export const HorarioCard: React.FC<HorarioCardProps> = ({
+const HorarioCardComponent: React.FC<HorarioCardProps> = ({
   titulo,
   service,
   direction,
@@ -242,3 +242,5 @@ export const HorarioCard: React.FC<HorarioCardProps> = ({
     </View>
   );
 };
+
+export const HorarioCard = React.memo(HorarioCardComponent);

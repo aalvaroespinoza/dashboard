@@ -32,7 +32,7 @@ interface GritHabitCardProps {
   isDark?: boolean;
 }
 
-export const GritHabitCard: React.FC<GritHabitCardProps> = ({
+const GritHabitCardComponent: React.FC<GritHabitCardProps> = ({
   habit,
   logsForHabit,
   recentDates,
@@ -128,7 +128,7 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
         style={({ pressed }) => ({
           opacity: pressed ? 0.92 : isRest ? 0.72 : 1,
           flex: 1,
-          minWidth: 320,
+          minWidth: 280,
           backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
           borderRadius: 24,
           padding: 16,
@@ -456,3 +456,5 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
     </>
   );
 };
+
+export const GritHabitCard = React.memo(GritHabitCardComponent);

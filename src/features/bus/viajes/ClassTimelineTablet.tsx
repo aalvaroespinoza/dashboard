@@ -343,7 +343,8 @@ export const ClassTimelineTablet: React.FC<ClassTimelineTabletProps> = ({
         >
           <View
             style={{
-              width: 440,
+              width: '100%',
+              maxWidth: 440,
               backgroundColor: theme.card,
               borderRadius: 24,
               padding: 24,

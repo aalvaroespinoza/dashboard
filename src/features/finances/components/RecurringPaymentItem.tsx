@@ -11,7 +11,7 @@ interface RecurringPaymentItemProps {
   isDark?: boolean;
 }
 
-export const RecurringPaymentItem: React.FC<RecurringPaymentItemProps> = ({
+const RecurringPaymentItemComponent: React.FC<RecurringPaymentItemProps> = ({
   item,
   onPress,
   isDark = true,
@@ -107,3 +107,5 @@ export const RecurringPaymentItem: React.FC<RecurringPaymentItemProps> = ({
     </Pressable>
   );
 };
+
+export const RecurringPaymentItem = React.memo(RecurringPaymentItemComponent);

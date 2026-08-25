@@ -7,6 +7,7 @@ import { TimeBlockItem } from './TimeBlockItem';
 import { SpecularCard } from '../../../components/common/SpecularCard';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
+import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 
 interface MonthHybridViewProps {
   selectedDate: string; // YYYY-MM-DD
@@ -31,6 +32,7 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
   onNextMonth,
   isDark = true,
 }) => {
+  const { isLandscape } = useResponsiveLayout();
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
   // Cálculo de la cuadrícula del mes
@@ -64,21 +66,21 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
     }
 
     // Días del mes actual
-    for (let d = 1; d <= totalDays; d++) {
-      const thisDate = new Date(year, month, d);
+    for (let i = 1; i <= totalDays; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       grid.push({
-        day: d,
-        dateStr: thisDate.toISOString().split('T')[0],
+        day: i,
+        dateStr,
         isCurrentMonth: true,
       });
     }
 
     // Días del mes siguiente para completar 35 o 42 celdas
     const remaining = (7 - (grid.length % 7)) % 7;
-    for (let d = 1; d <= remaining; d++) {
-      const nextDate = new Date(year, month + 1, d);
+    for (let i = 1; i <= remaining; i++) {
+      const nextDate = new Date(year, month + 1, i);
       grid.push({
-        day: d,
+        day: i,
         dateStr: nextDate.toISOString().split('T')[0],
         isCurrentMonth: false,
       });
@@ -87,7 +89,7 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
     return {
       monthLabel: label,
       daysGrid: grid,
-      todayStr: '2026-08-24',
+      todayStr: new Date().toISOString().split('T')[0],
     };
   }, [selectedDate]);
 
@@ -100,9 +102,9 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
   }, [selectedDate]);
 
   return (
-    <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
-      {/* 1. Columna Izquierda (50%): Cuadrícula Mensual Interactiva */}
-      <SpecularCard isDark={isDark} padding={20} style={{ flex: 1.1 }}>
+    <View style={{ flex: 1, flexDirection: isLandscape ? 'row' : 'column', gap: 16 }}>
+      {/* 1. Columna Izquierda: Cuadrícula Mensual Interactiva */}
+      <SpecularCard isDark={isDark} padding={20} style={{ flex: isLandscape ? 1.1 : undefined }}>
         {/* Header del Mes & Navegación */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.6 }}>

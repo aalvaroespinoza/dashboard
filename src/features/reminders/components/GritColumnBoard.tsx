@@ -51,7 +51,9 @@ export const GritColumnBoard: React.FC<GritColumnBoardProps> = ({
             key={col.id}
             layout={LinearTransition.springify().damping(20).stiffness(160)}
             style={{
-              width: 320,
+              minWidth: 280,
+              maxWidth: 340,
+              flex: 1,
               backgroundColor: theme.card,
               borderRadius: 20,
               borderWidth: 1,

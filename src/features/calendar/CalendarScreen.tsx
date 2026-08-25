@@ -11,9 +11,11 @@ import { DayTimelineView } from './components/DayTimelineView';
 import { EventModal } from './components/EventModal';
 import { CalendarSettingsModal } from './components/CalendarSettingsModal';
 import { IOS_COLORS } from '../../styles/theme';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export const CalendarScreen: React.FC = () => {
   const { themeMode } = useAppStore();
+  const { contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
@@ -160,7 +162,7 @@ export const CalendarScreen: React.FC = () => {
       />
 
       {/* 2. Área Central al 100% de Ancho según ViewMode */}
-      <View style={{ flex: 1, padding: 18 }}>
+      <View style={{ flex: 1, padding: contentPadding }}>
         {viewMode === 'month_hybrid' ? (
           // Vista Híbrida 50/50 Samsung One UI
           <MonthHybridView

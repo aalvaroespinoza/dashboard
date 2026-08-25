@@ -21,7 +21,7 @@ interface BusServiceCardProps {
   isDark?: boolean;
 }
 
-export const BusServiceCard: React.FC<BusServiceCardProps> = ({
+const BusServiceCardComponent: React.FC<BusServiceCardProps> = ({
   service,
   currentTime,
   isFavorite = false,
@@ -186,3 +186,5 @@ export const BusServiceCard: React.FC<BusServiceCardProps> = ({
     </Pressable>
   );
 };
+
+export const BusServiceCard = React.memo(BusServiceCardComponent);

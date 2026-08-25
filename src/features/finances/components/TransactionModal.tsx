@@ -71,7 +71,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       >
         <View
           style={{
-            width: 480,
+            width: '100%',
+            maxWidth: 480,
             backgroundColor: theme.card,
             borderRadius: 20,
             padding: 24,

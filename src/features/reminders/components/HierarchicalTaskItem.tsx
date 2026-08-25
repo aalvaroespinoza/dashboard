@@ -33,7 +33,7 @@ interface HierarchicalTaskItemProps {
   isDark?: boolean;
 }
 
-export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
+const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
   task,
   listColor = IOS_COLORS.blue,
   onToggleComplete,
@@ -395,3 +395,5 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
     </Pressable>
   );
 };
+
+export const HierarchicalTaskItem = React.memo(HierarchicalTaskItemComponent);

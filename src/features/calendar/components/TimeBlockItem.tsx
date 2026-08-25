@@ -15,7 +15,7 @@ interface TimeBlockItemProps {
   isDark?: boolean;
 }
 
-export const TimeBlockItem: React.FC<TimeBlockItemProps> = ({
+const TimeBlockItemComponent: React.FC<TimeBlockItemProps> = ({
   item,
   onPress,
   isCompact = false,
@@ -142,3 +142,5 @@ export const TimeBlockItem: React.FC<TimeBlockItemProps> = ({
     </Pressable>
   );
 };
+
+export const TimeBlockItem = React.memo(TimeBlockItemComponent);

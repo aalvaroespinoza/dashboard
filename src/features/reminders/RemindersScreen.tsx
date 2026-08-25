@@ -40,11 +40,13 @@ import { GritColumnBoard } from './components/GritColumnBoard';
 import { CreateReminderModal } from './components/CreateReminderModal';
 import { ReminderDetailSheet } from './components/ReminderDetailSheet';
 import { ListIconRenderer } from '../../components/ui/ListIconRenderer';
-import { IOS_COLORS } from '../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../styles/theme';
 import { createShadow } from '../../styles/shadows';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export const RemindersScreen: React.FC = () => {
   const { themeMode } = useAppStore();
+  const { isLandscape, contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
@@ -134,9 +136,9 @@ export const RemindersScreen: React.FC = () => {
         backgroundColor: isDark ? '#000000' : theme.background,
       }}
     >
-      <View style={{ flex: 1, padding: 24, gap: 16 }}>
+      <View style={{ flex: 1, padding: contentPadding, gap: 16 }}>
         {/* 1. Header General con Buscador y Acción Nueva Lista */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             {selectedListId && (
               <Pressable
@@ -170,7 +172,7 @@ export const RemindersScreen: React.FC = () => {
             )}
 
             <View>
-              <Text style={{ fontSize: 28, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.8 }}>
+              <Text style={{ fontSize: isLandscape ? 28 : 22, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.8 }}>
                 {activeListObj
                   ? activeListObj.title
                   : activeSmartFilter === 'today'
@@ -190,7 +192,7 @@ export const RemindersScreen: React.FC = () => {
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            {/* Buscador */}
+            {/* Buscador Flexible */}
             <View
               style={{
                 flexDirection: 'row',
@@ -201,7 +203,9 @@ export const RemindersScreen: React.FC = () => {
                 borderRadius: 12,
                 borderWidth: 1,
                 borderColor: isDark ? '#2C2C2E' : theme.border,
-                width: 220,
+                minWidth: 130,
+                maxWidth: 220,
+                flex: 1,
                 gap: 8,
               }}
             >

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT, getSpecularCardStyle } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
+import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 
 interface FinanceMetricCardsProps {
   income: number;
@@ -10,12 +11,13 @@ interface FinanceMetricCardsProps {
   isDark?: boolean;
 }
 
-export const FinanceMetricCards: React.FC<FinanceMetricCardsProps> = ({
+const FinanceMetricCardsComponent: React.FC<FinanceMetricCardsProps> = ({
   income,
   expense,
   savings,
   isDark = true,
 }) => {
+  const { isLandscape } = useResponsiveLayout();
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
   const formatCurrency = (val: number) => {
@@ -26,7 +28,7 @@ export const FinanceMetricCards: React.FC<FinanceMetricCardsProps> = ({
   const shadow = createShadow('#000000', { width: 0, height: 2 }, isDark ? 0.2 : 0.03, 6);
 
   return (
-    <View style={{ flexDirection: 'row', gap: 14 }}>
+    <View style={{ flexDirection: isLandscape ? 'row' : 'column', gap: 12 }}>
       {/* 1. Ingresos (Apple System Green) */}
       <View
         style={{
@@ -109,3 +111,5 @@ export const FinanceMetricCards: React.FC<FinanceMetricCardsProps> = ({
     </View>
   );
 };
+
+export const FinanceMetricCards = React.memo(FinanceMetricCardsComponent);

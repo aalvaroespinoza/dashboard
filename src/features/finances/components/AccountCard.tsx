@@ -13,7 +13,7 @@ interface AccountCardProps {
   isDark?: boolean;
 }
 
-export const AccountCard: React.FC<AccountCardProps> = ({
+const AccountCardComponent: React.FC<AccountCardProps> = ({
   account,
   isSelected,
   onPress,
@@ -38,7 +38,9 @@ export const AccountCard: React.FC<AccountCardProps> = ({
       style={({ pressed }) => ({
         transform: [{ scale: pressed ? 0.97 : 1 }],
         opacity: pressed ? 0.85 : 1,
-        width: 190,
+        minWidth: 160,
+        flex: 1,
+        maxWidth: 220,
         backgroundColor: isSelected
           ? isDark
             ? 'rgba(0, 122, 255, 0.18)'
@@ -108,3 +110,5 @@ export const AccountCard: React.FC<AccountCardProps> = ({
     </Pressable>
   );
 };
+
+export const AccountCard = React.memo(AccountCardComponent);

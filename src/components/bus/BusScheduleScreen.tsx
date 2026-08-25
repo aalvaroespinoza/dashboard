@@ -77,7 +77,9 @@ export const BusScheduleScreen: React.FC = () => {
       {/* Panel 1: Selector de Empresas / Líneas */}
       <View
         style={{
-          width: 280,
+          flex: 1,
+          minWidth: 220,
+          maxWidth: 300,
           backgroundColor: isDark ? '#12151B' : '#F1F3F5',
           borderRightWidth: 1,
           borderRightColor: isDark ? '#232733' : '#E5E7EB',
@@ -307,7 +309,9 @@ export const BusScheduleScreen: React.FC = () => {
       {/* Panel 3: Grilla y Lista Completa de Horarios */}
       <View
         style={{
-          width: 340,
+          flex: 1.3,
+          minWidth: 260,
+          maxWidth: 380,
           backgroundColor: isDark ? '#12151B' : '#F8F9FA',
           padding: 20,
           display: 'flex',

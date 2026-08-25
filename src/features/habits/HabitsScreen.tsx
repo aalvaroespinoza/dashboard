@@ -29,6 +29,7 @@ import { GritLevelUpModal } from './components/GritLevelUpModal';
 import { IOSSegmentedControl, SegmentTab } from '../../components/ui/IOSSegmentedControl';
 import { IOS_COLORS, IOS_FONTS } from '../../styles/theme';
 import { createShadow } from '../../styles/shadows';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 const HABIT_TABS: SegmentTab<GritNavigationTab>[] = [
   { id: 'today', label: 'Hoy' },
@@ -38,6 +39,7 @@ const HABIT_TABS: SegmentTab<GritNavigationTab>[] = [
 
 export const HabitsScreen: React.FC = () => {
   const { themeMode } = useAppStore();
+  const { isLandscape, contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
@@ -102,15 +104,16 @@ export const HabitsScreen: React.FC = () => {
       {/* 1. Header Unificado con Segmented Control y Acciones */}
       <View
         style={{
-          paddingHorizontal: 24,
-          paddingTop: 20,
-          paddingBottom: 16,
+          paddingHorizontal: contentPadding,
+          paddingTop: 18,
+          paddingBottom: 14,
           borderBottomWidth: 1,
           borderBottomColor: theme.border,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 16,
+          flexWrap: 'wrap',
+          gap: 14,
           backgroundColor: isDark ? 'rgba(20, 20, 22, 0.7)' : 'rgba(255, 255, 255, 0.7)',
         }}
       >
@@ -132,7 +135,7 @@ export const HabitsScreen: React.FC = () => {
           <View>
             <Text
               style={{
-                fontSize: 24,
+                fontSize: isLandscape ? 24 : 20,
                 fontFamily: IOS_FONTS.bold,
                 color: theme.text.primary,
                 letterSpacing: -0.6,
@@ -147,7 +150,7 @@ export const HabitsScreen: React.FC = () => {
         </View>
 
         {/* Selector de Pestañas Segmented Control */}
-        <View style={{ minWidth: 320 }}>
+        <View style={{ minWidth: 260, maxWidth: 360, flex: 1 }}>
           <IOSSegmentedControl
             tabs={tabsWithBadge}
             selectedTab={currentTab}
@@ -248,7 +251,7 @@ export const HabitsScreen: React.FC = () => {
           <ScrollView
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 24, paddingBottom: 90, gap: 18 }}
+            contentContainerStyle={{ padding: contentPadding, paddingBottom: 90, gap: 18 }}
           >
             {/* Tarjeta de Nivel RPG del Jugador */}
             <GritPlayerLevelCard isDark={isDark} />

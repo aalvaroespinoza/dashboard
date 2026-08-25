@@ -52,6 +52,7 @@ import { useTodaySchedule } from '../features/bus/hooks/useTodaySchedule';
 import { backupService } from '../services/backupService';
 import { IOS_COLORS } from '../styles/theme';
 import { createShadow } from '../styles/shadows';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 
 interface ConfirmDialogState {
   isOpen: boolean;
@@ -64,6 +65,7 @@ interface ConfirmDialogState {
 
 export const SettingsScreen: React.FC = () => {
   const { themeMode } = useAppStore();
+  const { isLandscape, contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
@@ -243,7 +245,7 @@ export const SettingsScreen: React.FC = () => {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: isDark ? '#000000' : theme.background }}
-      contentContainerStyle={{ padding: 24, gap: 20 }}
+      contentContainerStyle={{ padding: contentPadding, paddingBottom: 64, gap: 20 }}
     >
       {/* Banner de Estado */}
       {statusMessage && (
@@ -279,8 +281,8 @@ export const SettingsScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Grid de 2 Columnas para Tablet */}
-      <View style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start' }}>
+      {/* Grid Adaptable para Tablet (2 columnas en Landscape / 1 columna en Portrait) */}
+      <View style={{ flexDirection: isLandscape ? 'row' : 'column', gap: 20, alignItems: 'stretch' }}>
         {/* COLUMNA IZQUIERDA: iCloud CalDAV + Cursado */}
         <View style={{ flex: 1, gap: 20 }}>
           {/* 1. Sincronización iCloud (CalDAV) */}

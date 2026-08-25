@@ -240,12 +240,13 @@ export const backupService = {
     if (module === 'tasks' || module === 'all') {
       await db.runAsync('DELETE FROM tasks');
       await db.runAsync('DELETE FROM list_sections');
+      await db.runAsync('DELETE FROM link_previews');
       await db.runAsync('DELETE FROM lists');
     }
 
     if (module === 'calendar' || module === 'all') {
       await db.runAsync('DELETE FROM calendar_events');
-      await db.runAsync('DELETE FROM calendar_categories WHERE is_default = 0');
+      await db.runAsync('DELETE FROM calendar_categories');
     }
 
     if (module === 'habits' || module === 'all') {
@@ -258,12 +259,12 @@ export const backupService = {
 
     if (module === 'finances' || module === 'all') {
       await db.runAsync('DELETE FROM transactions');
+      await db.runAsync('DELETE FROM finance_budgets');
       await db.runAsync('DELETE FROM accounts');
       await db.runAsync('DELETE FROM categories');
     }
 
-    if (module === 'all') {
-      await seedDatabase(db);
-    }
+    // Re-sembrar las estructuras base limpias
+    await seedDatabase(db, true);
   },
 };

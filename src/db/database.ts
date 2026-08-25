@@ -38,20 +38,32 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 }
 
+/**
+ * resetDatabase
+ * Restablece toda la base de datos a 0 para uso real:
+ * - Borra todas las tareas, subtareas, notas, eventos, transacciones, presupuestos, hábitos y logs.
+ * - PRESERVA 100% las tablas y datos de transportes, colectivos y paradas.
+ * - Re-crea las categorías y listas limpias base.
+ */
 export async function resetDatabase(): Promise<void> {
   const db = await getDatabase();
   await db.execAsync(`
-    DROP TABLE IF EXISTS tasks;
-    DROP TABLE IF EXISTS lists;
-    DROP TABLE IF EXISTS calendar_events;
-    DROP TABLE IF EXISTS transactions;
-    DROP TABLE IF EXISTS categories;
-    DROP TABLE IF EXISTS notes;
-    DROP TABLE IF EXISTS bus_schedules;
-    DROP TABLE IF EXISTS bus_stops;
-    DROP TABLE IF EXISTS bus_routes;
-    DROP TABLE IF EXISTS app_settings;
+    DELETE FROM tasks;
+    DELETE FROM list_sections;
+    DELETE FROM link_previews;
+    DELETE FROM lists;
+    DELETE FROM calendar_events;
+    DELETE FROM calendar_categories;
+    DELETE FROM transactions;
+    DELETE FROM accounts;
+    DELETE FROM categories;
+    DELETE FROM finance_budgets;
+    DELETE FROM notes;
+    DELETE FROM habit_logs;
+    DELETE FROM habits;
+    DELETE FROM habit_categories;
+    DELETE FROM habit_gamification_profile;
+    DELETE FROM active_timers;
   `);
-  await db.execAsync(CREATE_TABLES_SQL);
-  await seedDatabase(db);
+  await seedDatabase(db, true);
 }

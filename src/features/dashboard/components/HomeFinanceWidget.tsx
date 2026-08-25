@@ -27,8 +27,8 @@ export const HomeFinanceWidget: React.FC<HomeFinanceWidgetProps> = React.memo(({
   const { setActiveModule } = useAppStore();
 
   const summary = useFinanceStore((state) => state.summary);
-  const totalIncome = summary?.totalIncome || 850000;
-  const totalExpense = summary?.totalExpense || 44300;
+  const totalIncome = summary?.totalIncome ?? 0;
+  const totalExpense = summary?.totalExpense ?? 0;
   const netBalance = totalIncome - totalExpense;
 
   const formatCurrency = (val: number) => {

@@ -225,10 +225,14 @@ export const SettingsScreen: React.FC = () => {
         try {
           await backupService.resetModule(module);
           if (module === 'tasks' || module === 'all') await useTasksStore.getState().loadTasksAndLists();
-          if (module === 'calendar' || module === 'all') await useCalendarStore.getState().loadEvents();
+          if (module === 'calendar' || module === 'all') {
+            await useCalendarStore.getState().loadEvents();
+            await useCalendarStore.getState().loadCategories();
+          }
           if (module === 'habits' || module === 'all') await useHabitsStore.getState().loadHabitsData();
           if (module === 'finances' || module === 'all') await useFinanceStore.getState().loadFinanceData();
-          showStatus(`Módulo ${label} restablecido correctamente.`);
+          if (module === 'all') await useAppStore.getState().initApp();
+          showStatus(`Módulo ${label} restablecido a 0 correctamente.`);
         } catch (e: any) {
           showStatus(`Error: ${e.message}`, 'error');
         }

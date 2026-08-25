@@ -27,10 +27,13 @@ import {
   Sun,
   Settings as SettingsIcon,
   Check,
+  RotateCcw,
 } from 'lucide-react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { useHabitsStore } from '../../features/habits/stores/useHabitsStore';
 import { useTasksStore } from '../../store/useTasksStore';
+import { useCalendarStore } from '../../store/useCalendarStore';
+import { useFinanceStore } from '../../store/useFinanceStore';
 import { useSyncStore } from '../../store/useSyncStore';
 import { AppleEmoji } from './AppleEmoji';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../styles/theme';
@@ -376,11 +379,60 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <SettingsIcon size={16} color={theme.text.secondary} />
                     <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.semibold, color: theme.text.primary }}>
-                      Ajustes del Sistema & Base de Datos
+                      Ajustes del Sistema
                     </Text>
                   </View>
                   <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
                     Abrir →
+                  </Text>
+                </Pressable>
+
+                <View style={{ height: 1, backgroundColor: theme.border }} />
+
+                {/* Botón Restablecer Base de Datos a 0 (Preserva Colectivos) */}
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      const { resetDatabase } = await import('../../db/database');
+                      await resetDatabase();
+                      await Promise.allSettled([
+                        useTasksStore.getState().loadTasksAndLists(),
+                        useCalendarStore.getState().loadEvents(),
+                        useCalendarStore.getState().loadCategories(),
+                        useFinanceStore.getState().loadFinanceData(),
+                        useHabitsStore.getState().loadHabitsData(),
+                        useAppStore.getState().initApp(),
+                      ]);
+                      setIsSaved(true);
+                      setTimeout(() => {
+                        onClose();
+                      }, 500);
+                    } catch (e: any) {
+                      console.error('Error al resetear base de datos:', e);
+                    }
+                  }}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.75 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                  })}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <RotateCcw size={16} color={isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light} />
+                    <View>
+                      <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.semibold, color: isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light }}>
+                        Restablecer Base de Datos a 0
+                      </Text>
+                      <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.tertiary }}>
+                        Vacía tareas, eventos y finanzas (conserva colectivos)
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light }}>
+                    Vaciar
                   </Text>
                 </Pressable>
               </View>

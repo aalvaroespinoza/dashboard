@@ -267,59 +267,6 @@ export const habitsRepo = {
     const rows = await db.getAllAsync<any>(
       'SELECT * FROM habits ORDER BY created_at ASC'
     );
-    if (rows.length === 0) {
-      const now = '2026-08-24T12:00:00.000Z';
-      for (const h of GRIT_HABITS) {
-        await db.runAsync(
-          `INSERT INTO habits (
-            id, category_id, title, type, target_value, target_unit,
-            frequency, color, icon, points, streak_count, days_of_week,
-            reminder_time, motivation, is_archived, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            h.id,
-            h.category_id,
-            h.title,
-            h.type,
-            h.target_value,
-            h.target_unit,
-            h.frequency,
-            h.color,
-            h.icon,
-            h.points,
-            h.streak_count ?? 0,
-            h.days_of_week ? JSON.stringify(h.days_of_week) : null,
-            h.reminder_time || null,
-            h.motivation || null,
-            h.is_archived ?? 0,
-            now,
-            now,
-          ]
-        );
-      }
-
-      // Sembrar logs históricos
-      const seedLogs = generateSeedLogs();
-      for (const l of seedLogs) {
-        await db.runAsync(
-          `INSERT INTO habit_logs (
-            id, habit_id, date, completed_value, is_completed, is_skipped, notes, created_at
-          ) VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
-          [
-            `log-${l.habit_id}-${l.date}`,
-            l.habit_id,
-            l.date,
-            l.completed_value,
-            l.is_completed,
-            l.notes,
-            now,
-          ]
-        );
-      }
-
-      return GRIT_HABITS.map((h) => ({ ...h, created_at: now, updated_at: now }));
-    }
-
     return rows.map((r: any) => ({
       ...r,
       days_of_week: r.days_of_week ? JSON.parse(r.days_of_week) : [0, 1, 2, 3, 4, 5, 6],
@@ -533,8 +480,16 @@ export const habitsRepo = {
     await db.runAsync('DELETE FROM habit_logs');
     await db.runAsync('DELETE FROM habits');
     await db.runAsync('DELETE FROM habit_categories');
-    // Re-seed
+    await db.runAsync('DELETE FROM habit_gamification_profile');
+    await db.runAsync('DELETE FROM active_timers');
+    // Re-crear categorías base y perfil RPG nivel 1
     await this.getAllCategories();
-    await this.getAllHabits();
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `INSERT OR REPLACE INTO habit_gamification_profile (
+        id, level, current_exp, next_level_exp, rank_title, strength_exp, intelligence_exp, focus_exp, perfect_days_count, total_exp_earned, created_at, updated_at
+      ) VALUES ('main-profile', 1, 0, 100, 'Novato', 0, 0, 0, 0, 0, ?, ?)`,
+      [now, now]
+    );
   },
 };

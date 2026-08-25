@@ -312,6 +312,13 @@ export const RemindersScreen: React.FC = () => {
               onSelectList={(id) => setSelectedListId(id)}
               onOpenNewList={() => setIsAddListModalOpen(true)}
               onSelectTag={(tag) => setSearchFilter(tag)}
+              onToggleTaskComplete={toggleTaskComplete}
+              onPressTask={(t) => setInspectingTask(t)}
+              onToggleTaskFlag={toggleFlag}
+              onAddQuickTaskInList={(listId) => {
+                setSelectedListId(listId);
+                setIsCreateReminderModalOpen(true);
+              }}
               isDark={isDark}
             />
           ) : (

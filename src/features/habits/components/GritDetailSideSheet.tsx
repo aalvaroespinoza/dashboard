@@ -43,7 +43,7 @@ import { HabitItem } from '../../../types';
 import { useHabitsStore } from '../stores/useHabitsStore';
 import { GritHabitOptionsMenu } from './GritHabitOptionsMenu';
 import { AppleEmoji } from '../../../components/ui/AppleEmoji';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface GritDetailSideSheetProps {
@@ -384,7 +384,14 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
               <AppleEmoji emoji={liveHabit.icon} size={34} />
             </View>
 
-            <Text style={{ fontSize: 22, fontWeight: '900', color: theme.text.primary, textAlign: 'center' }}>
+            <Text
+              style={{
+                fontSize: 22,
+                fontFamily: IOS_FONTS.roundedHeavy,
+                color: theme.text.primary,
+                textAlign: 'center',
+              }}
+            >
               {liveHabit.title}
             </Text>
 
@@ -511,10 +518,9 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
                 <Text
                   style={{
                     fontSize: 34,
-                    fontWeight: '900',
+                    fontFamily: IOS_FONTS.mono,
                     color: isTimerRunning ? '#FF3B30' : theme.text.primary,
                     fontVariant: ['tabular-nums'],
-                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
                     letterSpacing: -0.5,
                   }}
                 >

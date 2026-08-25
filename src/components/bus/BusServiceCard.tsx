@@ -3,6 +3,8 @@ import { View, Text, Pressable } from 'react-native';
 import { Clock, ArrowRight } from 'lucide-react-native';
 import { BusServiceItem } from '../../services/busService';
 
+import { IOS_COLORS, IOS_FONTS } from '../../styles/theme';
+
 interface BusServiceCardProps {
   service: BusServiceItem;
   isNext?: boolean;
@@ -44,7 +46,7 @@ export const BusServiceCard: React.FC<BusServiceCardProps> = ({
           <Text
             style={{
               fontSize: 20,
-              fontWeight: '900',
+              fontFamily: IOS_FONTS.mono,
               color: isDark ? '#F3F4F6' : '#111827',
               fontVariant: ['tabular-nums'],
             }}
@@ -57,7 +59,7 @@ export const BusServiceCard: React.FC<BusServiceCardProps> = ({
             <Text
               style={{
                 fontSize: 13,
-                fontWeight: '600',
+                fontFamily: IOS_FONTS.mono,
                 color: isDark ? '#9CA3AF' : '#6B7280',
                 fontVariant: ['tabular-nums'],
               }}

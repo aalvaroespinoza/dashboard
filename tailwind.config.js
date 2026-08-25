@@ -8,6 +8,15 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["SF-Pro-Display-Regular", "sans-serif"],
+        semibold: ["SF-Pro-Display-Semibold", "sans-serif"],
+        bold: ["SF-Pro-Display-Bold", "sans-serif"],
+        roundedMedium: ["SF-Pro-Rounded-Medium", "sans-serif"],
+        rounded: ["SF-Pro-Rounded-Bold", "sans-serif"],
+        roundedHeavy: ["SF-Pro-Rounded-Heavy", "sans-serif"],
+        mono: ["JetBrainsMono-Bold", "monospace"],
+      },
       colors: {
         ios: {
           blue: "#007AFF",

@@ -4,6 +4,8 @@ import { View, Text, ActivityIndicator, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { getDatabase } from './src/db/database';
 import { useAppStore } from './src/store/useAppStore';
@@ -19,9 +21,21 @@ import { BusRoutesScreen } from './src/screens/BusRoutesScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { IOS_COLORS } from './src/styles/theme';
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function App() {
   const [isDbReady, setIsDbReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+
+  const [fontsLoaded, fontError] = useFonts({
+    'SF-Pro-Display-Regular': require('./assets/fonts/SF-Pro-Display-Regular.otf'),
+    'SF-Pro-Display-Semibold': require('./assets/fonts/SF-Pro-Display-Semibold.otf'),
+    'SF-Pro-Display-Bold': require('./assets/fonts/SF-Pro-Display-Bold.otf'),
+    'SF-Pro-Rounded-Medium': require('./assets/fonts/SF-Pro-Rounded-Medium.otf'),
+    'SF-Pro-Rounded-Bold': require('./assets/fonts/SF-Pro-Rounded-Bold.otf'),
+    'SF-Pro-Rounded-Heavy': require('./assets/fonts/SF-Pro-Rounded-Heavy.otf'),
+    'JetBrainsMono-Bold': require('./assets/fonts/JetBrainsMono-Bold.ttf'),
+  });
 
   const { themeMode, activeModule, initApp } = useAppStore();
   const { loadCredentials } = useSyncStore();
@@ -46,10 +60,16 @@ export default function App() {
     prepare();
   }, []);
 
+  useEffect(() => {
+    if (isDbReady && (fontsLoaded || fontError)) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isDbReady, fontsLoaded, fontError]);
+
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  if (!isDbReady) {
+  if (!isDbReady || (!fontsLoaded && !fontError)) {
     return (
       <View
         style={{

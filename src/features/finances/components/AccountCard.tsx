@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FinanceAccount } from '../../../types';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 import { AppleEmoji } from '../../../components/ui/AppleEmoji';
 
@@ -89,14 +89,14 @@ export const AccountCard: React.FC<AccountCardProps> = ({
 
       {/* Medio & Abajo: Nombre y Saldo */}
       <View style={{ gap: 2 }}>
-        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '700', color: theme.text.secondary }}>
+        <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: IOS_FONTS.semibold, color: theme.text.secondary }}>
           {account.name}
         </Text>
         <Text
           numberOfLines={1}
           style={{
             fontSize: 20,
-            fontWeight: '900',
+            fontFamily: IOS_FONTS.roundedHeavy,
             color: isNegative ? '#FF3B30' : theme.text.primary,
             letterSpacing: -0.5,
             fontVariant: ['tabular-nums'],

@@ -11,7 +11,7 @@ import { useTasksStore } from '../../../store/useTasksStore';
 import { useCalendarStore } from '../../../store/useCalendarStore';
 import { useFinanceStore } from '../../../store/useFinanceStore';
 import { useAppStore } from '../../../store/useAppStore';
-import { IOS_COLORS, getSpecularCardStyle } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS, getSpecularCardStyle } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface DashboardTopRowProps {
@@ -147,9 +147,10 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
                 numberOfLines={1}
                 style={{
                   fontSize: 24,
-                  fontWeight: '900',
+                  fontFamily: IOS_FONTS.roundedHeavy,
                   color: theme.text.primary,
                   letterSpacing: -0.8,
+                  fontVariant: ['tabular-nums'],
                 }}
               >
                 {metric.value}
@@ -158,7 +159,7 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
                 numberOfLines={1}
                 style={{
                   fontSize: 11,
-                  fontWeight: '600',
+                  fontFamily: IOS_FONTS.regular,
                   color: theme.text.secondary,
                   marginTop: 2,
                 }}

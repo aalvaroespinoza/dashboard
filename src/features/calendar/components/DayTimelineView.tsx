@@ -6,7 +6,7 @@
 import React, { useRef, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { UnifiedCalendarItem } from '../../../types';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { CurrentTimeIndicator } from './CurrentTimeIndicator';
 import { TimeBlockItem } from './TimeBlockItem';
 
@@ -167,7 +167,7 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
                 <Text
                   style={{
                     fontSize: 11,
-                    fontWeight: '600',
+                    fontFamily: IOS_FONTS.mono,
                     color: theme.text.quaternary || theme.text.tertiary,
                   }}
                 >

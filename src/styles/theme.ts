@@ -68,6 +68,16 @@ export const IOS_SPRINGS = {
   gentle: { damping: 26, stiffness: 140, mass: 1 },
 };
 
+export const IOS_FONTS = {
+  regular: 'SF-Pro-Display-Regular',
+  semibold: 'SF-Pro-Display-Semibold',
+  bold: 'SF-Pro-Display-Bold',
+  roundedMedium: 'SF-Pro-Rounded-Medium',
+  rounded: 'SF-Pro-Rounded-Bold',
+  roundedHeavy: 'SF-Pro-Rounded-Heavy',
+  mono: 'JetBrainsMono-Bold',
+};
+
 export const getIosTheme = (isDark: boolean) => {
   return isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 };

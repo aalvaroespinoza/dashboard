@@ -21,7 +21,7 @@ import { HabitItem, HabitLogItem } from '../../../types';
 import { useHabitsStore, ActiveTimerState } from '../stores/useHabitsStore';
 import { GritHabitOptionsMenu } from './GritHabitOptionsMenu';
 import { AppleEmoji } from '../../../components/ui/AppleEmoji';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface GritHabitCardProps {
@@ -189,8 +189,8 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
               />
               <Text
                 style={{
-                  fontSize: 11,
-                  fontWeight: '900',
+                  fontSize: 12,
+                  fontFamily: IOS_FONTS.roundedHeavy,
                   color: isStreakNegative ? '#FF3B30' : '#34C759',
                 }}
               >
@@ -268,7 +268,7 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
                 numberOfLines={1}
                 style={{
                   fontSize: 15,
-                  fontWeight: '900',
+                  fontFamily: IOS_FONTS.bold,
                   color: isCompleted ? theme.text.secondary : theme.text.primary,
                   textDecorationLine: isCompleted ? 'line-through' : 'none',
                 }}
@@ -366,9 +366,8 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
             <Text
               style={{
                 fontSize: 14,
-                fontWeight: '900',
+                fontFamily: IOS_FONTS.mono,
                 color: '#FF3B30',
-                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
               }}
             >
               {formatTimerDigits(liveSeconds)}

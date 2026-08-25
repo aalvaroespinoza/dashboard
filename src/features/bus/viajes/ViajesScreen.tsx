@@ -224,6 +224,19 @@ export const ViajesScreen: React.FC = () => {
         visible={isAllSchedulesModalOpen}
         onClose={() => setIsAllSchedulesModalOpen(false)}
         diaSeleccionado={diaSeleccionado}
+        onSelectDay={setDiaSeleccionado}
+        onSelectSchedule={(entry, sentido) => {
+          if (sentido === 'ida') {
+            setOverrideIda(entry);
+          } else {
+            setOverrideVuelta(entry);
+          }
+          setIsAllSchedulesModalOpen(false);
+        }}
+        activeIdaEntry={overrideIda || recomendacionIda?.recomendado || null}
+        activeVueltaEntry={overrideVuelta || recomendacionVuelta?.recomendado || null}
+        horaActualHHMM={horaActualHHMM}
+        isToday={isToday}
         isDark={isDark}
       />
     </ScrollView>

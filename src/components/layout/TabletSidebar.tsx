@@ -1,20 +1,15 @@
-/**
- * TabletSidebar.tsx
- * Navigation Rail colapsable para Tablet / iPadOS.
- * Modo colapsado: 68px con botones cuadrados de 44px perfectamente centrados (sin solapamientos).
- * Modo expandido: 220px con íconos, títulos de módulo y badges.
- */
-
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Image } from 'react-native';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
-  Easing,
+  withSpring,
   interpolate,
   Extrapolation,
+  runOnJS,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -35,13 +30,12 @@ import { useAppStore } from '../../store/useAppStore';
 import { useTasksStore } from '../../store/useTasksStore';
 import { useSyncStore } from '../../store/useSyncStore';
 import { ActiveModule } from '../../types';
-import { IOS_COLORS } from '../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../styles/theme';
 import { GlassContainer } from '../common/GlassContainer';
 
 const RAIL_COLLAPSED_WIDTH = 68;
 const RAIL_EXPANDED_WIDTH = 220;
-const ANIMATION_DURATION = 260;
-const ANIMATION_EASING = Easing.bezier(0.25, 0.1, 0.25, 1);
+const RAIL_DELTA_WIDTH = RAIL_EXPANDED_WIDTH - RAIL_COLLAPSED_WIDTH; // 152px
 
 export const TabletSidebar: React.FC = () => {
   const {
@@ -65,13 +59,73 @@ export const TabletSidebar: React.FC = () => {
 
   // Valor animado Reanimated: 0 = colapsado (68px), 1 = expandido (220px)
   const expandProgress = useSharedValue(isSidebarCollapsed ? 0 : 1);
+  const startProgress = useSharedValue(isSidebarCollapsed ? 0 : 1);
 
   React.useEffect(() => {
-    expandProgress.value = withTiming(
-      isSidebarCollapsed ? 0 : 1,
-      { duration: ANIMATION_DURATION, easing: ANIMATION_EASING }
-    );
+    expandProgress.value = withSpring(isSidebarCollapsed ? 0 : 1, {
+      damping: 22,
+      stiffness: 240,
+      mass: 0.9,
+    });
   }, [isSidebarCollapsed]);
+
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+
+  const syncStoreCollapse = (collapsed: boolean) => {
+    if (useAppStore.getState().isSidebarCollapsed !== collapsed) {
+      useAppStore.setState({ isSidebarCollapsed: collapsed });
+    }
+  };
+
+  // Gesto Pan con filtros direccionales estrictos para evitar disparos accidentales
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-12, 12])
+    .onStart(() => {
+      'worklet';
+      startProgress.value = expandProgress.value;
+    })
+    .onUpdate((e) => {
+      'worklet';
+      const delta = e.translationX / RAIL_DELTA_WIDTH;
+      expandProgress.value = Math.max(0, Math.min(1, startProgress.value + delta));
+    })
+    .onEnd((e) => {
+      'worklet';
+      const wasCollapsed = startProgress.value < 0.5;
+      let shouldExpand = false;
+
+      if (wasCollapsed) {
+        // Estaba colapsado: se expande si se arrastró más del 35% a la derecha o con velocidad positiva
+        shouldExpand = expandProgress.value > 0.35 || e.velocityX > 450;
+      } else {
+        // Estaba expandido: se colapsa si se arrastró más del 35% a la izquierda o con velocidad negativa
+        shouldExpand = !(expandProgress.value < 0.65 || e.velocityX < -450);
+      }
+
+      const targetValue = shouldExpand ? 1 : 0;
+      const willBeCollapsed = !shouldExpand;
+
+      expandProgress.value = withSpring(
+        targetValue,
+        {
+          damping: 22,
+          stiffness: 240,
+          mass: 0.9,
+        },
+        (finished) => {
+          if (finished) {
+            runOnJS(syncStoreCollapse)(willBeCollapsed);
+          }
+        }
+      );
+
+      if (wasCollapsed !== willBeCollapsed) {
+        runOnJS(triggerHaptic)();
+      }
+    });
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
     width: interpolate(
@@ -111,17 +165,18 @@ export const TabletSidebar: React.FC = () => {
   ];
 
   return (
-    <Animated.View
-      style={[
-        animatedContainerStyle,
-        {
-          height: '100%',
-          borderRightWidth: 1,
-          borderRightColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
-          zIndex: 60,
-        },
-      ]}
-    >
+    <GestureDetector gesture={panGesture}>
+      <Animated.View
+        style={[
+          animatedContainerStyle,
+          {
+            height: '100%',
+            borderRightWidth: 1,
+            borderRightColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+            zIndex: 60,
+          },
+        ]}
+      >
       <GlassContainer
         isDark={isDark}
         intensity={40}
@@ -446,5 +501,6 @@ export const TabletSidebar: React.FC = () => {
         </View>
       </GlassContainer>
     </Animated.View>
+  </GestureDetector>
   );
 };

@@ -1,68 +1,57 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { Calendar as CalendarIcon, ChevronRight, Clock, MapPin } from 'lucide-react-native';
+/**
+ * HomeCalendarWidget.tsx
+ * Widget de Próximos Eventos del Dashboard con diseño Split 50/50:
+ * - Lado Izquierdo: Lista textual cronológica de eventos (Hoy / Mañana) con dots de color y ubicación.
+ * - Lado Derecho: Mini grilla semanal con selector de días y bloques de tiempo pastel interactivos.
+ */
+
+import React, { useState, useMemo } from 'react';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+import { ChevronRight, Calendar as CalendarIcon, MapPin, Clock } from 'lucide-react-native';
 import { useCalendarStore } from '../../../store/useCalendarStore';
 import { useAppStore } from '../../../store/useAppStore';
-import { SpecularCard } from '../../../components/common/SpecularCard';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
+import { createShadow } from '../../../styles/shadows';
 
 interface HomeCalendarWidgetProps {
   isDark?: boolean;
 }
 
+const WEEK_DAYS = [
+  { short: 'LUN', num: '19', fullDate: '2026-08-24' },
+  { short: 'MAR', num: '20', fullDate: '2026-08-25', isCurrent: true },
+  { short: 'MIÉ', num: '21', fullDate: '2026-08-26' },
+  { short: 'JUE', num: '22', fullDate: '2026-08-27' },
+  { short: 'VIE', num: '23', fullDate: '2026-08-28' },
+  { short: 'SÁB', num: '24', fullDate: '2026-08-29' },
+  { short: 'DOM', num: '25', fullDate: '2026-08-30' },
+];
+
 export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(({ isDark = true }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const { setActiveModule } = useAppStore();
 
+  const [selectedDayIndex, setSelectedDayIndex] = useState(1); // MAR 20
   const events = useCalendarStore((state) => state.events);
 
-  const displayEvents = events.length > 0 ? events.slice(0, 3) : [
-    {
-      id: 'evt-1',
-      title: 'Clase de Sistemas Operativos (UTN)',
-      description: 'Aula 304 - Campus Virtual',
-      location: 'Córdoba',
-      start_date: '2026-08-24T14:30:00',
-      end_date: '2026-08-24T18:00:00',
-      color: '#FF9500',
-    },
-    {
-      id: 'evt-2',
-      title: 'Entrenamiento físico',
-      description: 'Rutina en Despeñaderos',
-      location: 'Gimnasio Central',
-      start_date: '2026-08-24T19:00:00',
-      end_date: '2026-08-24T20:15:00',
-      color: '#34C759',
-    },
-  ];
-
   return (
-    <SpecularCard isDark={isDark} padding={22}>
+    <View
+      style={{
+        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+        borderRadius: 24,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.9)',
+        gap: 14,
+        ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.22 : 0.03, 8),
+      }}
+    >
       {/* Header del Widget */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              backgroundColor: 'rgba(52, 199, 89, 0.16)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <CalendarIcon size={19} color="#34C759" strokeWidth={2.5} />
-          </View>
-          <View>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.5 }}>
-              Agenda de Hoy
-            </Text>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text.secondary }}>
-              Eventos y clases
-            </Text>
-          </View>
-        </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.4 }}>
+          Próximos eventos
+        </Text>
 
         <Pressable
           onPress={() => setActiveModule('calendar')}
@@ -70,80 +59,251 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
             opacity: pressed ? 0.7 : 1,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 10,
             gap: 2,
           })}
         >
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#34C759' }}>
-            Calendario
+          <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.semibold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
+            Ver calendario
           </Text>
-          <ChevronRight size={13} color="#34C759" />
+          <ChevronRight size={13} color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} />
         </Pressable>
       </View>
 
-      {/* Lista de Eventos con Bloques Pastel y Bordes Especulares */}
-      <View style={{ gap: 10 }}>
-        {displayEvents.map((evt) => {
-          const startTime = evt.start_date.includes('T') ? evt.start_date.split('T')[1].slice(0, 5) : '14:30';
-          const endTime = evt.end_date.includes('T') ? evt.end_date.split('T')[1].slice(0, 5) : '18:00';
-          const eventColor = evt.color || '#34C759';
+      {/* Contenedor Split 50/50 */}
+      <View style={{ flexDirection: 'row', gap: 16, alignItems: 'stretch' }}>
+        {/* Lado Izquierdo (~46%): Lista Textual de Eventos */}
+        <View style={{ flex: 1, gap: 12, borderRightWidth: 1, borderRightColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7', paddingRight: 14 }}>
+          {/* Sección HOY */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.bold, color: theme.text.tertiary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              HOY
+            </Text>
 
-          return (
-            <View
-              key={evt.id}
-              style={{
-                flexDirection: 'row',
-                borderRadius: 16,
-                backgroundColor: isDark ? '#242426' : '#F9FAFB',
-                borderWidth: 1,
-                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.8)',
-                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#E5E5EA',
-                borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
-                borderRightColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Barra de Color Izquierda */}
-              <View style={{ width: 5, backgroundColor: eventColor }} />
-
-              {/* Contenido */}
-              <View style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 14, gap: 4 }}>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    fontSize: 14,
-                    fontWeight: '800',
-                    color: theme.text.primary,
-                  }}
-                >
-                  {evt.title}
+            {/* Evento 1 */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light, marginTop: 5 }} />
+              <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 44 }}>
+                14:30
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+                  Clase de Sistemas Operativos
                 </Text>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 2 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Clock size={12} color={theme.text.secondary} />
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.secondary }}>
-                      {startTime} - {endTime}
-                    </Text>
-                  </View>
-
-                  {evt.location && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <MapPin size={12} color={theme.text.tertiary} />
-                      <Text style={{ fontSize: 11, color: theme.text.tertiary, fontWeight: '600' }} numberOfLines={1}>
-                        {evt.location}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+                <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                  UTN · Aula 3
+                </Text>
               </View>
             </View>
-          );
-        })}
+
+            {/* Evento 2 */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light, marginTop: 5 }} />
+              <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 44 }}>
+                19:00
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+                  Entrenamiento físico
+                </Text>
+                <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                  Gimnasio Central
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Sección MAÑANA */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.bold, color: theme.text.tertiary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+              MAÑANA
+            </Text>
+
+            {/* Evento 3 */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light, marginTop: 5 }} />
+              <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 44 }}>
+                11:00
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+                  Reunión de proyecto
+                </Text>
+                <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                  Google Meet
+                </Text>
+              </View>
+            </View>
+
+            {/* Evento 4 */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isDark ? APPLE_ACCENT.teal.dark : APPLE_ACCENT.teal.light, marginTop: 5 }} />
+              <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 44 }}>
+                17:00
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1} style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+                  Cumpleaños de Ana
+                </Text>
+                <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                  Cena en lo de Fer
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Lado Derecho (~54%): Mini Grilla Semanal con Time-Blocking */}
+        <View style={{ flex: 1.25, gap: 8 }}>
+          {/* Selector de Días Semanales */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            {WEEK_DAYS.map((day, idx) => {
+              const isSelected = selectedDayIndex === idx;
+              return (
+                <Pressable
+                  key={day.short}
+                  onPress={() => setSelectedDayIndex(idx)}
+                  style={{ alignItems: 'center', gap: 2 }}
+                >
+                  <Text style={{ fontSize: 9, fontFamily: IOS_FONTS.bold, color: isSelected ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light) : theme.text.tertiary }}>
+                    {day.short}
+                  </Text>
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: isSelected ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light) : 'transparent',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontFamily: IOS_FONTS.bold,
+                        color: isSelected ? '#FFFFFF' : theme.text.primary,
+                      }}
+                    >
+                      {day.num}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Mini Franja de Horas con Bloques Pastel */}
+          <View
+            style={{
+              height: 148,
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#F9FAFB',
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: theme.border,
+              padding: 6,
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Líneas Horarias */}
+            {['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map((hour, i) => (
+              <View key={hour} style={{ flexDirection: 'row', alignItems: 'center', height: 24, gap: 4 }}>
+                <Text style={{ fontSize: 9, fontFamily: IOS_FONTS.regular, color: theme.text.tertiary, width: 28 }}>
+                  {hour}
+                </Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA' }} />
+              </View>
+            ))}
+
+            {/* Bloque 1: Reunión equipo 10:00 - 11:00 (Pastel Azul) */}
+            <View
+              style={{
+                position: 'absolute',
+                top: 24,
+                left: 36,
+                right: 80,
+                height: 22,
+                backgroundColor: isDark ? 'rgba(10, 132, 255, 0.25)' : 'rgba(0, 122, 255, 0.15)',
+                borderRadius: 6,
+                borderLeftWidth: 3,
+                borderLeftColor: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
+                paddingHorizontal: 6,
+                justifyContent: 'center',
+              }}
+            >
+              <Text numberOfLines={1} style={{ fontSize: 9, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
+                Reunión equipo · 10:00
+              </Text>
+            </View>
+
+            {/* Bloque 2: Diseñar mockups 11:00 - 13:00 (Pastel Verde) */}
+            <View
+              style={{
+                position: 'absolute',
+                top: 48,
+                left: 36,
+                right: 40,
+                height: 22,
+                backgroundColor: isDark ? 'rgba(48, 209, 88, 0.25)' : 'rgba(52, 199, 89, 0.15)',
+                borderRadius: 6,
+                borderLeftWidth: 3,
+                borderLeftColor: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
+                paddingHorizontal: 6,
+                justifyContent: 'center',
+              }}
+            >
+              <Text numberOfLines={1} style={{ fontSize: 9, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light }}>
+                Diseñar mockups · 11:00
+              </Text>
+            </View>
+
+            {/* Bloque 3: Sistemas Operativos 14:30 - 18:00 (Pastel Púrpura) */}
+            <View
+              style={{
+                position: 'absolute',
+                top: 76,
+                left: 36,
+                right: 10,
+                height: 38,
+                backgroundColor: isDark ? 'rgba(191, 90, 242, 0.25)' : 'rgba(175, 82, 222, 0.15)',
+                borderRadius: 6,
+                borderLeftWidth: 3,
+                borderLeftColor: isDark ? APPLE_ACCENT.purple.dark : APPLE_ACCENT.purple.light,
+                paddingHorizontal: 6,
+                justifyContent: 'center',
+              }}
+            >
+              <Text numberOfLines={1} style={{ fontSize: 10, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.purple.dark : APPLE_ACCENT.purple.light }}>
+                Clase Sistemas Operativos (UTN)
+              </Text>
+              <Text style={{ fontSize: 8, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                14:30 - 18:00 · Aula 3
+              </Text>
+            </View>
+
+            {/* Bloque 4: Entrenamiento físico 19:00 (Pastel Naranja) */}
+            <View
+              style={{
+                position: 'absolute',
+                top: 118,
+                left: 36,
+                right: 60,
+                height: 22,
+                backgroundColor: isDark ? 'rgba(255, 159, 10, 0.25)' : 'rgba(255, 149, 0, 0.15)',
+                borderRadius: 6,
+                borderLeftWidth: 3,
+                borderLeftColor: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light,
+                paddingHorizontal: 6,
+                justifyContent: 'center',
+              }}
+            >
+              <Text numberOfLines={1} style={{ fontSize: 9, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light }}>
+                Entrenamiento físico · 19:00
+              </Text>
+            </View>
+          </View>
+        </View>
       </View>
-    </SpecularCard>
+    </View>
   );
 });

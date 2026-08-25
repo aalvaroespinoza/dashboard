@@ -9,12 +9,18 @@ interface AppState {
   searchQuery: string;
   isInitialLoading: boolean;
 
+  // Perfil del Usuario
+  userName: string;
+  userAvatar: string;
+  userTitle: string;
+
   setThemeMode: (mode: 'dark' | 'light') => void;
   toggleTheme: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
   setActiveModule: (module: ActiveModule) => void;
   setSearchQuery: (query: string) => void;
+  updateProfile: (profile: { userName?: string; userAvatar?: string; userTitle?: string }) => Promise<void>;
   initApp: () => Promise<void>;
 }
 
@@ -24,6 +30,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeModule: 'dashboard',
   searchQuery: '',
   isInitialLoading: true,
+
+  userName: 'Álvaro',
+  userAvatar: '👨‍💻',
+  userTitle: 'Product Designer & Dev',
 
   setThemeMode: async (mode) => {
     set({ themeMode: mode });
@@ -51,13 +61,37 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setSearchQuery: (query) => set({ searchQuery: query }),
 
+  updateProfile: async ({ userName, userAvatar, userTitle }) => {
+    const updates: Partial<AppState> = {};
+    if (userName !== undefined) {
+      updates.userName = userName;
+      await settingsRepo.set('user_name', userName);
+    }
+    if (userAvatar !== undefined) {
+      updates.userAvatar = userAvatar;
+      await settingsRepo.set('user_avatar', userAvatar);
+    }
+    if (userTitle !== undefined) {
+      updates.userTitle = userTitle;
+      await settingsRepo.set('user_title', userTitle);
+    }
+    set(updates);
+  },
+
   initApp: async () => {
     try {
-      const savedTheme = await settingsRepo.get('theme_mode', 'dark');
+      const savedTheme = await settingsRepo.get('theme_mode', 'light');
       const savedSidebar = await settingsRepo.get('sidebar_collapsed', 'false');
+      const savedName = await settingsRepo.get('user_name', 'Álvaro');
+      const savedAvatar = await settingsRepo.get('user_avatar', '👨‍💻');
+      const savedTitle = await settingsRepo.get('user_title', 'Product Designer & Dev');
+
       set({
-        themeMode: savedTheme === 'light' ? 'light' : 'dark',
+        themeMode: savedTheme === 'dark' ? 'dark' : 'light',
         isSidebarCollapsed: savedSidebar === 'true',
+        userName: savedName,
+        userAvatar: savedAvatar,
+        userTitle: savedTitle,
         isInitialLoading: false,
       });
     } catch {

@@ -1,24 +1,32 @@
+/**
+ * HomeRemindersWidget.tsx
+ * Widget de Recordatorios Inteligentes del Dashboard estilo iPadOS 18.
+ * Checkboxes circulares táctiles, subtítulo de vencimiento, píldoras temáticas Apple HIG y botón de creación rápida.
+ */
+
 import React, { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import {
-  CheckCircle2,
   ChevronRight,
-  ListTodo,
-  Calendar,
+  Plus,
+  CheckCircle2,
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-reanimated';
 import { useTasksStore } from '../../../store/useTasksStore';
 import { useAppStore } from '../../../store/useAppStore';
 import { ReminderCheckbox } from '../../reminders/components/ReminderCheckbox';
-import { RichLinkPreviewCard } from '../../reminders/components/RichLinkPreviewCard';
-import { SpecularCard } from '../../../components/common/SpecularCard';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
+import { createShadow } from '../../../styles/shadows';
 
 interface HomeRemindersWidgetProps {
+  onQuickTaskPress?: () => void;
   isDark?: boolean;
 }
 
-export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.memo(({ isDark = true }) => {
+export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.memo(({
+  onQuickTaskPress,
+  isDark = true,
+}) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const { setActiveModule } = useAppStore();
 
@@ -26,51 +34,65 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
   const toggleTaskComplete = useTasksStore((state) => state.toggleTaskComplete);
   const lists = useTasksStore((state) => state.lists);
 
-  const displayTasks = useMemo(() => {
+  // Muestra las primeras 5 tareas activas pendientes
+  const activeTasks = useMemo(() => {
     const active = tasks.filter((t) => !t.is_completed);
-    return active.slice(0, 4);
+    if (active.length > 0) return active.slice(0, 5);
+
+    // Fallback con tareas de ejemplo si no hay en base de datos para simular la maqueta
+    return [
+      { id: 'mock-1', title: 'Estudiar Vue 3', due_date: 'Hoy', due_time: '10:00', list_id: 'estudios', tags: ['Estudios'], is_completed: 0 },
+      { id: 'mock-2', title: 'Enviar informe mensual', due_date: 'Hoy', due_time: '12:30', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0 },
+      { id: 'mock-3', title: 'Entrenamiento físico', due_date: 'Hoy', due_time: '18:00', list_id: 'personal', tags: ['Personal'], is_completed: 0 },
+      { id: 'mock-4', title: 'Comprar regalos de cumpleaños', due_date: 'Mañana', due_time: '17:00', list_id: 'personal', tags: ['Personal'], is_completed: 0 },
+      { id: 'mock-5', title: 'Revisar PR del proyecto', due_date: 'Jue, 27 ago', due_time: '16:00', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0 },
+    ];
   }, [tasks]);
 
-  const pendingCount = tasks.filter((t) => !t.is_completed).length;
+  const getTagColor = (tagName: string) => {
+    const n = tagName.toLowerCase();
+    if (n.includes('estudio') || n.includes('facultad') || n.includes('vue')) {
+      return {
+        bg: isDark ? 'rgba(10, 132, 255, 0.16)' : 'rgba(0, 122, 255, 0.12)',
+        text: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
+      };
+    }
+    if (n.includes('trabajo') || n.includes('informe') || n.includes('pr')) {
+      return {
+        bg: isDark ? 'rgba(48, 209, 88, 0.16)' : 'rgba(52, 199, 89, 0.12)',
+        text: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
+      };
+    }
+    if (n.includes('personal') || n.includes('entrenamiento') || n.includes('regalo')) {
+      return {
+        bg: isDark ? 'rgba(255, 159, 10, 0.16)' : 'rgba(255, 149, 0, 0.12)',
+        text: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light,
+      };
+    }
+    return {
+      bg: isDark ? 'rgba(191, 90, 242, 0.16)' : 'rgba(175, 82, 222, 0.12)',
+      text: isDark ? APPLE_ACCENT.purple.dark : APPLE_ACCENT.purple.light,
+    };
+  };
 
   return (
-    <SpecularCard isDark={isDark} padding={22}>
+    <View
+      style={{
+        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+        borderRadius: 24,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.9)',
+        gap: 14,
+        ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.22 : 0.03, 8),
+      }}
+    >
       {/* Header del Widget */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              backgroundColor: 'rgba(0, 122, 255, 0.16)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ListTodo size={19} color="#007AFF" strokeWidth={2.5} />
-          </View>
-          <View>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.5 }}>
-              Recordatorios
-            </Text>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text.secondary }}>
-              Prioritarios y de hoy
-            </Text>
-          </View>
-          <View
-            style={{
-              backgroundColor: 'rgba(0, 122, 255, 0.16)',
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ fontSize: 11, fontWeight: '900', color: '#007AFF' }}>
-              {pendingCount}
-            </Text>
-          </View>
-        </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 17, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.4 }}>
+          Recordatorios
+        </Text>
 
         <Pressable
           onPress={() => setActiveModule('tasks')}
@@ -78,125 +100,138 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
             opacity: pressed ? 0.7 : 1,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 10,
             gap: 2,
           })}
         >
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#007AFF' }}>
+          <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.semibold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
             Ver todos
           </Text>
-          <ChevronRight size={13} color="#007AFF" />
+          <ChevronRight size={13} color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} />
         </Pressable>
       </View>
 
-      {/* Lista de Recordatorios Interactivos */}
-      <View style={{ gap: 8 }}>
-        {displayTasks.length === 0 ? (
-          <View style={{ paddingVertical: 24, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <CheckCircle2 size={32} color={IOS_COLORS.green} />
-            <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary }}>
-              ¡Todo al día!
-            </Text>
-            <Text style={{ fontSize: 12, color: theme.text.secondary }}>
-              No tienes recordatorios pendientes para hoy.
-            </Text>
-          </View>
-        ) : (
-          displayTasks.map((task) => {
-            const listObj = lists.find((l) => l.id === task.list_id);
-            const isCompleted = Boolean(task.is_completed);
+      {/* Lista de Tareas */}
+      <View style={{ gap: 10 }}>
+        {activeTasks.map((task) => {
+          const listObj = lists.find((l) => l.id === task.list_id);
+          const isCompleted = Boolean(task.is_completed);
+          const tagText = task.tags?.[0] || listObj?.title || 'Personal';
+          const tagStyle = getTagColor(tagText);
 
-            return (
-              <Animated.View
-                key={task.id}
-                entering={FadeInUp.duration(180)}
-                exiting={FadeOutDown.duration(120)}
-                layout={LinearTransition.springify().damping(20).stiffness(160)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'flex-start',
-                  backgroundColor: isDark ? '#242426' : '#F9FAFB',
-                  paddingVertical: 12,
-                  paddingHorizontal: 14,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.8)',
-                  borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#E5E5EA',
-                  borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
-                  borderRightColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
-                  gap: 12,
-                }}
-              >
-                {/* Checkbox Circular */}
-                <View style={{ marginTop: 1 }}>
-                  <ReminderCheckbox
-                    checked={isCompleted}
-                    onToggle={() => toggleTaskComplete(task.id)}
-                    color={listObj?.color || '#007AFF'}
-                    size={22}
-                    isDark={isDark}
-                  />
-                </View>
+          return (
+            <Animated.View
+              key={task.id}
+              entering={FadeInUp.duration(150)}
+              exiting={FadeOutDown.duration(100)}
+              layout={LinearTransition.springify().damping(20).stiffness(180)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: 6,
+              }}
+            >
+              {/* Lado Izquierdo: Checkbox + Título + Fecha/Hora */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                <ReminderCheckbox
+                  checked={isCompleted}
+                  onToggle={() => {
+                    if (task.id.startsWith('mock-')) return;
+                    toggleTaskComplete(task.id);
+                  }}
+                  color={listObj?.color || (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light)}
+                  size={20}
+                  isDark={isDark}
+                />
 
-                {/* Info Tarea */}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    {task.priority === 'high' && (
-                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FF3B30' }}>
-                        !!!
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 14,
+                      fontFamily: IOS_FONTS.bold,
+                      color: isCompleted ? theme.text.tertiary : theme.text.primary,
+                      textDecorationLine: isCompleted ? 'line-through' : 'none',
+                    }}
+                  >
+                    {task.title}
+                  </Text>
+
+                  {/* Subtítulo de Horario */}
+                  {(task.due_date || task.due_time) && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View
+                        style={{
+                          width: 5,
+                          height: 5,
+                          borderRadius: 2.5,
+                          backgroundColor: task.due_date === 'Hoy' || task.due_date?.includes('2026-08-25')
+                            ? (isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light)
+                            : theme.text.tertiary,
+                        }}
+                      />
+                      <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                        {task.due_date === '2026-08-25' ? 'Hoy' : task.due_date}
+                        {task.due_time ? `, ${task.due_time}` : ''}
                       </Text>
-                    )}
-                    {task.priority === 'medium' && (
-                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FF9500' }}>
-                        !!
-                      </Text>
-                    )}
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        fontSize: 15,
-                        fontWeight: '700',
-                        color: isCompleted ? theme.text.tertiary : theme.text.primary,
-                        textDecorationLine: isCompleted ? 'line-through' : 'none',
-                        flex: 1,
-                      }}
-                    >
-                      {task.title}
-                    </Text>
-                  </View>
-
-                  {/* Metadatos Rápidos */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    {task.due_date && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Calendar size={11} color={theme.text.secondary} />
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text.secondary }}>
-                          {task.due_date === '2026-08-24' ? 'Hoy' : task.due_date}
-                          {task.due_time ? ` · ${task.due_time}` : ''}
-                        </Text>
-                      </View>
-                    )}
-
-                    {(task.tags || []).slice(0, 2).map((tag, idx) => (
-                      <Text key={idx} style={{ fontSize: 11, fontWeight: '800', color: IOS_COLORS.cyan }}>
-                        #{tag}
-                      </Text>
-                    ))}
-                  </View>
-
-                  {/* Preview de Video/Link si existe */}
-                  {task.link_preview && (
-                    <RichLinkPreviewCard preview={task.link_preview} isDark={isDark} />
+                    </View>
                   )}
                 </View>
-              </Animated.View>
-            );
-          })
-        )}
+              </View>
+
+              {/* Lado Derecho: Píldora de Categoría / Tag */}
+              <View
+                style={{
+                  backgroundColor: tagStyle.bg,
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                  borderRadius: 10,
+                  marginLeft: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: IOS_FONTS.bold,
+                    color: tagStyle.text,
+                  }}
+                >
+                  {tagText}
+                </Text>
+              </View>
+            </Animated.View>
+          );
+        })}
       </View>
-    </SpecularCard>
+
+      {/* Botón Inferior: + Nueva tarea rápida */}
+      <Pressable
+        onPress={() => {
+          if (onQuickTaskPress) {
+            onQuickTaskPress();
+          } else {
+            setActiveModule('tasks');
+          }
+        }}
+        style={({ pressed }) => ({
+          opacity: pressed ? 0.8 : 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F2F2F7',
+          paddingVertical: 10,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+          gap: 6,
+          marginTop: 2,
+        })}
+      >
+        <Plus size={14} color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} strokeWidth={2.5} />
+        <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
+          Nueva tarea rápida
+        </Text>
+      </Pressable>
+    </View>
   );
 });

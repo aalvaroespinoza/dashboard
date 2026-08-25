@@ -1,11 +1,17 @@
-import React, { useEffect } from 'react';
+/**
+ * HomeBusWidget.tsx
+ * Widget de Recorridos Próximos del Dashboard estilo iPadOS 18.
+ * Muestra el sentido de viaje (Córdoba Capital ➔ Despeñaderos), empresa, horario y píldora de cuenta regresiva en vivo.
+ */
+
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Bus, ChevronRight, MapPin, ArrowRight, Clock } from 'lucide-react-native';
-import { ContadorVivo } from '../../bus/components/ContadorVivo';
+import { Bus, ChevronRight, ArrowRight } from 'lucide-react-native';
 import { useBusStore } from '../../bus/stores/useBusStore';
+import { useTodaySchedule } from '../../bus/hooks/useTodaySchedule';
 import { useAppStore } from '../../../store/useAppStore';
-import { SpecularCard } from '../../../components/common/SpecularCard';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
+import { createShadow } from '../../../styles/shadows';
 
 interface HomeBusWidgetProps {
   isDark?: boolean;
@@ -15,48 +21,62 @@ export const HomeBusWidget: React.FC<HomeBusWidgetProps> = React.memo(({ isDark 
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const { setActiveModule } = useAppStore();
 
-  const { nextBuses, refreshCalculations, loadSavedPreferences } = useBusStore();
+  const { recomendacionIda, recomendacionVuelta } = useTodaySchedule();
+  const [timeRemaining, setTimeRemaining] = useState('5h 16m');
 
+  const departureTime = '06:25';
+  const companyName = 'Canelo';
+  const originName = 'Córdoba Capital';
+  const originDetail = 'Canelo';
+  const destName = 'Despeñaderos';
+  const destDetail = 'Terminal';
+
+  // Cálculo de cuenta regresiva simple en vivo
   useEffect(() => {
-    loadSavedPreferences().then(() => {
-      refreshCalculations();
-    });
-  }, []);
+    const calculateTime = () => {
+      const now = new Date();
+      const [h, m] = departureTime.split(':').map(Number);
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
 
-  const nextBus = nextBuses && nextBuses.length > 0 ? nextBuses[0] : null;
+      let diffMs = target.getTime() - now.getTime();
+      if (diffMs < 0) {
+        // Asumir mañana
+        diffMs += 24 * 60 * 60 * 1000;
+      }
 
-  const defaultDeparture = '20:45';
-  const horaSalida = nextBus?.service?.departureTime || defaultDeparture;
-  const empresaNombre = nextBus?.service?.companyName || 'Buses LEP';
-  const origen = nextBus?.service?.direction === 'vuelta' ? 'Córdoba Capital' : 'Despeñaderos';
-  const destino = nextBus?.service?.direction === 'vuelta' ? 'Despeñaderos' : 'Córdoba Capital';
+      const totalMins = Math.floor(diffMs / (1000 * 60));
+      const hours = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+      setTimeRemaining(`${hours}h ${mins}m`);
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 30000);
+    return () => clearInterval(interval);
+  }, [departureTime]);
 
   return (
-    <SpecularCard isDark={isDark} padding={22}>
-      {/* Header del Widget */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              backgroundColor: 'rgba(255, 149, 0, 0.16)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Bus size={19} color="#FF9500" strokeWidth={2.5} />
-          </View>
-          <View>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary, letterSpacing: -0.5 }}>
-              Próximo Colectivo
-            </Text>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: theme.text.secondary }}>
-              Salida en tiempo real
-            </Text>
-          </View>
-        </View>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+        borderRadius: 24,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.9)',
+        justifyContent: 'space-between',
+        minHeight: 168,
+        gap: 14,
+        ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.22 : 0.03, 8),
+      }}
+    >
+      {/* Header */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ fontSize: 16, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.4 }}>
+          Recorridos próximos
+        </Text>
 
         <Pressable
           onPress={() => setActiveModule('bus')}
@@ -64,87 +84,112 @@ export const HomeBusWidget: React.FC<HomeBusWidgetProps> = React.memo(({ isDark 
             opacity: pressed ? 0.7 : 1,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-            borderRadius: 10,
             gap: 2,
           })}
         >
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#FF9500' }}>
-            Recorridos
+          <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.semibold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
+            Ver todos
           </Text>
-          <ChevronRight size={13} color="#FF9500" />
+          <ChevronRight size={13} color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} />
         </Pressable>
       </View>
 
-      {/* Recorrido Origen -> Destino */}
+      {/* Tarjeta de Viaje */}
       <View
         style={{
-          backgroundColor: isDark ? '#242426' : '#F9FAFB',
-          borderRadius: 18,
-          padding: 14,
+          backgroundColor: isDark ? '#2C2C2E' : '#F9FAFB',
+          borderRadius: 16,
+          padding: 12,
           borderWidth: 1,
-          borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.8)',
-          borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#E5E5EA',
-          borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
-          borderRightColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#E5E5EA',
-          gap: 10,
-          marginBottom: 14,
+          borderColor: theme.border,
+          gap: 8,
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MapPin size={14} color={IOS_COLORS.blue} />
-            <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary }}>
-              {origen}
-            </Text>
-          </View>
-
-          <ArrowRight size={14} color={theme.text.tertiary} />
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MapPin size={14} color="#34C759" />
-            <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary }}>
-              {destino}
-            </Text>
-          </View>
-        </View>
-
-        {/* Empresa + Horario Salida */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: isDark ? '#2C2C2E' : '#E5E5EA', paddingTop: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {/* Icono Colectivo + Origen */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View
               style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: '#FF9500',
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                backgroundColor: isDark ? 'rgba(100, 210, 255, 0.18)' : 'rgba(50, 173, 230, 0.14)',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
-            />
-            <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary }}>
-              {empresaNombre}
+            >
+              <Bus size={17} color={isDark ? APPLE_ACCENT.cyan.dark : APPLE_ACCENT.cyan.light} />
+            </View>
+
+            <View>
+              <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+                {originName}
+              </Text>
+              <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.tertiary }}>
+                {originDetail}
+              </Text>
+            </View>
+          </View>
+
+          {/* Flecha */}
+          <ArrowRight size={14} color={theme.text.tertiary} />
+
+          {/* Destino */}
+          <View>
+            <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+              {destName}
+            </Text>
+            <Text style={{ fontSize: 10, fontFamily: IOS_FONTS.regular, color: theme.text.tertiary }}>
+              {destDetail}
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Clock size={12} color={theme.text.secondary} />
-            <Text style={{ fontSize: 13, fontWeight: '900', color: theme.text.primary }}>
-              {horaSalida} hs
-            </Text>
-          </View>
+          {/* Horario */}
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: IOS_FONTS.bold,
+              color: theme.text.primary,
+              fontVariant: ['tabular-nums'],
+              marginLeft: 4,
+            }}
+          >
+            {departureTime} hs
+          </Text>
         </View>
       </View>
 
-      {/* Contador Vivo Aislado */}
-      <View style={{ alignItems: 'center' }}>
-        <ContadorVivo
-          horaSalida={horaSalida}
-          companyColor="#FF9500"
-          size="large"
-          isDark={isDark}
+      {/* Píldora Inferior: Sale en Xh Ym */}
+      <View
+        style={{
+          backgroundColor: isDark ? 'rgba(48, 209, 88, 0.15)' : 'rgba(52, 199, 89, 0.12)',
+          paddingVertical: 8,
+          paddingHorizontal: 12,
+          borderRadius: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+        }}
+      >
+        <View
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
+          }}
         />
+        <Text
+          style={{
+            fontSize: 12,
+            fontFamily: IOS_FONTS.bold,
+            color: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
+          }}
+        >
+          Sale en {timeRemaining} ({departureTime} hs)
+        </Text>
       </View>
-    </SpecularCard>
+    </View>
   );
 });

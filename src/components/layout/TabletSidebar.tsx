@@ -48,21 +48,20 @@ const RAIL_EXPANDED_WIDTH = 220;
 const RAIL_DELTA_WIDTH = RAIL_EXPANDED_WIDTH - RAIL_COLLAPSED_WIDTH; // 152px
 
 export const TabletSidebar: React.FC = () => {
-  const {
-    themeMode,
-    toggleTheme,
-    isSidebarCollapsed,
-    toggleSidebar,
-    activeModule,
-    setActiveModule,
-  } = useAppStore();
+  const themeMode = useAppStore((state) => state.themeMode);
+  const toggleTheme = useAppStore((state) => state.toggleTheme);
+  const isSidebarCollapsed = useAppStore((state) => state.isSidebarCollapsed);
+  const toggleSidebar = useAppStore((state) => state.toggleSidebar);
+  const activeModule = useAppStore((state) => state.activeModule);
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
 
-  const { tasks } = useTasksStore();
-  const { hasCredentials, isSyncing, triggerSync } = useSyncStore();
+  const pendingTasksCount = useTasksStore((state) => state.tasks.filter((t) => !t.is_completed).length);
+  const hasCredentials = useSyncStore((state) => state.hasCredentials);
+  const isSyncing = useSyncStore((state) => state.isSyncing);
+  const triggerSync = useSyncStore((state) => state.triggerSync);
 
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
-  const pendingTasksCount = tasks.filter((t) => !t.is_completed).length;
 
   // Tooltip temporal en long-press (modo colapsado)
   const [tooltipItemId, setTooltipItemId] = useState<string | null>(null);

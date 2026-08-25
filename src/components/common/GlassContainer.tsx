@@ -19,7 +19,23 @@ export const GlassContainer: React.FC<GlassContainerProps> = ({
 }) => {
   const resolvedTint = tint || (isDark ? 'dark' : 'light');
 
-  // En Android y Web, BlurView funciona con aceleración por hardware
+  // En Android y tablets de gama media, BlurView en tiempo real causa caídas de frames.
+  // Usamos una superficie translúcida GPU-friendly con micro-borde para máximo rendimiento (60fps).
+  if (Platform.OS === 'android') {
+    return (
+      <View
+        style={[
+          {
+            backgroundColor: isDark ? 'rgba(28, 28, 30, 0.95)' : 'rgba(242, 242, 247, 0.95)',
+          },
+          style,
+        ]}
+      >
+        {children}
+      </View>
+    );
+  }
+
   return (
     <View
       style={[

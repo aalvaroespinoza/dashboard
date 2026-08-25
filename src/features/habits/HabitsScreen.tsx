@@ -38,28 +38,26 @@ const HABIT_TABS: SegmentTab<GritNavigationTab>[] = [
 ];
 
 export const HabitsScreen: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((state) => state.themeMode);
   const { isLandscape, contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  const {
-    currentTab,
-    setCurrentTab,
-    selectedDate,
-    searchQuery,
-    setSearchQuery,
-    selectedDetailHabit,
-    editingHabit,
-    openDetailHabit,
-    closeDetailHabit,
-    setEditingHabit,
-    categories,
-    habits,
-    logsMap,
-    recentDates,
-    loadHabitsData,
-  } = useHabitsStore();
+  const currentTab = useHabitsStore((state) => state.currentTab);
+  const setCurrentTab = useHabitsStore((state) => state.setCurrentTab);
+  const selectedDate = useHabitsStore((state) => state.selectedDate);
+  const searchQuery = useHabitsStore((state) => state.searchQuery);
+  const setSearchQuery = useHabitsStore((state) => state.setSearchQuery);
+  const selectedDetailHabit = useHabitsStore((state) => state.selectedDetailHabit);
+  const editingHabit = useHabitsStore((state) => state.editingHabit);
+  const openDetailHabit = useHabitsStore((state) => state.openDetailHabit);
+  const closeDetailHabit = useHabitsStore((state) => state.closeDetailHabit);
+  const setEditingHabit = useHabitsStore((state) => state.setEditingHabit);
+  const categories = useHabitsStore((state) => state.categories);
+  const habits = useHabitsStore((state) => state.habits);
+  const logsMap = useHabitsStore((state) => state.logsMap);
+  const recentDates = useHabitsStore((state) => state.recentDates);
+  const loadHabitsData = useHabitsStore((state) => state.loadHabitsData);
 
   useEffect(() => {
     loadHabitsData();

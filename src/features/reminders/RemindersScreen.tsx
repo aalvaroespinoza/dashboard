@@ -45,42 +45,40 @@ import { createShadow } from '../../styles/shadows';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export const RemindersScreen: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((state) => state.themeMode);
   const { isLandscape, contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  const {
-    lists,
-    sections,
-    tasks,
-    selectedListId,
-    activeSmartFilter,
-    viewMode,
-    groupBy,
-    filterPriority,
-    searchFilter,
-    loadTasksAndLists,
-    setSelectedListId,
-    setActiveSmartFilter,
-    setViewMode,
-    setGroupBy,
-    setFilterPriority,
-    setSearchFilter,
-    toggleTaskCollapse,
-    toggleFlag,
-    addTask,
-    addSubtask,
-    updateTask,
-    deleteTask,
-    toggleTaskComplete,
-    addList,
-    addSection,
-    getFlattenedTasks,
-    getTasksGroupedBySection,
-    getGritColumns,
-    getSmartCounts,
-  } = useTasksStore();
+  const lists = useTasksStore((state) => state.lists);
+  const sections = useTasksStore((state) => state.sections);
+  const tasks = useTasksStore((state) => state.tasks);
+  const selectedListId = useTasksStore((state) => state.selectedListId);
+  const activeSmartFilter = useTasksStore((state) => state.activeSmartFilter);
+  const viewMode = useTasksStore((state) => state.viewMode);
+  const groupBy = useTasksStore((state) => state.groupBy);
+  const filterPriority = useTasksStore((state) => state.filterPriority);
+  const searchFilter = useTasksStore((state) => state.searchFilter);
+  const loadTasksAndLists = useTasksStore((state) => state.loadTasksAndLists);
+  const setSelectedListId = useTasksStore((state) => state.setSelectedListId);
+  const setActiveSmartFilter = useTasksStore((state) => state.setActiveSmartFilter);
+  const setViewMode = useTasksStore((state) => state.setViewMode);
+  const setGroupBy = useTasksStore((state) => state.setGroupBy);
+  const setFilterPriority = useTasksStore((state) => state.setFilterPriority);
+  const setSearchFilter = useTasksStore((state) => state.setSearchFilter);
+  const toggleTaskCollapse = useTasksStore((state) => state.toggleTaskCollapse);
+  const toggleFlag = useTasksStore((state) => state.toggleFlag);
+  const addTask = useTasksStore((state) => state.addTask);
+  const addSubtask = useTasksStore((state) => state.addSubtask);
+  const updateTask = useTasksStore((state) => state.updateTask);
+  const deleteTask = useTasksStore((state) => state.deleteTask);
+  const toggleTaskComplete = useTasksStore((state) => state.toggleTaskComplete);
+  const addList = useTasksStore((state) => state.addList);
+  const addSection = useTasksStore((state) => state.addSection);
+  const getFlattenedTasks = useTasksStore((state) => state.getFlattenedTasks);
+  const getTasksGroupedBySection = useTasksStore((state) => state.getTasksGroupedBySection);
+  const getGritColumns = useTasksStore((state) => state.getGritColumns);
+  const getSmartCounts = useTasksStore((state) => state.getSmartCounts);
 
   useEffect(() => {
     loadTasksAndLists();
@@ -404,7 +402,10 @@ export const RemindersScreen: React.FC = () => {
                   data={flattenedTasks}
                   keyExtractor={(item) => item.id}
                   showsVerticalScrollIndicator={false}
-                  removeClippedSubviews
+                  removeClippedSubviews={true}
+                  maxToRenderPerBatch={10}
+                  windowSize={5}
+                  initialNumToRender={8}
                   contentContainerStyle={{ paddingBottom: 24 }}
                   renderItem={({ item }) => {
                     const listObj = lists.find((l) => l.id === item.list_id);

@@ -18,13 +18,14 @@ import { IOS_COLORS, IOS_FONTS } from '../../styles/theme';
 import { GlassContainer } from '../common/GlassContainer';
 
 export const TabletBottomBar: React.FC = () => {
-  const { themeMode, activeModule, setActiveModule } = useAppStore();
-  const { tasks } = useTasksStore();
+  const themeMode = useAppStore((state) => state.themeMode);
+  const activeModule = useAppStore((state) => state.activeModule);
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
+  const pendingTasksCount = useTasksStore((state) => state.tasks.filter((t) => !t.is_completed).length);
   const insets = useSafeAreaInsets();
 
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
-  const pendingTasksCount = tasks.filter((t) => !t.is_completed).length;
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

@@ -13,7 +13,7 @@ interface ReminderCardProps {
   isDark?: boolean;
 }
 
-export const ReminderCard: React.FC<ReminderCardProps> = ({
+const ReminderCardComponent: React.FC<ReminderCardProps> = ({
   task,
   listColor = IOS_COLORS.blue,
   onToggleComplete,
@@ -182,3 +182,5 @@ export const ReminderCard: React.FC<ReminderCardProps> = ({
     </Pressable>
   );
 };
+
+export const ReminderCard = React.memo(ReminderCardComponent);

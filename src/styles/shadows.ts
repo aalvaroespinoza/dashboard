@@ -29,6 +29,14 @@ export function createShadow(
     } as any;
   }
 
+  if (Platform.OS === 'android') {
+    // En Android / HarmonyOS, sombras con elevation > 3 saturan el GPU pipeline.
+    // Limitamos la elevación a valores ligeros (máx 2) para fluidez de 60fps constante.
+    return {
+      elevation: Math.min(2, Math.max(0, elevation)),
+    };
+  }
+
   return {
     shadowColor: color,
     shadowOffset: offset,

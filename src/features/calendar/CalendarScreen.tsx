@@ -14,32 +14,30 @@ import { IOS_COLORS } from '../../styles/theme';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export const CalendarScreen: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((state) => state.themeMode);
   const { contentPadding } = useResponsiveLayout();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  const {
-    events,
-    selectedDate,
-    viewMode,
-    categories,
-    settings,
-    loadEvents,
-    setSelectedDate,
-    setViewMode,
-    goToToday,
-    nextPeriod,
-    prevPeriod,
-    toggleCategoryVisibility,
-    addEvent,
-    updateEvent,
-    deleteEvent,
-    getUnifiedItemsForDate,
-    getUnifiedItemsForRange,
-  } = useCalendarStore();
+  const events = useCalendarStore((state) => state.events);
+  const selectedDate = useCalendarStore((state) => state.selectedDate);
+  const viewMode = useCalendarStore((state) => state.viewMode);
+  const categories = useCalendarStore((state) => state.categories);
+  const settings = useCalendarStore((state) => state.settings);
+  const loadEvents = useCalendarStore((state) => state.loadEvents);
+  const setSelectedDate = useCalendarStore((state) => state.setSelectedDate);
+  const setViewMode = useCalendarStore((state) => state.setViewMode);
+  const goToToday = useCalendarStore((state) => state.goToToday);
+  const nextPeriod = useCalendarStore((state) => state.nextPeriod);
+  const prevPeriod = useCalendarStore((state) => state.prevPeriod);
+  const toggleCategoryVisibility = useCalendarStore((state) => state.toggleCategoryVisibility);
+  const addEvent = useCalendarStore((state) => state.addEvent);
+  const updateEvent = useCalendarStore((state) => state.updateEvent);
+  const deleteEvent = useCalendarStore((state) => state.deleteEvent);
+  const getUnifiedItemsForDate = useCalendarStore((state) => state.getUnifiedItemsForDate);
+  const getUnifiedItemsForRange = useCalendarStore((state) => state.getUnifiedItemsForRange);
 
-  const { loadTasksAndLists } = useTasksStore();
+  const loadTasksAndLists = useTasksStore((state) => state.loadTasksAndLists);
 
   useEffect(() => {
     loadEvents();

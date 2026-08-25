@@ -50,15 +50,31 @@ import { createShadow } from '../../styles/shadows';
 import { TaskItem, CalendarEventItem } from '../../types';
 
 export const HomeScreen: React.FC = () => {
-  const { themeMode, userName, userAvatar, initApp, setActiveModule } = useAppStore();
+  const themeMode = useAppStore((state) => state.themeMode);
+  const userName = useAppStore((state) => state.userName);
+  const userAvatar = useAppStore((state) => state.userAvatar);
+  const initApp = useAppStore((state) => state.initApp);
+  const setActiveModule = useAppStore((state) => state.setActiveModule);
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
-  const { lists, tasks, loadTasksAndLists, addTask, updateTask, deleteTask } = useTasksStore();
-  const { events, categories: calendarCategories, loadEvents, loadCategories, addEvent, updateEvent, deleteEvent } = useCalendarStore();
-  const { loadFinanceData } = useFinanceStore();
-  const { loadHabitsData } = useHabitsStore();
-  const { loadWeatherStore } = useWeatherStore();
+  const lists = useTasksStore((state) => state.lists);
+  const tasks = useTasksStore((state) => state.tasks);
+  const loadTasksAndLists = useTasksStore((state) => state.loadTasksAndLists);
+  const addTask = useTasksStore((state) => state.addTask);
+  const updateTask = useTasksStore((state) => state.updateTask);
+  const deleteTask = useTasksStore((state) => state.deleteTask);
+
+  const calendarCategories = useCalendarStore((state) => state.categories);
+  const loadEvents = useCalendarStore((state) => state.loadEvents);
+  const loadCategories = useCalendarStore((state) => state.loadCategories);
+  const addEvent = useCalendarStore((state) => state.addEvent);
+  const updateEvent = useCalendarStore((state) => state.updateEvent);
+  const deleteEvent = useCalendarStore((state) => state.deleteEvent);
+
+  const loadFinanceData = useFinanceStore((state) => state.loadFinanceData);
+  const loadHabitsData = useHabitsStore((state) => state.loadHabitsData);
+  const loadWeatherStore = useWeatherStore((state) => state.loadWeatherStore);
 
   // Estados de Modales Interactivos
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);

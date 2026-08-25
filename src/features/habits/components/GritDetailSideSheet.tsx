@@ -81,6 +81,7 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
     saveHabitNote,
     setEditingHabit,
     getTimerSeconds,
+    checkTimerAutoCompletion,
   } = useHabitsStore();
 
   // Obtener el hábito fresco de la lista del store
@@ -133,11 +134,12 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
       setLiveSeconds(getTimerSeconds(habitId));
       return;
     }
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       setLiveSeconds(getTimerSeconds(habitId));
+      await checkTimerAutoCompletion(habitId, selectedDate);
     }, 400);
     return () => clearInterval(interval);
-  }, [isTimerRunning, habitId]);
+  }, [isTimerRunning, habitId, selectedDate]);
 
   // Editor de notas
   const [isNoteOpen, setIsNoteOpen] = useState(false);

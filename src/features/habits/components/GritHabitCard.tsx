@@ -48,6 +48,7 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
     stopAndSaveTimer,
     activeTimers,
     getTimerSeconds,
+    checkTimerAutoCompletion,
     isRestDay,
     setEditingHabit,
     lastExpGain,
@@ -88,11 +89,12 @@ export const GritHabitCard: React.FC<GritHabitCardProps> = ({
       setLiveSeconds(getTimerSeconds(habit.id));
       return;
     }
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       setLiveSeconds(getTimerSeconds(habit.id));
+      await checkTimerAutoCompletion(habit.id, selectedDate);
     }, 400);
     return () => clearInterval(interval);
-  }, [isTimerRunning, habit.id]);
+  }, [isTimerRunning, habit.id, selectedDate]);
 
   const formatTimerDigits = (secs: number) => {
     const m = Math.floor(secs / 60);

@@ -70,6 +70,7 @@ interface HabitsStoreState {
   resetTimer: (habitId: string) => Promise<void>;
   setTimerElapsed: (habitId: string, seconds: number) => void;
   stopAndSaveTimer: (habitId: string, date?: string) => Promise<void>;
+  checkTimerAutoCompletion: (habitId: string, date?: string) => Promise<boolean>;
   skipToday: (habitId: string, date?: string) => Promise<void>;
   undoSkip: (habitId: string, date?: string) => Promise<void>;
   saveHabitNote: (habitId: string, note: string, date?: string) => Promise<void>;
@@ -488,6 +489,29 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
         set((s) => (s.lastExpGain?.habitId === habitId ? { lastExpGain: null } : s));
       }, 2500);
     }
+  },
+
+  checkTimerAutoCompletion: async (habitId: string, date?: string): Promise<boolean> => {
+    const targetDate = date || get().selectedDate;
+    const habit = get().habits.find((h) => h.id === habitId);
+    if (!habit || habit.type !== 'timer') return false;
+
+    const active = get().activeTimers[habitId];
+    if (!active || !active.isRunning) return false;
+
+    const currentLog = get().logsMap[habitId]?.[targetDate];
+    const previousSaved = currentLog?.completed_value || 0;
+    const currentSession =
+      active.accumulatedSeconds + Math.floor((Date.now() - active.startTimestamp) / 1000);
+    const totalSec = previousSaved + currentSession;
+    const targetSeconds = (habit.target_value || 25) * 60;
+
+    if (totalSec >= targetSeconds) {
+      // Auto-completar el hábito y guardar log con éxito
+      await get().stopAndSaveTimer(habitId, targetDate);
+      return true;
+    }
+    return false;
   },
 
   skipToday: async (habitId: string, date?: string) => {

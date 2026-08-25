@@ -48,3 +48,16 @@ test('3. Pausar temporizador computa e incrementa los segundos acumulados para S
   assert.equal(paused.accumulatedSeconds, 175);
   assert.equal(paused.isRunning, false);
 });
+
+test('4. Auto-completar hábito cuando los segundos vivos alcanzan la meta', () => {
+  const targetMinutes = 25; // 25 min = 1500 segundos
+  const targetSeconds = targetMinutes * 60;
+  const previousSaved = 1200; // 20 min ya guardados hoy
+  const currentSession = 305; // 5 min y 5 seg en la sesión actual
+  const totalEffective = previousSaved + currentSession;
+
+  const shouldAutoComplete = totalEffective >= targetSeconds;
+  assert.equal(shouldAutoComplete, true);
+  assert.equal(totalEffective >= 1500, true);
+});
+

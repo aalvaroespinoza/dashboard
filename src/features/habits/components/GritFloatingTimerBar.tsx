@@ -16,24 +16,26 @@ export const GritFloatingTimerBar: React.FC<GritFloatingTimerBarProps> = ({
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
-  const { getActiveRunningTimer, stopAndSaveTimer, selectedDate } = useHabitsStore();
+  const { getActiveRunningTimer, stopAndSaveTimer, checkTimerAutoCompletion, selectedDate } = useHabitsStore();
 
   const [liveSecs, setLiveSecs] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Interval GLOBAL que vive mientras el FloatingTimerBar esté montado.
-  // Siempre activo: calcula liveSeconds leyendo delta Date.now() en cada tick.
+  // Siempre activo: calcula liveSeconds leyendo delta Date.now() en cada tick y verifica meta.
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
+    intervalRef.current = setInterval(async () => {
       const info = getActiveRunningTimer();
       if (info) {
         setLiveSecs(info.liveSeconds);
+        // Si llega al tiempo límite, auto-completar el hábito y otorgar EXP
+        await checkTimerAutoCompletion(info.habit.id, selectedDate);
       }
     }, 1000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []); // [] → solo se monta/desmonta una vez — sobrevive cambios de pantalla
+  }, [selectedDate]);
 
   const activeInfo = getActiveRunningTimer();
   if (!activeInfo) return null;

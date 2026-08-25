@@ -1,4 +1,11 @@
-import React, { useRef, useState } from 'react';
+/**
+ * TabletSidebar.tsx
+ * Navigation Rail colapsable para Tablet / iPadOS.
+ * Modo colapsado: 68px con botones cuadrados de 44px perfectamente centrados (sin solapamientos).
+ * Modo expandido: 220px con íconos, títulos de módulo y badges.
+ */
+
+import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -33,11 +40,19 @@ import { GlassContainer } from '../common/GlassContainer';
 
 const RAIL_COLLAPSED_WIDTH = 68;
 const RAIL_EXPANDED_WIDTH = 220;
-const ANIMATION_DURATION = 280;
+const ANIMATION_DURATION = 260;
 const ANIMATION_EASING = Easing.bezier(0.25, 0.1, 0.25, 1);
 
 export const TabletSidebar: React.FC = () => {
-  const { themeMode, toggleTheme, isSidebarCollapsed, toggleSidebar, activeModule, setActiveModule } = useAppStore();
+  const {
+    themeMode,
+    toggleTheme,
+    isSidebarCollapsed,
+    toggleSidebar,
+    activeModule,
+    setActiveModule,
+  } = useAppStore();
+
   const { tasks } = useTasksStore();
   const { hasCredentials, isSyncing, triggerSync } = useSyncStore();
 
@@ -45,13 +60,12 @@ export const TabletSidebar: React.FC = () => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const pendingTasksCount = tasks.filter((t) => !t.is_completed).length;
 
-  // Tooltip state for collapsed mode
+  // Tooltip temporal en long-press (modo colapsado)
   const [tooltipItemId, setTooltipItemId] = useState<string | null>(null);
 
-  // Reanimated shared value: 0 = collapsed, 1 = expanded
+  // Valor animado Reanimated: 0 = colapsado (68px), 1 = expandido (220px)
   const expandProgress = useSharedValue(isSidebarCollapsed ? 0 : 1);
 
-  // Sync when isSidebarCollapsed changes (from store)
   React.useEffect(() => {
     expandProgress.value = withTiming(
       isSidebarCollapsed ? 0 : 1,
@@ -66,17 +80,11 @@ export const TabletSidebar: React.FC = () => {
       [RAIL_COLLAPSED_WIDTH, RAIL_EXPANDED_WIDTH],
       Extrapolation.CLAMP
     ),
-    paddingHorizontal: interpolate(
-      expandProgress.value,
-      [0, 1],
-      [6, 12],
-      Extrapolation.CLAMP
-    ),
   }));
 
   const animatedLabelStyle = useAnimatedStyle(() => ({
     opacity: interpolate(expandProgress.value, [0.4, 1], [0, 1], Extrapolation.CLAMP),
-    width: interpolate(expandProgress.value, [0, 1], [0, 120], Extrapolation.CLAMP),
+    width: interpolate(expandProgress.value, [0, 1], [0, 115], Extrapolation.CLAMP),
     overflow: 'hidden' as const,
   }));
 
@@ -88,7 +96,13 @@ export const TabletSidebar: React.FC = () => {
     badge?: number;
   }[] = [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, color: '#5856D6' },
-    { id: 'tasks', label: 'Recordatorios', icon: CheckSquare, color: '#007AFF', badge: pendingTasksCount > 0 ? pendingTasksCount : undefined },
+    {
+      id: 'tasks',
+      label: 'Recordatorios',
+      icon: CheckSquare,
+      color: '#007AFF',
+      badge: pendingTasksCount > 0 ? pendingTasksCount : undefined,
+    },
     { id: 'habits', label: 'Hábitos', icon: Zap, color: '#FF9500' },
     { id: 'calendar', label: 'Calendario', icon: Calendar, color: '#34C759' },
     { id: 'finance', label: 'Finanzas', icon: DollarSign, color: '#32ADE6' },
@@ -104,7 +118,8 @@ export const TabletSidebar: React.FC = () => {
           height: '100%',
           borderRightWidth: 1,
           borderRightColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
-        }
+          zIndex: 60,
+        },
       ]}
     >
       <GlassContainer
@@ -112,20 +127,23 @@ export const TabletSidebar: React.FC = () => {
         intensity={40}
         style={{
           flex: 1,
-          paddingVertical: 18,
+          paddingVertical: 16,
+          paddingHorizontal: isSidebarCollapsed ? 0 : 10,
           flexDirection: 'column',
           justifyContent: 'space-between',
+          alignItems: isSidebarCollapsed ? 'center' : 'stretch',
         }}
       >
-        {/* 1. Header de Marca (MiHub) */}
-        <View>
+        {/* 1. Header (Logo / Botón Colapsar) */}
+        <View style={{ width: '100%', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-              marginBottom: 20,
-              paddingHorizontal: isSidebarCollapsed ? 0 : 8,
+              marginBottom: 16,
+              paddingHorizontal: isSidebarCollapsed ? 0 : 4,
+              height: 38,
             }}
           >
             {!isSidebarCollapsed && (
@@ -145,16 +163,23 @@ export const TabletSidebar: React.FC = () => {
                 <View>
                   <Text
                     style={{
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: '900',
                       color: theme.text.primary,
-                      letterSpacing: -0.5,
+                      letterSpacing: -0.4,
                     }}
                   >
                     MiHub
                   </Text>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: theme.text.tertiary, textTransform: 'uppercase' }}>
-                    iPadOS 18
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '700',
+                      color: theme.text.tertiary,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    iPadOS
                   </Text>
                 </View>
               </View>
@@ -164,162 +189,193 @@ export const TabletSidebar: React.FC = () => {
               onPress={toggleSidebar}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.7 : 1,
-                padding: 6,
-                borderRadius: 10,
+                width: 36,
+                height: 36,
+                borderRadius: 12,
                 backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+                alignItems: 'center',
+                justifyContent: 'center',
               })}
             >
               {isSidebarCollapsed ? (
-                <ChevronRight size={16} color={theme.text.secondary} />
+                <ChevronRight size={18} color={theme.text.secondary} />
               ) : (
-                <ChevronLeft size={16} color={theme.text.secondary} />
+                <ChevronLeft size={18} color={theme.text.secondary} />
               )}
             </Pressable>
           </View>
 
-          {/* 2. Lista de Navegación */}
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
-            <View style={{ gap: 4 }}>
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeModule === item.id;
-                const showTooltip = isSidebarCollapsed && tooltipItemId === item.id;
+          {/* 2. Items de Navegación */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              gap: 6,
+              alignItems: isSidebarCollapsed ? 'center' : 'stretch',
+            }}
+          >
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeModule === item.id;
+              const showTooltip = isSidebarCollapsed && tooltipItemId === item.id;
 
-                return (
-                  <View key={item.id} style={{ position: 'relative' }}>
-                    <Pressable
-                      onPress={() => setActiveModule(item.id)}
-                      onLongPress={() => {
-                        if (isSidebarCollapsed) {
-                          setTooltipItemId(item.id);
-                          setTimeout(() => setTooltipItemId(null), 1500);
-                        }
-                      }}
-                      style={({ pressed }) => ({
-                        opacity: pressed ? 0.8 : 1,
+              return (
+                <View
+                  key={item.id}
+                  style={{
+                    position: 'relative',
+                    width: isSidebarCollapsed ? 44 : '100%',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Pressable
+                    onPress={() => setActiveModule(item.id)}
+                    onLongPress={() => {
+                      if (isSidebarCollapsed) {
+                        setTooltipItemId(item.id);
+                        setTimeout(() => setTooltipItemId(null), 1500);
+                      }
+                    }}
+                    style={({ pressed }) => ({
+                      opacity: pressed ? 0.8 : 1,
+                      width: isSidebarCollapsed ? 44 : '100%',
+                      height: 44,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+                      paddingHorizontal: isSidebarCollapsed ? 0 : 10,
+                      borderRadius: 14,
+                      backgroundColor: isActive
+                        ? isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 122, 255, 0.12)'
+                        : 'transparent',
+                      borderWidth: 1,
+                      borderColor: isActive
+                        ? isDark
+                          ? 'rgba(255, 255, 255, 0.18)'
+                          : 'rgba(0, 122, 255, 0.25)'
+                        : 'transparent',
+                    })}
+                  >
+                    <View
+                      style={{
                         flexDirection: 'row',
                         alignItems: 'center',
-                        justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-                        paddingVertical: 10,
-                        paddingHorizontal: isSidebarCollapsed ? 0 : 10,
-                        borderRadius: 14,
-                        backgroundColor: isActive
-                          ? isDark
-                            ? 'rgba(255, 255, 255, 0.12)'
-                            : 'rgba(0, 122, 255, 0.12)'
-                          : 'transparent',
-                        borderWidth: 1,
-                        borderColor: isActive
-                          ? isDark
-                            ? 'rgba(255, 255, 255, 0.15)'
-                            : 'rgba(0, 122, 255, 0.2)'
-                          : 'transparent',
-                      })}
+                        gap: isSidebarCollapsed ? 0 : 10,
+                      }}
                     >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        {/* Squircle — más grande en modo colapsado para mejor touch target */}
-                        <View
-                          style={{
-                            width: isSidebarCollapsed ? 36 : 28,
-                            height: isSidebarCollapsed ? 36 : 28,
-                            borderRadius: isSidebarCollapsed ? 11 : 8,
-                            backgroundColor: isActive
-                              ? item.color
-                              : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : '#E5E5EA',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Icon
-                            size={isSidebarCollapsed ? 18 : 15}
-                            color={isActive ? '#FFFFFF' : item.color}
-                            strokeWidth={isActive ? 2.5 : 2}
-                          />
-                        </View>
+                      {/* Squircle / Contenedor del Ícono */}
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          backgroundColor: isActive
+                            ? item.color
+                            : isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : '#E5E5EA',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Icon
+                          size={17}
+                          color={isActive ? '#FFFFFF' : item.color}
+                          strokeWidth={isActive ? 2.5 : 2}
+                        />
+                      </View>
 
-                        {/* Label animado */}
+                      {/* Label en Modo Expandido */}
+                      {!isSidebarCollapsed && (
                         <Animated.Text
                           style={[
                             animatedLabelStyle,
                             {
-                              fontSize: 14,
+                              fontSize: 13.5,
                               fontWeight: isActive ? '800' : '600',
                               color: isActive ? theme.text.primary : theme.text.secondary,
-                            }
+                            },
                           ]}
                           numberOfLines={1}
                         >
                           {item.label}
                         </Animated.Text>
-                      </View>
-
-                      {/* Badge de conteo (solo expandido) */}
-                      {!isSidebarCollapsed && item.badge !== undefined && (
-                        <View
-                          style={{
-                            backgroundColor: '#007AFF',
-                            borderRadius: 10,
-                            paddingHorizontal: 7,
-                            paddingVertical: 2,
-                          }}
-                        >
-                          <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>
-                            {item.badge}
-                          </Text>
-                        </View>
                       )}
+                    </View>
 
-                      {/* Badge pequeño en modo colapsado */}
-                      {isSidebarCollapsed && item.badge !== undefined && (
-                        <View
-                          style={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            width: 8,
-                            height: 8,
-                            borderRadius: 4,
-                            backgroundColor: '#007AFF',
-                          }}
-                        />
-                      )}
-                    </Pressable>
-
-                    {/* Tooltip de nombre en longPress modo colapsado */}
-                    {showTooltip && (
+                    {/* Badge en Modo Expandido */}
+                    {!isSidebarCollapsed && item.badge !== undefined && (
                       <View
                         style={{
-                          position: 'absolute',
-                          left: RAIL_COLLAPSED_WIDTH - 2,
-                          top: 8,
-                          backgroundColor: isDark ? '#3A3A3C' : '#1C1C1E',
+                          backgroundColor: '#007AFF',
                           borderRadius: 10,
-                          paddingHorizontal: 10,
-                          paddingVertical: 6,
-                          zIndex: 999,
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 8,
-                          elevation: 8,
+                          paddingHorizontal: 7,
+                          paddingVertical: 2,
                         }}
                       >
-                        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
-                          {item.label}
+                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>
+                          {item.badge}
                         </Text>
                       </View>
                     )}
-                  </View>
-                );
-              })}
-            </View>
+
+                    {/* Badge pequeño en Modo Colapsado */}
+                    {isSidebarCollapsed && item.badge !== undefined && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          width: 8,
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: '#007AFF',
+                        }}
+                      />
+                    )}
+                  </Pressable>
+
+                  {/* Tooltip en Long Press (Modo Colapsado) */}
+                  {showTooltip && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        left: 56,
+                        top: 6,
+                        backgroundColor: isDark ? '#2C2C2E' : '#1C1C1E',
+                        borderRadius: 10,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        zIndex: 999,
+                        shadowColor: '#000000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 8,
+                        elevation: 10,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
 
-        {/* 3. Controles Inferiores (Sincronización iCloud & Tema) */}
-        <View style={{ gap: 6 }}>
+        {/* 3. Controles Inferiores (iCloud Sync & Tema) */}
+        <View
+          style={{
+            width: '100%',
+            gap: 6,
+            alignItems: isSidebarCollapsed ? 'center' : 'stretch',
+          }}
+        >
           {/* CalDAV Sync Button */}
           <Pressable
             onPress={() => {
@@ -331,24 +387,25 @@ export const TabletSidebar: React.FC = () => {
             }}
             style={({ pressed }) => ({
               opacity: pressed ? 0.8 : 1,
+              width: isSidebarCollapsed ? 44 : '100%',
+              height: 40,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-              paddingVertical: 9,
               paddingHorizontal: isSidebarCollapsed ? 0 : 10,
               borderRadius: 12,
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
               borderWidth: 1,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
-              gap: 8,
+              gap: isSidebarCollapsed ? 0 : 8,
             })}
           >
             {isSyncing ? (
-              <RefreshCw size={15} color="#007AFF" />
+              <RefreshCw size={16} color="#007AFF" />
             ) : hasCredentials ? (
-              <Cloud size={15} color="#34C759" />
+              <Cloud size={16} color="#34C759" />
             ) : (
-              <CloudOff size={15} color={theme.text.tertiary} />
+              <CloudOff size={16} color={theme.text.tertiary} />
             )}
 
             {!isSidebarCollapsed && (
@@ -369,22 +426,23 @@ export const TabletSidebar: React.FC = () => {
             onPress={toggleTheme}
             style={({ pressed }) => ({
               opacity: pressed ? 0.8 : 1,
+              width: isSidebarCollapsed ? 44 : '100%',
+              height: 40,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-              paddingVertical: 9,
               paddingHorizontal: isSidebarCollapsed ? 0 : 10,
               borderRadius: 12,
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
               borderWidth: 1,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
-              gap: 8,
+              gap: isSidebarCollapsed ? 0 : 8,
             })}
           >
             {isDark ? (
-              <Sun size={15} color="#FF9500" />
+              <Sun size={16} color="#FF9500" />
             ) : (
-              <Moon size={15} color="#5856D6" />
+              <Moon size={16} color="#5856D6" />
             )}
 
             {!isSidebarCollapsed && (

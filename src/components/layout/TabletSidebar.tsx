@@ -1,3 +1,13 @@
+/**
+ * TabletSidebar.tsx
+ * Navigation Rail colapsable para Tablet / iPadOS con soporte de gestos táctiles 1:1 en vivo.
+ *
+ * Modo colapsado: 68px con botones cuadrados de 44px perfectamente centrados.
+ * Modo expandido: 220px con íconos, títulos de módulo y badges.
+ * Transición continua: Todo el texto, badges y acompañamientos visuales se expanden
+ * y contraen en tiempo real de forma controlada y proporcional al arrastre del dedo.
+ */
+
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Image } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
@@ -19,7 +29,6 @@ import {
   Bus,
   Settings,
   ChevronLeft,
-  ChevronRight,
   Sun,
   Moon,
   Cloud,
@@ -127,6 +136,7 @@ export const TabletSidebar: React.FC = () => {
       }
     });
 
+  // Estilo animado del ancho total del sidebar
   const animatedContainerStyle = useAnimatedStyle(() => ({
     width: interpolate(
       expandProgress.value,
@@ -136,10 +146,64 @@ export const TabletSidebar: React.FC = () => {
     ),
   }));
 
-  const animatedLabelStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(expandProgress.value, [0.4, 1], [0, 1], Extrapolation.CLAMP),
-    width: interpolate(expandProgress.value, [0, 1], [0, 115], Extrapolation.CLAMP),
+  // Estilo animado del título "MiHub" en la cabecera
+  const animatedHeaderStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(expandProgress.value, [0.2, 0.8], [0, 1], Extrapolation.CLAMP),
+    width: interpolate(expandProgress.value, [0, 1], [0, 95], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateX: interpolate(expandProgress.value, [0, 1], [-12, 0], Extrapolation.CLAMP),
+      },
+    ],
     overflow: 'hidden' as const,
+  }));
+
+  // Estilo animado de los labels de texto de navegación
+  const animatedLabelStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(expandProgress.value, [0.25, 0.85], [0, 1], Extrapolation.CLAMP),
+    width: interpolate(expandProgress.value, [0, 1], [0, 110], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateX: interpolate(expandProgress.value, [0, 1], [-8, 0], Extrapolation.CLAMP),
+      },
+    ],
+    overflow: 'hidden' as const,
+  }));
+
+  // Estilo animado del badge numérico grande
+  const animatedBadgeStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(expandProgress.value, [0.45, 0.9], [0, 1], Extrapolation.CLAMP),
+    transform: [
+      {
+        scale: interpolate(expandProgress.value, [0.45, 0.9], [0.5, 1], Extrapolation.CLAMP),
+      },
+    ],
+  }));
+
+  // Estilo animado del badge punto pequeño (modo colapsado)
+  const animatedDotBadgeStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(expandProgress.value, [0, 0.25], [1, 0], Extrapolation.CLAMP),
+  }));
+
+  // Estilo animado del texto del footer (iCloud / Tema)
+  const animatedFooterTextStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(expandProgress.value, [0.3, 0.85], [0, 1], Extrapolation.CLAMP),
+    width: interpolate(expandProgress.value, [0, 1], [0, 120], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateX: interpolate(expandProgress.value, [0, 1], [-8, 0], Extrapolation.CLAMP),
+      },
+    ],
+    overflow: 'hidden' as const,
+  }));
+
+  // Estilo animado de rotación del chevron de colapso
+  const animatedChevronStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        rotate: `${interpolate(expandProgress.value, [0, 1], [180, 0], Extrapolation.CLAMP)}deg`,
+      },
+    ],
   }));
 
   const navItems: {
@@ -177,31 +241,31 @@ export const TabletSidebar: React.FC = () => {
           },
         ]}
       >
-      <GlassContainer
-        isDark={isDark}
-        intensity={40}
-        style={{
-          flex: 1,
-          paddingVertical: 16,
-          paddingHorizontal: isSidebarCollapsed ? 0 : 10,
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          alignItems: isSidebarCollapsed ? 'center' : 'stretch',
-        }}
-      >
-        {/* 1. Header (Logo / Botón Colapsar) */}
-        <View style={{ width: '100%', alignItems: isSidebarCollapsed ? 'center' : 'stretch' }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-              marginBottom: 16,
-              paddingHorizontal: isSidebarCollapsed ? 0 : 4,
-              height: 38,
-            }}
-          >
-            {!isSidebarCollapsed && (
+        <GlassContainer
+          isDark={isDark}
+          intensity={40}
+          style={{
+            flex: 1,
+            paddingVertical: 16,
+            paddingHorizontal: 12,
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'stretch',
+          }}
+        >
+          {/* 1. Header (Logo / Botón Colapsar) */}
+          <View style={{ width: '100%' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 16,
+                height: 38,
+                overflow: 'hidden',
+              }}
+            >
+              {/* Logo e Icono */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Image
                   source={require('../../../assets/icon.png')}
@@ -211,296 +275,315 @@ export const TabletSidebar: React.FC = () => {
                     borderRadius: 9,
                   }}
                 />
-                <View>
+                <Animated.View style={animatedHeaderStyle}>
                   <Text
                     style={{
                       fontSize: 17,
-                      fontWeight: '900',
+                      fontFamily: IOS_FONTS.bold,
                       color: theme.text.primary,
                       letterSpacing: -0.5,
                     }}
+                    numberOfLines={1}
                   >
                     MiHub
                   </Text>
-                </View>
+                </Animated.View>
               </View>
-            )}
 
-            <Pressable
-              onPress={toggleSidebar}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.7 : 1,
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
-                alignItems: 'center',
-                justifyContent: 'center',
-              })}
+              {/* Botón de Colapso con Chevron Animado */}
+              <Pressable
+                onPress={toggleSidebar}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.7 : 1,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 11,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Animated.View style={animatedChevronStyle}>
+                  <ChevronLeft size={17} color={theme.text.secondary} />
+                </Animated.View>
+              </Pressable>
+            </View>
+
+            {/* 2. Items de Navegación */}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 6,
+              }}
             >
-              {isSidebarCollapsed ? (
-                <ChevronRight size={18} color={theme.text.secondary} />
-              ) : (
-                <ChevronLeft size={18} color={theme.text.secondary} />
-              )}
-            </Pressable>
-          </View>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeModule === item.id;
+                const showTooltip = isSidebarCollapsed && tooltipItemId === item.id;
 
-          {/* 2. Items de Navegación */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              gap: 6,
-              alignItems: isSidebarCollapsed ? 'center' : 'stretch',
-            }}
-          >
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeModule === item.id;
-              const showTooltip = isSidebarCollapsed && tooltipItemId === item.id;
-
-              return (
-                <View
-                  key={item.id}
-                  style={{
-                    position: 'relative',
-                    width: isSidebarCollapsed ? 44 : '100%',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Pressable
-                    onPress={() => setActiveModule(item.id)}
-                    onLongPress={() => {
-                      if (isSidebarCollapsed) {
-                        setTooltipItemId(item.id);
-                        setTimeout(() => setTooltipItemId(null), 1500);
-                      }
+                return (
+                  <View
+                    key={item.id}
+                    style={{
+                      position: 'relative',
+                      width: '100%',
                     }}
-                    style={({ pressed }) => ({
-                      opacity: pressed ? 0.8 : 1,
-                      width: isSidebarCollapsed ? 44 : '100%',
-                      height: 44,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-                      paddingHorizontal: isSidebarCollapsed ? 0 : 10,
-                      borderRadius: 14,
-                      backgroundColor: isActive
-                        ? isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : 'rgba(0, 122, 255, 0.12)'
-                        : 'transparent',
-                      borderWidth: 1,
-                      borderColor: isActive
-                        ? isDark
-                          ? 'rgba(255, 255, 255, 0.18)'
-                          : 'rgba(0, 122, 255, 0.25)'
-                        : 'transparent',
-                    })}
                   >
-                    <View
-                      style={{
+                    <Pressable
+                      onPress={() => setActiveModule(item.id)}
+                      onLongPress={() => {
+                        if (isSidebarCollapsed) {
+                          setTooltipItemId(item.id);
+                          setTimeout(() => setTooltipItemId(null), 1500);
+                        }
+                      }}
+                      style={({ pressed }) => ({
+                        opacity: pressed ? 0.8 : 1,
+                        width: '100%',
+                        height: 44,
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: isSidebarCollapsed ? 0 : 10,
-                      }}
+                        justifyContent: 'space-between',
+                        paddingHorizontal: 6,
+                        borderRadius: 14,
+                        backgroundColor: isActive
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.12)'
+                            : 'rgba(0, 122, 255, 0.12)'
+                          : 'transparent',
+                        borderWidth: 1,
+                        borderColor: isActive
+                          ? isDark
+                            ? 'rgba(255, 255, 255, 0.18)'
+                            : 'rgba(0, 122, 255, 0.25)'
+                          : 'transparent',
+                      })}
                     >
-                      {/* Squircle / Contenedor del Ícono */}
                       <View
                         style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          backgroundColor: isActive
-                            ? item.color
-                            : isDark
-                            ? 'rgba(255, 255, 255, 0.08)'
-                            : '#E5E5EA',
+                          flexDirection: 'row',
                           alignItems: 'center',
-                          justifyContent: 'center',
+                          gap: 10,
                         }}
                       >
-                        <Icon
-                          size={17}
-                          color={isActive ? '#FFFFFF' : item.color}
-                          strokeWidth={isActive ? 2.5 : 2}
-                        />
+                        {/* Squircle / Contenedor del Ícono */}
+                        <View
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 10,
+                            backgroundColor: isActive
+                              ? item.color
+                              : isDark
+                              ? 'rgba(255, 255, 255, 0.08)'
+                              : '#E5E5EA',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Icon
+                            size={17}
+                            color={isActive ? '#FFFFFF' : item.color}
+                            strokeWidth={isActive ? 2.5 : 2}
+                          />
+                        </View>
+
+                        {/* Label Animado en tiempo real */}
+                        <Animated.View style={animatedLabelStyle}>
+                          <Text
+                            style={{
+                              fontSize: 13.5,
+                              fontFamily: isActive ? IOS_FONTS.bold : IOS_FONTS.semibold,
+                              color: isActive ? theme.text.primary : theme.text.secondary,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {item.label}
+                          </Text>
+                        </Animated.View>
                       </View>
 
-                      {/* Label en Modo Expandido */}
-                      {!isSidebarCollapsed && (
-                        <Animated.Text
+                      {/* Badge Grande Animado */}
+                      {item.badge !== undefined && (
+                        <Animated.View
                           style={[
-                            animatedLabelStyle,
+                            animatedBadgeStyle,
                             {
-                              fontSize: 13.5,
-                              fontWeight: isActive ? '800' : '600',
-                              color: isActive ? theme.text.primary : theme.text.secondary,
+                              backgroundColor: '#007AFF',
+                              borderRadius: 10,
+                              paddingHorizontal: 7,
+                              paddingVertical: 2,
                             },
                           ]}
-                          numberOfLines={1}
                         >
-                          {item.label}
-                        </Animated.Text>
+                          <Text style={{ color: '#FFFFFF', fontSize: 11, fontFamily: IOS_FONTS.bold }}>
+                            {item.badge}
+                          </Text>
+                        </Animated.View>
                       )}
-                    </View>
 
-                    {/* Badge en Modo Expandido */}
-                    {!isSidebarCollapsed && item.badge !== undefined && (
-                      <View
-                        style={{
-                          backgroundColor: '#007AFF',
-                          borderRadius: 10,
-                          paddingHorizontal: 7,
-                          paddingVertical: 2,
-                        }}
-                      >
-                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>
-                          {item.badge}
-                        </Text>
-                      </View>
-                    )}
+                      {/* Badge Punto Pequeño (Modo Colapsado) */}
+                      {item.badge !== undefined && (
+                        <Animated.View
+                          style={[
+                            animatedDotBadgeStyle,
+                            {
+                              position: 'absolute',
+                              top: 6,
+                              left: 32,
+                              width: 8,
+                              height: 8,
+                              borderRadius: 4,
+                              backgroundColor: '#007AFF',
+                            },
+                          ]}
+                        />
+                      )}
+                    </Pressable>
 
-                    {/* Badge pequeño en Modo Colapsado */}
-                    {isSidebarCollapsed && item.badge !== undefined && (
+                    {/* Tooltip en Long Press (Modo Colapsado) */}
+                    {showTooltip && (
                       <View
                         style={{
                           position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          width: 8,
-                          height: 8,
-                          borderRadius: 4,
-                          backgroundColor: '#007AFF',
+                          left: 56,
+                          top: 6,
+                          backgroundColor: isDark ? '#2C2C2E' : '#1C1C1E',
+                          borderRadius: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          zIndex: 999,
+                          shadowColor: '#000000',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.35,
+                          shadowRadius: 8,
+                          elevation: 10,
+                          borderWidth: 1,
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                         }}
-                      />
+                      >
+                        <Text style={{ color: '#FFFFFF', fontSize: 12, fontFamily: IOS_FONTS.bold }}>
+                          {item.label}
+                        </Text>
+                      </View>
                     )}
-                  </Pressable>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-                  {/* Tooltip en Long Press (Modo Colapsado) */}
-                  {showTooltip && (
-                    <View
-                      style={{
-                        position: 'absolute',
-                        left: 56,
-                        top: 6,
-                        backgroundColor: isDark ? '#2C2C2E' : '#1C1C1E',
-                        borderRadius: 10,
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        zIndex: 999,
-                        shadowColor: '#000000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.35,
-                        shadowRadius: 8,
-                        elevation: 10,
-                        borderWidth: 1,
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-                      }}
-                    >
-                      <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
-                        {item.label}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* 3. Controles Inferiores (iCloud Sync & Tema) */}
-        <View
-          style={{
-            width: '100%',
-            gap: 6,
-            alignItems: isSidebarCollapsed ? 'center' : 'stretch',
-          }}
-        >
-          {/* CalDAV Sync Button */}
-          <Pressable
-            onPress={() => {
-              if (hasCredentials && !isSyncing) {
-                triggerSync();
-              } else if (!hasCredentials) {
-                setActiveModule('settings');
-              }
+          {/* 3. Controles Inferiores (iCloud Sync & Tema) */}
+          <View
+            style={{
+              width: '100%',
+              gap: 6,
             }}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.8 : 1,
-              width: isSidebarCollapsed ? 44 : '100%',
-              height: 40,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-              paddingHorizontal: isSidebarCollapsed ? 0 : 10,
-              borderRadius: 12,
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
-              borderWidth: 1,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
-              gap: isSidebarCollapsed ? 0 : 8,
-            })}
           >
-            {isSyncing ? (
-              <RefreshCw size={16} color="#007AFF" />
-            ) : hasCredentials ? (
-              <Cloud size={16} color="#34C759" />
-            ) : (
-              <CloudOff size={16} color={theme.text.tertiary} />
-            )}
-
-            {!isSidebarCollapsed && (
-              <Text
+            {/* CalDAV Sync Button */}
+            <Pressable
+              onPress={() => {
+                if (hasCredentials && !isSyncing) {
+                  triggerSync();
+                } else if (!hasCredentials) {
+                  setActiveModule('settings');
+                }
+              }}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.8 : 1,
+                width: '100%',
+                height: 40,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 6,
+                borderRadius: 12,
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
+                gap: 10,
+              })}
+            >
+              <View
                 style={{
-                  fontSize: 12,
-                  color: theme.text.secondary,
-                  fontWeight: '700',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 9,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                {isSyncing ? 'Sincronizando...' : hasCredentials ? 'iCloud Conectado' : 'Conectar iCloud'}
-              </Text>
-            )}
-          </Pressable>
+                {isSyncing ? (
+                  <RefreshCw size={16} color="#007AFF" />
+                ) : hasCredentials ? (
+                  <Cloud size={16} color="#34C759" />
+                ) : (
+                  <CloudOff size={16} color={theme.text.tertiary} />
+                )}
+              </View>
 
-          {/* Dark/Light Mode Toggle */}
-          <Pressable
-            onPress={toggleTheme}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.8 : 1,
-              width: isSidebarCollapsed ? 44 : '100%',
-              height: 40,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
-              paddingHorizontal: isSidebarCollapsed ? 0 : 10,
-              borderRadius: 12,
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
-              borderWidth: 1,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
-              gap: isSidebarCollapsed ? 0 : 8,
-            })}
-          >
-            {isDark ? (
-              <Sun size={16} color="#FF9500" />
-            ) : (
-              <Moon size={16} color="#5856D6" />
-            )}
+              <Animated.View style={animatedFooterTextStyle}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: theme.text.secondary,
+                    fontFamily: IOS_FONTS.semibold,
+                  }}
+                  numberOfLines={1}
+                >
+                  {isSyncing ? 'Sincronizando...' : hasCredentials ? 'iCloud Conectado' : 'Conectar iCloud'}
+                </Text>
+              </Animated.View>
+            </Pressable>
 
-            {!isSidebarCollapsed && (
-              <Text
+            {/* Dark/Light Mode Toggle */}
+            <Pressable
+              onPress={toggleTheme}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.8 : 1,
+                width: '100%',
+                height: 40,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 6,
+                borderRadius: 12,
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#D1D5DB',
+                gap: 10,
+              })}
+            >
+              <View
                 style={{
-                  fontSize: 12,
-                  color: theme.text.secondary,
-                  fontWeight: '700',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 9,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                {isDark ? 'Modo Claro' : 'Modo Oscuro'}
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      </GlassContainer>
-    </Animated.View>
-  </GestureDetector>
+                {isDark ? (
+                  <Sun size={16} color="#FF9500" />
+                ) : (
+                  <Moon size={16} color="#5856D6" />
+                )}
+              </View>
+
+              <Animated.View style={animatedFooterTextStyle}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: theme.text.secondary,
+                    fontFamily: IOS_FONTS.semibold,
+                  }}
+                  numberOfLines={1}
+                >
+                  {isDark ? 'Modo Claro' : 'Modo Oscuro'}
+                </Text>
+              </Animated.View>
+            </Pressable>
+          </View>
+        </GlassContainer>
+      </Animated.View>
+    </GestureDetector>
   );
 };

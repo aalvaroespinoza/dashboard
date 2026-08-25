@@ -37,7 +37,7 @@ import { RemindersViewToggle } from './components/RemindersViewToggle';
 import { HierarchicalTaskItem } from './components/HierarchicalTaskItem';
 import { ReminderSectionHeader } from './components/ReminderSectionHeader';
 import { GritColumnBoard } from './components/GritColumnBoard';
-import { QuickTaskToolbar } from './components/QuickTaskToolbar';
+import { CreateReminderModal } from './components/CreateReminderModal';
 import { ReminderDetailSheet } from './components/ReminderDetailSheet';
 import { ListIconRenderer } from '../../components/ui/ListIconRenderer';
 import { IOS_COLORS } from '../../styles/theme';
@@ -86,6 +86,7 @@ export const RemindersScreen: React.FC = () => {
 
   // Modales
   const [inspectingTask, setInspectingTask] = useState<TaskItem | null>(null);
+  const [isCreateReminderModalOpen, setIsCreateReminderModalOpen] = useState(false);
   const [isAddListModalOpen, setIsAddListModalOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListColor, setNewListColor] = useState(IOS_COLORS.blue);
@@ -332,7 +333,7 @@ export const RemindersScreen: React.FC = () => {
                     No hay recordatorios en esta vista
                   </Text>
                   <Text style={{ fontSize: 12, color: theme.text.secondary }}>
-                    Usa la barra rápida inferior para crear tu primer recordatorio.
+                    Toca el botón + flotante para crear un nuevo recordatorio.
                   </Text>
                 </View>
               ) : selectedListId && groupedSections.length > 0 ? (
@@ -350,8 +351,9 @@ export const RemindersScreen: React.FC = () => {
                             listId={selectedListId}
                             tasksCount={secTasks.length}
                             completedCount={compCount}
-                            onAddTaskInSection={(secId) => {
+                            onAddTaskInSection={(secId?: string | null) => {
                               setTargetSectionForNewTask(secId || null);
+                              setIsCreateReminderModalOpen(true);
                             }}
                             isDark={isDark}
                           />
@@ -421,20 +423,50 @@ export const RemindersScreen: React.FC = () => {
           )}
         </View>
 
-        {/* 5. Barra de Acceso Rápido Flotante (Quick Task Toolbar) */}
-        <QuickTaskToolbar
-          lists={lists}
-          activeListId={selectedListId}
-          onAddTask={async (t) => {
-            await addTask({
-              ...t,
-              section_id: targetSectionForNewTask,
-            });
-            setTargetSectionForNewTask(null);
-          }}
-          isDark={isDark}
-        />
+        {/* FAB Flotante Circular iPadOS */}
+        <Pressable
+          onPress={() => setIsCreateReminderModalOpen(true)}
+          style={({ pressed }) => ({
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+            position: 'absolute',
+            bottom: 24,
+            right: 24,
+            width: 54,
+            height: 54,
+            borderRadius: 27,
+            backgroundColor: '#007AFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            ...createShadow('#007AFF', { width: 0, height: 4 }, 0.4, 10),
+          })}
+        >
+          <Plus size={26} color="#FFFFFF" strokeWidth={2.6} />
+        </Pressable>
       </View>
+
+      {/* Modal Flotante de Creación de Recordatorios */}
+      <CreateReminderModal
+        visible={isCreateReminderModalOpen}
+        onClose={() => {
+          setIsCreateReminderModalOpen(false);
+          setTargetSectionForNewTask(null);
+        }}
+        lists={lists}
+        sections={sections}
+        defaultListId={selectedListId}
+        defaultSectionId={targetSectionForNewTask}
+        defaultDueDate={activeSmartFilter === 'today' ? new Date().toISOString().split('T')[0] : null}
+        defaultFlagged={activeSmartFilter === 'flagged'}
+        onAddTask={async (t) => {
+          await addTask({
+            ...t,
+            section_id: t.section_id || targetSectionForNewTask,
+          });
+          setTargetSectionForNewTask(null);
+        }}
+        isDark={isDark}
+      />
 
       {/* Modal Inspector Detallado de Tarea */}
       <ReminderDetailSheet

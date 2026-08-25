@@ -7,7 +7,7 @@ export * from './components/ReminderCheckbox';
 export * from './components/HierarchicalTaskItem';
 export * from './components/SmartListCards';
 export * from './components/RemindersViewToggle';
-export * from './components/QuickTaskToolbar';
+export * from './components/CreateReminderModal';
 export * from './components/ReminderDetailSheet';
 export * from './components/RichLinkPreviewCard';
 export * from './components/ReminderSectionHeader';

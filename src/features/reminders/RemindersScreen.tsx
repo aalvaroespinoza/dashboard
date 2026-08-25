@@ -39,6 +39,7 @@ import { ReminderSectionHeader } from './components/ReminderSectionHeader';
 import { GritColumnBoard } from './components/GritColumnBoard';
 import { QuickTaskToolbar } from './components/QuickTaskToolbar';
 import { ReminderDetailSheet } from './components/ReminderDetailSheet';
+import { ListIconRenderer } from '../../components/ui/ListIconRenderer';
 import { IOS_COLORS } from '../../styles/theme';
 import { createShadow } from '../../styles/shadows';
 
@@ -88,6 +89,7 @@ export const RemindersScreen: React.FC = () => {
   const [isAddListModalOpen, setIsAddListModalOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListColor, setNewListColor] = useState(IOS_COLORS.blue);
+  const [newListIcon, setNewListIcon] = useState('list');
 
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState('');
@@ -99,8 +101,9 @@ export const RemindersScreen: React.FC = () => {
 
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
-    const created = await addList(newListName.trim(), newListColor);
+    const created = await addList(newListName.trim(), newListColor, newListIcon);
     setNewListName('');
+    setNewListIcon('list');
     setIsAddListModalOpen(false);
     setSelectedListId(created.id);
   };
@@ -148,6 +151,21 @@ export const RemindersScreen: React.FC = () => {
               >
                 <ChevronLeft size={20} color={theme.text.primary} />
               </Pressable>
+            )}
+
+            {activeListObj && (
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 12,
+                  backgroundColor: activeListObj.color || IOS_COLORS.blue,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ListIconRenderer icon={activeListObj.icon} size={18} color="#FFFFFF" />
+              </View>
             )}
 
             <View>
@@ -514,6 +532,69 @@ export const RemindersScreen: React.FC = () => {
                     }}
                   />
                 ))}
+              </View>
+            </View>
+
+            {/* Selector de Ícono / Emoji */}
+            <View style={{ gap: 8 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text.secondary }}>
+                Ícono o Emoji
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  'list',
+                  'graduation-cap',
+                  'user',
+                  'shopping-cart',
+                  'briefcase',
+                  'book',
+                  'bookmark',
+                  'heart',
+                  'star',
+                  'home',
+                  'code',
+                  'dumbbell',
+                  'sparkles',
+                  'coffee',
+                  'car',
+                  '🎓',
+                  '🛒',
+                  '💼',
+                  '🏠',
+                  '🏋️',
+                  '⭐',
+                  '🎯',
+                  '💡',
+                  '🍕',
+                ].map((ic) => {
+                  const isSelected = newListIcon === ic;
+                  return (
+                    <Pressable
+                      key={ic}
+                      onPress={() => setNewListIcon(ic)}
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 12,
+                        backgroundColor: isSelected
+                          ? newListColor
+                          : isDark
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : '#F2F2F7',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: isSelected ? 2 : 1,
+                        borderColor: isSelected ? '#FFFFFF' : theme.border,
+                      }}
+                    >
+                      <ListIconRenderer
+                        icon={ic}
+                        size={18}
+                        color={isSelected ? '#FFFFFF' : theme.text.primary}
+                      />
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
 

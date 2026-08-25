@@ -436,22 +436,15 @@ export async function seedBusDatabase(db: SQLiteDatabase): Promise<void> {
 
   // 2. Insertar Paradas (Ida y Vuelta)
   await db.execAsync(`
-    -- Paradas Canelo
     INSERT INTO bus_stops (id, route_id, name, latitude, longitude, sequence_order, direction) VALUES
     ('stop-canelo-ida-1', 'canelo', 'Despeñaderos (Terminal / Garita)', -31.8153, -64.2894, 1, 'outbound'),
     ('stop-canelo-ida-2', 'canelo', 'Córdoba (Terminal de Ómnibus)', -31.4422, -64.1938, 2, 'outbound'),
     ('stop-canelo-vuelta-1', 'canelo', 'Córdoba (Terminal de Ómnibus)', -31.4422, -64.1938, 1, 'inbound'),
     ('stop-canelo-vuelta-2', 'canelo', 'Despeñaderos (Garita Central)', -31.8153, -64.2894, 2, 'inbound'),
-
-    -- Paradas Lumasa
-    INSERT INTO bus_stops (id, route_id, name, latitude, longitude, sequence_order, direction) VALUES
     ('stop-lumasa-ida-1', 'lumasa', 'Despeñaderos (Ruta 36)', -31.8153, -64.2894, 1, 'outbound'),
     ('stop-lumasa-ida-2', 'lumasa', 'Córdoba (Terminal T1 / T2)', -31.4422, -64.1938, 2, 'outbound'),
     ('stop-lumasa-vuelta-1', 'lumasa', 'Córdoba (Terminal T1 / T2)', -31.4422, -64.1938, 1, 'inbound'),
     ('stop-lumasa-vuelta-2', 'lumasa', 'Despeñaderos (Ruta 36)', -31.8153, -64.2894, 2, 'inbound'),
-
-    -- Paradas Intercórdoba
-    INSERT INTO bus_stops (id, route_id, name, latitude, longitude, sequence_order, direction) VALUES
     ('stop-inter-ida-1', 'intercordoba', 'Despeñaderos (Garita)', -31.8153, -64.2894, 1, 'outbound'),
     ('stop-inter-ida-2', 'intercordoba', 'Córdoba (Terminal Nueva)', -31.4422, -64.1938, 2, 'outbound'),
     ('stop-inter-vuelta-1', 'intercordoba', 'Córdoba (Terminal Nueva)', -31.4422, -64.1938, 1, 'inbound'),
@@ -459,78 +452,60 @@ export async function seedBusDatabase(db: SQLiteDatabase): Promise<void> {
   `);
 
   // 3. Insertar Horarios Crudos en SQLite
-  // Días hábiles
-  const insertStatements: string[] = [];
+  const scheduleValues: string[] = [];
 
   // Canelo Lunes a Viernes
   CANELO_IDA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-can-ida-${i}', 'canelo', 'stop-canelo-ida-1', 'weekday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-can-ida-${i}', 'canelo', 'stop-canelo-ida-1', 'weekday', '${hora}')`);
   });
   CANELO_VUELTA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-can-vue-${i}', 'canelo', 'stop-canelo-vuelta-1', 'weekday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-can-vue-${i}', 'canelo', 'stop-canelo-vuelta-1', 'weekday', '${hora}')`);
   });
 
   // Intercordoba Lunes a Viernes
   INTERCORDOBA_IDA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-int-ida-${i}', 'intercordoba', 'stop-inter-ida-1', 'weekday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-int-ida-${i}', 'intercordoba', 'stop-inter-ida-1', 'weekday', '${hora}')`);
   });
   INTERCORDOBA_VUELTA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-int-vue-${i}', 'intercordoba', 'stop-inter-vuelta-1', 'weekday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-int-vue-${i}', 'intercordoba', 'stop-inter-vuelta-1', 'weekday', '${hora}')`);
   });
 
   // Lumasa Lunes a Viernes
   LUMASA_IDA_SALIDA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-lum-ida-${i}', 'lumasa', 'stop-lumasa-ida-1', 'weekday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-lum-ida-${i}', 'lumasa', 'stop-lumasa-ida-1', 'weekday', '${hora}')`);
   });
   LUMASA_VUELTA_SALIDA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-lum-vue-${i}', 'lumasa', 'stop-lumasa-vuelta-1', 'weekday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-lum-vue-${i}', 'lumasa', 'stop-lumasa-vuelta-1', 'weekday', '${hora}')`);
   });
 
   // Sábados
   CANELO_IDA_SABADO.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-can-sab-ida-${i}', 'canelo', 'stop-canelo-ida-1', 'saturday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-can-sab-ida-${i}', 'canelo', 'stop-canelo-ida-1', 'saturday', '${hora}')`);
   });
   CANELO_VUELTA_SABADO.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-can-sab-vue-${i}', 'canelo', 'stop-canelo-vuelta-1', 'saturday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-can-sab-vue-${i}', 'canelo', 'stop-canelo-vuelta-1', 'saturday', '${hora}')`);
   });
 
+  // Intercordoba Sábados
   INTERCORDOBA_IDA_SABADO.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-int-sab-ida-${i}', 'intercordoba', 'stop-inter-ida-1', 'saturday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-int-sab-ida-${i}', 'intercordoba', 'stop-inter-ida-1', 'saturday', '${hora}')`);
   });
   INTERCORDOBA_VUELTA_SABADO.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-int-sab-vue-${i}', 'intercordoba', 'stop-inter-vuelta-1', 'saturday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-int-sab-vue-${i}', 'intercordoba', 'stop-inter-vuelta-1', 'saturday', '${hora}')`);
   });
 
+  // Lumasa Sábados
   LUMASA_IDA_SABADO_SALIDA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-lum-sab-ida-${i}', 'lumasa', 'stop-lumasa-ida-1', 'saturday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-lum-sab-ida-${i}', 'lumasa', 'stop-lumasa-ida-1', 'saturday', '${hora}')`);
   });
   LUMASA_VUELTA_SABADO_SALIDA.forEach((hora, i) => {
-    insertStatements.push(
-      `INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES ('sch-lum-sab-vue-${i}', 'lumasa', 'stop-lumasa-vuelta-1', 'saturday', '${hora}');`
-    );
+    scheduleValues.push(`('sch-lum-sab-vue-${i}', 'lumasa', 'stop-lumasa-vuelta-1', 'saturday', '${hora}')`);
   });
 
-  await db.execAsync(insertStatements.join('\n'));
+  if (scheduleValues.length > 0) {
+    await db.execAsync(`
+      INSERT INTO bus_schedules (id, route_id, stop_id, day_type, departure_time) VALUES
+      ${scheduleValues.join(',\n')};
+    `);
+  }
 }

@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -148,38 +148,24 @@ export const TabletSidebar: React.FC = () => {
           >
             {!isSidebarCollapsed && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View
+                <Image
+                  source={require('../../../assets/icon.png')}
                   style={{
                     width: 32,
                     height: 32,
-                    borderRadius: 10,
-                    backgroundColor: '#007AFF',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    borderRadius: 9,
                   }}
-                >
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 16 }}>M</Text>
-                </View>
+                />
                 <View>
                   <Text
                     style={{
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: '900',
                       color: theme.text.primary,
-                      letterSpacing: -0.4,
+                      letterSpacing: -0.5,
                     }}
                   >
                     MiHub
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: '700',
-                      color: theme.text.tertiary,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    iPadOS
                   </Text>
                 </View>
               </View>

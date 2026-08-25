@@ -186,16 +186,16 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
           </Pressable>
         </View>
       )}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, width: '100%' }}>
         {/* Indicador de jerarquía para subtareas */}
         {level > 0 && (
-          <View style={{ marginTop: 4, marginRight: -4 }}>
+          <View style={{ marginTop: 4, marginRight: -4, flexShrink: 0 }}>
             <CornerDownRight size={14} color={theme.text.tertiary} />
           </View>
         )}
 
         {/* Checkbox Circular Animado */}
-        <View style={{ marginTop: 1 }}>
+        <View style={{ marginTop: 1, flexShrink: 0 }}>
           <ReminderCheckbox
             checked={isCompleted}
             onToggle={() => onToggleComplete(task.id)}
@@ -206,13 +206,13 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
         </View>
 
         {/* Contenido Principal */}
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <View style={{ flex: 1, paddingRight: 6 }}>
+        <View style={{ flex: 1, flexShrink: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <View style={{ flex: 1, flexShrink: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {/* Indicador de Prioridad Exclamation */}
                 {priorityInfo && (
-                  <Text style={{ fontSize: 13, fontWeight: '900', color: priorityInfo.color }}>
+                  <Text style={{ fontSize: 13, fontWeight: '900', color: priorityInfo.color, flexShrink: 0 }}>
                     {priorityInfo.label}
                   </Text>
                 )}
@@ -220,11 +220,12 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                 <Text
                   style={{
                     fontSize: 15,
-                    fontWeight: '700',
+                    fontFamily: IOS_FONTS.bold,
                     color: isCompleted ? theme.text.tertiary : theme.text.primary,
                     textDecorationLine: isCompleted ? 'line-through' : 'none',
                     lineHeight: 20,
                     flex: 1,
+                    flexShrink: 1,
                   }}
                 >
                   {task.title}
@@ -237,6 +238,7 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                   numberOfLines={2}
                   style={{
                     fontSize: 12,
+                    fontFamily: IOS_FONTS.regular,
                     color: theme.text.secondary,
                     marginTop: 3,
                     lineHeight: 16,
@@ -248,7 +250,7 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
             </View>
 
             {/* Acciones Rápidas (Subtareas / Flag / Plus) */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               {/* Botón de Colapso de Subtareas si tiene hijos */}
               {task.has_subtasks && (
                 <Pressable
@@ -256,17 +258,19 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                     e.stopPropagation();
                     onToggleCollapse?.(task.id);
                   }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
-                    paddingHorizontal: 7,
-                    paddingVertical: 3,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
                     borderRadius: 8,
-                    gap: 3,
+                    gap: 4,
+                    minHeight: 28,
                   }}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: theme.text.secondary }}>
                     {task.subtasks_completed_count}/{task.subtasks_count}
                   </Text>
                   {task.is_collapsed ? (
@@ -283,7 +287,15 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                   e.stopPropagation();
                   onToggleFlag?.(task.id);
                 }}
-                style={{ padding: 3 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: task.flagged ? (isDark ? 'rgba(255, 149, 0, 0.2)' : '#FEF3C7') : 'transparent',
+                }}
               >
                 <Flag
                   size={14}
@@ -299,16 +311,17 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                     e.stopPropagation();
                     onAddSubtask(task.id);
                   }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
                     backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Plus size={13} color={theme.text.secondary} strokeWidth={2.5} />
+                  <Plus size={14} color={theme.text.secondary} strokeWidth={2.5} />
                 </Pressable>
               )}
             </View>
@@ -327,6 +340,7 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
+                  flexShrink: 0,
                   backgroundColor: isOverdue || isToday
                     ? 'rgba(255, 59, 48, 0.15)'
                     : isDark
@@ -344,7 +358,7 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                 <Text
                   style={{
                     fontSize: 11,
-                    fontWeight: '800',
+                    fontFamily: IOS_FONTS.bold,
                     color: isOverdue || isToday ? '#FF3B30' : IOS_COLORS.blue,
                   }}
                 >
@@ -359,6 +373,7 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
+                  flexShrink: 0,
                   backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
                   paddingHorizontal: 7,
                   paddingVertical: 3,
@@ -367,7 +382,7 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                 }}
               >
                 <Repeat size={11} color={IOS_COLORS.purple} />
-                <Text style={{ fontSize: 11, fontWeight: '800', color: IOS_COLORS.purple }}>
+                <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: IOS_COLORS.purple }}>
                   {getHumanReadableRRule(task.rrule)}
                 </Text>
               </View>
@@ -382,9 +397,10 @@ const HierarchicalTaskItemComponent: React.FC<HierarchicalTaskItemProps> = ({
                   paddingHorizontal: 8,
                   paddingVertical: 3,
                   borderRadius: 8,
+                  flexShrink: 0,
                 }}
               >
-                <Text style={{ fontSize: 11, color: IOS_COLORS.cyan, fontWeight: '700' }}>
+                <Text style={{ fontSize: 11, color: IOS_COLORS.cyan, fontFamily: IOS_FONTS.bold }}>
                   #{tag}
                 </Text>
               </View>

@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, Check
 import { UnifiedCalendarItem } from '../../../types';
 import { TimeBlockItem } from './TimeBlockItem';
 import { SpecularCard } from '../../../components/common/SpecularCard';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 
@@ -140,26 +140,25 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
           </View>
         </View>
 
-        {/* Días de la semana */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, paddingHorizontal: 4 }}>
+        {/* Días de la semana (Grilla 7 Columnas 14.285% perfectamente simétrica) */}
+        <View style={{ flexDirection: 'row', width: '100%', marginBottom: 10 }}>
           {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-            <Text
-              key={i}
-              style={{
-                width: 38,
-                textAlign: 'center',
-                fontSize: 11,
-                fontWeight: '800',
-                color: i >= 5 ? IOS_COLORS.red : theme.text.secondary,
-              }}
-            >
-              {d}
-            </Text>
+            <View key={i} style={{ width: '14.285%', alignItems: 'center', justifyContent: 'center' }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: IOS_FONTS.bold,
+                  color: i >= 5 ? IOS_COLORS.red : theme.text.secondary,
+                }}
+              >
+                {d}
+              </Text>
+            </View>
           ))}
         </View>
 
-        {/* Celdas de Días del Mes */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 }}>
+        {/* Celdas de Días del Mes (14.285% por celda con aspect simétrico) */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: '100%', rowGap: 6 }}>
           {daysGrid.map((item, index) => {
             const isSelected = item.dateStr === selectedDate;
             const isToday = item.dateStr === todayStr;
@@ -167,45 +166,61 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
             const hasItems = meta && meta.count > 0;
 
             return (
-              <Pressable
+              <View
                 key={index}
-                onPress={() => onSelectDate(item.dateStr)}
-                style={({ pressed }) => ({
-                  width: 38,
-                  height: 48,
-                  borderRadius: 14,
+                style={{
+                  width: '14.285%',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  opacity: pressed ? 0.75 : item.isCurrentMonth ? 1 : 0.35,
-                  backgroundColor: isSelected
-                    ? isDark
-                      ? '#007AFF'
-                      : '#007AFF'
-                    : isToday
-                    ? isDark
-                      ? 'rgba(0, 122, 255, 0.2)'
-                      : '#EFF6FF'
-                    : 'transparent',
-                  borderWidth: isToday && !isSelected ? 1 : 0,
-                  borderColor: '#007AFF',
-                })}
+                  paddingVertical: 2,
+                }}
               >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: isSelected || isToday ? '900' : '700',
-                    color: isSelected
-                      ? '#FFFFFF'
-                      : isToday
+                <Pressable
+                  onPress={() => onSelectDate(item.dateStr)}
+                  style={({ pressed }) => ({
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: pressed ? 0.75 : item.isCurrentMonth ? 1 : 0.35,
+                    backgroundColor: isSelected
                       ? '#007AFF'
-                      : theme.text.primary,
+                      : isToday
+                      ? isDark
+                        ? 'rgba(0, 122, 255, 0.22)'
+                        : '#EFF6FF'
+                      : 'transparent',
+                    borderWidth: isToday && !isSelected ? 1.5 : 0,
+                    borderColor: '#007AFF',
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontFamily: isSelected || isToday ? IOS_FONTS.bold : IOS_FONTS.semibold,
+                      color: isSelected
+                        ? '#FFFFFF'
+                        : isToday
+                        ? '#007AFF'
+                        : theme.text.primary,
+                    }}
+                  >
+                    {item.day}
+                  </Text>
+                </Pressable>
+
+                {/* Puntos/dots de eventos en contenedor de altura fija (6px) para evitar saltos */}
+                <View
+                  style={{
+                    height: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                    marginTop: 2,
                   }}
                 >
-                  {item.day}
-                </Text>
-
-                {/* Puntos de color de eventos y tareas */}
-                <View style={{ flexDirection: 'row', gap: 2, marginTop: 4, height: 4 }}>
                   {hasItems &&
                     meta.colors.slice(0, 3).map((col, cIdx) => (
                       <View
@@ -214,12 +229,12 @@ export const MonthHybridView: React.FC<MonthHybridViewProps> = ({
                           width: 4,
                           height: 4,
                           borderRadius: 2,
-                          backgroundColor: isSelected ? '#FFFFFF' : col,
+                          backgroundColor: col,
                         }}
                       />
                     ))}
                 </View>
-              </Pressable>
+              </View>
             );
           })}
         </View>

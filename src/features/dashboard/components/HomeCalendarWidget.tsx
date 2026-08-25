@@ -229,32 +229,43 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
 
         {/* Lado Derecho (~54%): Mini Grilla Semanal con Time-Blocking Dinámico Real */}
         <View style={{ flex: 1.25, gap: 8 }}>
-          {/* Selector de Días Semanales */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          {/* Selector de Días Semanales (7 Columnas flex-1 Simétricas) */}
+          <View style={{ flexDirection: 'row', width: '100%', alignItems: 'center' }}>
             {weekDays.map((day, idx) => {
               const isSelected = selectedDayIndex === idx;
               return (
                 <Pressable
                   key={day.fullDate}
                   onPress={() => setSelectedDayIndex(idx)}
-                  style={{ alignItems: 'center', gap: 2 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                  style={{ flex: 1, alignItems: 'center', gap: 3 }}
                 >
-                  <Text style={{ fontSize: 9, fontFamily: IOS_FONTS.bold, color: isSelected ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light) : theme.text.tertiary }}>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontFamily: IOS_FONTS.bold,
+                      color: isSelected
+                        ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light)
+                        : theme.text.tertiary,
+                    }}
+                  >
                     {day.short}
                   </Text>
                   <View
                     style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      backgroundColor: isSelected ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light) : 'transparent',
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: isSelected
+                        ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light)
+                        : 'transparent',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: 11,
+                        fontSize: 12,
                         fontFamily: IOS_FONTS.bold,
                         color: isSelected ? '#FFFFFF' : theme.text.primary,
                       }}

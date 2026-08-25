@@ -246,24 +246,25 @@ const GritHabitCardComponent: React.FC<GritHabitCardProps> = ({
         </View>
 
         {/* 2. Cuerpo: Emoji, Título, Subtítulo y Botón de Acción */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 4, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, flexShrink: 1 }}>
             {/* Emoji */}
             <View
               style={{
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 borderRadius: 14,
                 backgroundColor: `${cardAccent}20`,
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <AppleEmoji emoji={habit.icon} size={24} />
             </View>
 
             {/* Título & Frecuencia */}
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, flexShrink: 1 }}>
               <Text
                 numberOfLines={1}
                 style={{
@@ -286,17 +287,21 @@ const GritHabitCardComponent: React.FC<GritHabitCardProps> = ({
             </View>
           </View>
 
-          {/* Botón Circular de Acción Táctil */}
+          {/* Botón Circular de Acción Táctil (Mínimo 44x44 dp) */}
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
               handleActionPress();
             }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={({ pressed }) => ({
               transform: [{ scale: pressed ? 0.88 : 1 }],
-              width: 40,
-              height: 40,
-              borderRadius: 20,
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              minHeight: 44,
+              borderRadius: 22,
+              flexShrink: 0,
               backgroundColor: isCompleted
                 ? cardAccent
                 : isTimerRunning
@@ -320,24 +325,24 @@ const GritHabitCardComponent: React.FC<GritHabitCardProps> = ({
           >
             {habit.type === 'check' ? (
               isCompleted ? (
-                <Check size={18} color="#FFFFFF" strokeWidth={3} />
+                <Check size={20} color="#FFFFFF" strokeWidth={3} />
               ) : (
-                <Check size={18} color={cardAccent} strokeWidth={2.5} />
+                <Check size={20} color={cardAccent} strokeWidth={2.5} />
               )
             ) : habit.type === 'counter' ? (
               isCompleted ? (
-                <Check size={18} color="#FFFFFF" strokeWidth={3} />
+                <Check size={20} color="#FFFFFF" strokeWidth={3} />
               ) : (
-                <Plus size={18} color={cardAccent} strokeWidth={2.5} />
+                <Plus size={20} color={cardAccent} strokeWidth={2.5} />
               )
             ) : (
               // Timer
               isTimerRunning ? (
-                <Square size={14} color="#FFFFFF" fill="#FFFFFF" />
+                <Square size={16} color="#FFFFFF" fill="#FFFFFF" />
               ) : isCompleted ? (
-                <Check size={18} color="#FFFFFF" strokeWidth={3} />
+                <Check size={20} color="#FFFFFF" strokeWidth={3} />
               ) : (
-                <Play size={16} color={cardAccent} fill={cardAccent} style={{ marginLeft: 2 }} />
+                <Play size={18} color={cardAccent} fill={cardAccent} style={{ marginLeft: 2 }} />
               )
             )}
           </Pressable>

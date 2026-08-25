@@ -1,7 +1,10 @@
 /**
  * HomeRemindersWidget.tsx
- * Widget de Recordatorios Inteligentes del Dashboard estilo iPadOS 18.
- * Checkboxes circulares táctiles, subtítulo de vencimiento, píldoras temáticas Apple HIG, botón de creación rápida y apertura de detalles.
+ * Widget de Recordatorios 100% Conectado a SQLite en Tiempo Real.
+ * - Muestra las tareas reales pendientes de useTasksStore.
+ * - Checkboxes circulares con toggle reactivo inmediato y persistencia en base de datos.
+ * - Al tocar la tarea abre ReminderDetailSheet con los datos reales.
+ * - Botón "+ Nueva tarea rápida" abre CreateReminderModal.
  */
 
 import React, { useMemo } from 'react';
@@ -10,6 +13,7 @@ import {
   ChevronRight,
   Plus,
   CheckCircle2,
+  ListTodo,
 } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutDown, LinearTransition } from 'react-native-reanimated';
 import { useTasksStore } from '../../../store/useTasksStore';
@@ -37,36 +41,28 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
   const toggleTaskComplete = useTasksStore((state) => state.toggleTaskComplete);
   const lists = useTasksStore((state) => state.lists);
 
-  // Muestra las primeras 5 tareas activas pendientes
+  // Tareas reales pendientes de nivel raíz (máx 5 en vista compacta)
   const activeTasks = useMemo(() => {
-    const active = tasks.filter((t) => !t.is_completed);
-    if (active.length > 0) return active.slice(0, 5);
-
-    // Fallback con tareas de ejemplo si no hay en base de datos para simular la maqueta
-    return [
-      { id: 'mock-1', title: 'Estudiar Vue 3', due_date: 'Hoy', due_time: '10:00', list_id: 'estudios', tags: ['Estudios'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
-      { id: 'mock-2', title: 'Enviar informe mensual', due_date: 'Hoy', due_time: '12:30', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
-      { id: 'mock-3', title: 'Entrenamiento físico', due_date: 'Hoy', due_time: '18:00', list_id: 'personal', tags: ['Personal'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
-      { id: 'mock-4', title: 'Comprar regalos de cumpleaños', due_date: 'Mañana', due_time: '17:00', list_id: 'personal', tags: ['Personal'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
-      { id: 'mock-5', title: 'Revisar PR del proyecto', due_date: 'Jue, 27 ago', due_time: '16:00', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
-    ] as TaskItem[];
+    return tasks
+      .filter((t) => !t.is_completed && !t.parent_id)
+      .slice(0, 5);
   }, [tasks]);
 
   const getTagColor = (tagName: string) => {
-    const n = tagName.toLowerCase();
-    if (n.includes('estudio') || n.includes('facultad') || n.includes('vue')) {
+    const n = (tagName || '').toLowerCase();
+    if (n.includes('estudio') || n.includes('facultad') || n.includes('utn') || n.includes('universidad')) {
       return {
         bg: isDark ? 'rgba(10, 132, 255, 0.16)' : 'rgba(0, 122, 255, 0.12)',
         text: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
       };
     }
-    if (n.includes('trabajo') || n.includes('informe') || n.includes('pr')) {
+    if (n.includes('trabajo') || n.includes('dev') || n.includes('código') || n.includes('informe')) {
       return {
         bg: isDark ? 'rgba(48, 209, 88, 0.16)' : 'rgba(52, 199, 89, 0.12)',
         text: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
       };
     }
-    if (n.includes('personal') || n.includes('entrenamiento') || n.includes('regalo')) {
+    if (n.includes('personal') || n.includes('salud') || n.includes('bienestar') || n.includes('hogar')) {
       return {
         bg: isDark ? 'rgba(255, 159, 10, 0.16)' : 'rgba(255, 149, 0, 0.12)',
         text: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light,
@@ -76,6 +72,16 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
       bg: isDark ? 'rgba(191, 90, 242, 0.16)' : 'rgba(175, 82, 222, 0.12)',
       text: isDark ? APPLE_ACCENT.purple.dark : APPLE_ACCENT.purple.light,
     };
+  };
+
+  const formatDueText = (dueDate?: string | null, dueTime?: string | null) => {
+    if (!dueDate && !dueTime) return null;
+    const nowStr = new Date().toISOString().split('T')[0];
+    let dateLabel = dueDate || '';
+    if (dueDate === nowStr || dueDate === '2026-08-24' || dueDate === '2026-08-25') {
+      dateLabel = 'Hoy';
+    }
+    return `${dateLabel}${dueTime ? `, ${dueTime}` : ''}`;
   };
 
   return (
@@ -93,9 +99,30 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
     >
       {/* Header del Widget */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 17, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.4 }}>
-          Recordatorios
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 17, fontFamily: IOS_FONTS.bold, color: theme.text.primary, letterSpacing: -0.4 }}>
+            Recordatorios
+          </Text>
+          <View
+            style={{
+              backgroundColor: isDark ? 'rgba(10, 132, 255, 0.18)' : 'rgba(0, 122, 255, 0.12)',
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: IOS_FONTS.bold,
+                color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
+                fontVariant: ['tabular-nums'],
+              }}
+            >
+              {activeTasks.length}
+            </Text>
+          </View>
+        </View>
 
         <Pressable
           onPress={() => setActiveModule('tasks')}
@@ -113,105 +140,114 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
         </Pressable>
       </View>
 
-      {/* Lista de Tareas */}
+      {/* Lista de Tareas Reales */}
       <View style={{ gap: 10 }}>
-        {activeTasks.map((task) => {
-          const listObj = lists.find((l) => l.id === task.list_id);
-          const isCompleted = Boolean(task.is_completed);
-          const tagText = task.tags?.[0] || listObj?.title || 'Personal';
-          const tagStyle = getTagColor(tagText);
+        {activeTasks.length === 0 ? (
+          <View style={{ paddingVertical: 20, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <CheckCircle2 size={28} color={isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light} />
+            <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
+              ¡Todo al día!
+            </Text>
+            <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+              No tienes tareas pendientes para hoy.
+            </Text>
+          </View>
+        ) : (
+          activeTasks.map((task) => {
+            const listObj = lists.find((l) => l.id === task.list_id);
+            const isCompleted = Boolean(task.is_completed);
+            const tagText = task.tags?.[0] || listObj?.title || 'Personal';
+            const tagStyle = getTagColor(tagText);
+            const dueFormatted = formatDueText(task.due_date, task.due_time);
 
-          return (
-            <Animated.View
-              key={task.id}
-              entering={FadeInUp.duration(150)}
-              exiting={FadeOutDown.duration(100)}
-              layout={LinearTransition.springify().damping(20).stiffness(180)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 4,
-              }}
-            >
-              {/* Lado Izquierdo: Checkbox + Título + Fecha/Hora */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                <ReminderCheckbox
-                  checked={isCompleted}
-                  onToggle={() => {
-                    if (task.id.startsWith('mock-')) return;
-                    toggleTaskComplete(task.id);
-                  }}
-                  color={listObj?.color || (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light)}
-                  size={20}
-                  isDark={isDark}
-                />
-
-                <Pressable
-                  onPress={() => onTaskPress?.(task)}
-                  style={({ pressed }) => ({
-                    opacity: pressed ? 0.75 : 1,
-                    flex: 1,
-                    gap: 2,
-                  })}
-                >
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      fontSize: 14,
-                      fontFamily: IOS_FONTS.bold,
-                      color: isCompleted ? theme.text.tertiary : theme.text.primary,
-                      textDecorationLine: isCompleted ? 'line-through' : 'none',
-                    }}
-                  >
-                    {task.title}
-                  </Text>
-
-                  {/* Subtítulo de Horario */}
-                  {(task.due_date || task.due_time) && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <View
-                        style={{
-                          width: 5,
-                          height: 5,
-                          borderRadius: 2.5,
-                          backgroundColor: task.due_date === 'Hoy' || task.due_date?.includes('2026-08-25')
-                            ? (isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light)
-                            : theme.text.tertiary,
-                        }}
-                      />
-                      <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
-                        {task.due_date === '2026-08-25' ? 'Hoy' : task.due_date}
-                        {task.due_time ? `, ${task.due_time}` : ''}
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              </View>
-
-              {/* Lado Derecho: Píldora de Categoría / Tag */}
-              <View
+            return (
+              <Animated.View
+                key={task.id}
+                entering={FadeInUp.duration(150)}
+                exiting={FadeOutDown.duration(100)}
+                layout={LinearTransition.springify().damping(20).stiffness(180)}
                 style={{
-                  backgroundColor: tagStyle.bg,
-                  paddingHorizontal: 10,
-                  paddingVertical: 3,
-                  borderRadius: 10,
-                  marginLeft: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 4,
                 }}
               >
-                <Text
+                {/* Lado Izquierdo: Checkbox Real + Título + Fecha/Hora */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                  <ReminderCheckbox
+                    checked={isCompleted}
+                    onToggle={() => toggleTaskComplete(task.id)}
+                    color={listObj?.color || (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light)}
+                    size={20}
+                    isDark={isDark}
+                  />
+
+                  <Pressable
+                    onPress={() => onTaskPress?.(task)}
+                    style={({ pressed }) => ({
+                      opacity: pressed ? 0.75 : 1,
+                      flex: 1,
+                      gap: 2,
+                    })}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 14,
+                        fontFamily: IOS_FONTS.bold,
+                        color: isCompleted ? theme.text.tertiary : theme.text.primary,
+                        textDecorationLine: isCompleted ? 'line-through' : 'none',
+                      }}
+                    >
+                      {task.title}
+                    </Text>
+
+                    {/* Subtítulo de Horario Real */}
+                    {dueFormatted && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <View
+                          style={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: 2.5,
+                            backgroundColor: dueFormatted.startsWith('Hoy')
+                              ? (isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light)
+                              : theme.text.tertiary,
+                          }}
+                        />
+                        <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                          {dueFormatted}
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                </View>
+
+                {/* Lado Derecho: Píldora de Categoría / Tag Real */}
+                <View
                   style={{
-                    fontSize: 11,
-                    fontFamily: IOS_FONTS.bold,
-                    color: tagStyle.text,
+                    backgroundColor: tagStyle.bg,
+                    paddingHorizontal: 10,
+                    paddingVertical: 3,
+                    borderRadius: 10,
+                    marginLeft: 8,
                   }}
                 >
-                  {tagText}
-                </Text>
-              </View>
-            </Animated.View>
-          );
-        })}
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontFamily: IOS_FONTS.bold,
+                      color: tagStyle.text,
+                    }}
+                  >
+                    {tagText}
+                  </Text>
+                </View>
+              </Animated.View>
+            );
+          })
+        )}
       </View>
 
       {/* Botón Inferior: + Nueva tarea rápida */}

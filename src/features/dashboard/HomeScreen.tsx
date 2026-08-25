@@ -54,7 +54,7 @@ export const HomeScreen: React.FC = () => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
   const { lists, tasks, loadTasksAndLists, addTask, updateTask, deleteTask } = useTasksStore();
-  const { events, categories: calendarCategories, loadEvents, addEvent, updateEvent, deleteEvent } = useCalendarStore();
+  const { events, categories: calendarCategories, loadEvents, loadCategories, addEvent, updateEvent, deleteEvent } = useCalendarStore();
   const { loadFinanceData } = useFinanceStore();
   const { loadHabitsData } = useHabitsStore();
 
@@ -74,6 +74,7 @@ export const HomeScreen: React.FC = () => {
     Promise.allSettled([
       loadTasksAndLists(),
       loadEvents(),
+      loadCategories(),
       loadFinanceData(),
       loadHabitsData(),
     ]);

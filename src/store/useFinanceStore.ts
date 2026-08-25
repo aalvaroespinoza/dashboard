@@ -15,6 +15,8 @@ interface FinanceSummary {
   totalExpense: number;
   balance: number;
   savingsRate: number;
+  totalBudget: number;
+  totalBudgetSpentPercentage: number;
   categoryBreakdown: {
     categoryId: string;
     name: string;
@@ -22,6 +24,10 @@ interface FinanceSummary {
     color: string;
     total: number;
     percentage: number;
+    budgetLimit: number | null;
+    budgetSpentPercentage: number | null;
+    remainingBudget: number | null;
+    isOverBudget: boolean;
   }[];
 }
 
@@ -32,6 +38,7 @@ interface FinanceState {
   transactions: FinanceTransaction[];
   recurringPayments: FinanceTransaction[];
   selectedMonth: string; // YYYY-MM
+  budgets: Record<string, number>; // categoryId -> amount_limit
   summary: FinanceSummary;
   totalNetWorth: number;
   isLoading: boolean;
@@ -42,6 +49,9 @@ interface FinanceState {
   setSelectedMonth: (yearMonth: string) => Promise<void>;
   prevMonth: () => Promise<void>;
   nextMonth: () => Promise<void>;
+
+  setCategoryBudget: (categoryId: string, amountLimit: number) => Promise<void>;
+  deleteCategoryBudget: (categoryId: string) => Promise<void>;
 
   addAccount: (acc: {
     name: string;
@@ -81,11 +91,14 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   transactions: [],
   recurringPayments: [],
   selectedMonth: new Date().toISOString().substring(0, 7),
+  budgets: {},
   summary: {
     totalIncome: 0,
     totalExpense: 0,
     balance: 0,
     savingsRate: 0,
+    totalBudget: 0,
+    totalBudgetSpentPercentage: 0,
     categoryBreakdown: [],
   },
   totalNetWorth: 0,
@@ -109,12 +122,13 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     set({ isLoading: true });
     try {
       const month = get().selectedMonth;
-      const [categories, transactions, summary, accounts, recurring] = await Promise.all([
+      const [categories, transactions, summary, accounts, recurring, budgets] = await Promise.all([
         financeRepo.getCategories(),
         financeRepo.getTransactionsByMonth(month),
         financeRepo.getMonthlySummary(month),
         accountsRepo.getAll(),
         financeRepo.getRecurringPayments(),
+        financeRepo.getBudgetsForMonth(month),
       ]);
 
       const totalNetWorth = accounts.reduce((acc, a) => acc + (a.current_balance || 0), 0);
@@ -125,6 +139,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         summary,
         accounts,
         recurringPayments: recurring,
+        budgets,
         totalNetWorth,
         isLoading: false,
       });
@@ -136,14 +151,27 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   setSelectedMonth: async (yearMonth: string) => {
     set({ selectedMonth: yearMonth, isLoading: true });
     try {
-      const [transactions, summary] = await Promise.all([
+      const [transactions, summary, budgets] = await Promise.all([
         financeRepo.getTransactionsByMonth(yearMonth),
         financeRepo.getMonthlySummary(yearMonth),
+        financeRepo.getBudgetsForMonth(yearMonth),
       ]);
-      set({ transactions, summary, isLoading: false });
+      set({ transactions, summary, budgets, isLoading: false });
     } catch {
       set({ isLoading: false });
     }
+  },
+
+  setCategoryBudget: async (categoryId: string, amountLimit: number) => {
+    const month = get().selectedMonth;
+    await financeRepo.setCategoryBudget(categoryId, month, amountLimit);
+    await get().loadFinanceData();
+  },
+
+  deleteCategoryBudget: async (categoryId: string) => {
+    const month = get().selectedMonth;
+    await financeRepo.deleteCategoryBudget(categoryId, month);
+    await get().loadFinanceData();
   },
 
   prevMonth: async () => {

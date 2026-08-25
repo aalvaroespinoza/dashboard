@@ -128,6 +128,19 @@ export const CREATE_TABLES_SQL = `
   CREATE INDEX IF NOT EXISTS idx_trans_date ON transactions(transaction_date);
   CREATE INDEX IF NOT EXISTS idx_trans_cat ON transactions(category_id);
 
+  -- Presupuestos mensuales por categoría
+  CREATE TABLE IF NOT EXISTS finance_budgets (
+    id TEXT PRIMARY KEY,
+    category_id TEXT NOT NULL,
+    month TEXT NOT NULL,
+    amount_limit REAL NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE(category_id, month)
+  );
+  CREATE INDEX IF NOT EXISTS idx_budgets_month ON finance_budgets(month);
+
   -- Timers activos de hábitos (persistencia entre sesiones)
   CREATE TABLE IF NOT EXISTS active_timers (
     habit_id TEXT PRIMARY KEY,

@@ -145,6 +145,15 @@ export interface FinanceCategory {
   budget_limit?: number | null;
 }
 
+export interface FinanceBudget {
+  id: string;
+  category_id: string;
+  month: string; // YYYY-MM
+  amount_limit: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export type AccountType = 'cash' | 'debit' | 'credit' | 'savings';
 
 export interface FinanceAccount {

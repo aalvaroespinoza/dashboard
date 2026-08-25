@@ -29,6 +29,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { FinanceMetricCards } from './components/FinanceMetricCards';
 import { FinanceChartAnimated } from './components/FinanceChartAnimated';
 import { CategoryBreakdownList, CategoryItem } from './components/CategoryBreakdownList';
+import { CategoryBudgetModal } from './components/CategoryBudgetModal';
 import { AccountCard } from './components/AccountCard';
 import { RecurringPaymentItem } from './components/RecurringPaymentItem';
 import { NewTransactionModal } from './components/NewTransactionModal';
@@ -63,6 +64,8 @@ export const FinancesScreen: React.FC = () => {
     setSelectedAccountId,
     prevMonth,
     nextMonth,
+    setCategoryBudget,
+    deleteCategoryBudget,
     addAccount,
     deleteAccount,
     addTransaction,
@@ -76,6 +79,7 @@ export const FinancesScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FinanceTab>('overview');
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isAccModalOpen, setIsAccModalOpen] = useState(false);
+  const [selectedBudgetCategory, setSelectedBudgetCategory] = useState<CategoryItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Formato del mes visible: "Agosto 2026"
@@ -105,7 +109,7 @@ export const FinancesScreen: React.FC = () => {
     return list;
   }, [transactions, selectedAccountId, searchQuery]);
 
-  // Transformar desglose de categorías
+  // Transformar desglose de categorías y presupuestos
   const categoryItems: CategoryItem[] = useMemo(() => {
     if (summary?.categoryBreakdown && summary.categoryBreakdown.length > 0) {
       return summary.categoryBreakdown.map((b) => ({
@@ -115,6 +119,10 @@ export const FinancesScreen: React.FC = () => {
         percentage: b.percentage,
         color: b.color || IOS_COLORS.blue,
         iconName: b.icon,
+        budgetLimit: b.budgetLimit,
+        budgetSpentPercentage: b.budgetSpentPercentage,
+        remainingBudget: b.remainingBudget,
+        isOverBudget: b.isOverBudget,
       }));
     }
     return [];
@@ -362,9 +370,20 @@ export const FinancesScreen: React.FC = () => {
           {/* Gráfico de Evolución */}
           <FinanceChartAnimated monthKey={selectedMonth} isDark={isDark} />
 
-          {/* Desglose por Categorías */}
+          {/* Desglose por Categorías y Presupuestos */}
           <CategoryBreakdownList
             categories={categoryItems}
+            totalBudget={summary?.totalBudget || 0}
+            totalSpent={expense}
+            onSelectCategory={(catId) => {
+              const cat = categoryItems.find((c) => c.id === catId);
+              if (cat) {
+                setSelectedBudgetCategory({
+                  ...cat,
+                  amountSpent: cat.amount,
+                });
+              }
+            }}
             isDark={isDark}
           />
         </View>
@@ -578,6 +597,23 @@ export const FinancesScreen: React.FC = () => {
         onClose={() => setIsAccModalOpen(false)}
         onSave={async (acc) => {
           await addAccount(acc);
+        }}
+        isDark={isDark}
+      />
+
+      {/* Modal Ajustar Presupuesto de Categoría */}
+      <CategoryBudgetModal
+        visible={Boolean(selectedBudgetCategory)}
+        category={selectedBudgetCategory}
+        monthLabel={formattedMonthLabel}
+        onClose={() => setSelectedBudgetCategory(null)}
+        onSave={async (catId, limit) => {
+          await setCategoryBudget(catId, limit);
+          setSelectedBudgetCategory(null);
+        }}
+        onRemoveBudget={async (catId) => {
+          await deleteCategoryBudget(catId);
+          setSelectedBudgetCategory(null);
         }}
         isDark={isDark}
       />

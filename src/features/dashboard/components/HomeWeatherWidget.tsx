@@ -1,31 +1,40 @@
 /**
  * HomeWeatherWidget.tsx
- * Tarjeta de Clima estilo Apple Weather (iOS / iPadOS) con gradiente pastel y acabado Glassmorphism.
+ * Tarjeta de Clima interactiva estilo Apple Weather (iOS / iPadOS) con gradiente pastel y acabado Glassmorphism.
+ * Al presionar abre el modal detallado de pronóstico con selector multi-ciudad y deep link.
  */
 
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import {
   Sun,
-  CloudSun,
-  Wind,
   Droplets,
-  ChevronRight,
+  Wind,
   MapPin,
+  ChevronRight,
 } from 'lucide-react-native';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface HomeWeatherWidgetProps {
+  onPress?: () => void;
+  currentCity?: string;
   isDark?: boolean;
 }
 
-export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({ isDark = true }) => {
+export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
+  onPress,
+  currentCity = 'Despeñaderos, Córdoba',
+  isDark = true,
+}) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
   return (
-    <View
-      style={{
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        transform: [{ scale: pressed ? 0.99 : 1 }],
+        opacity: pressed ? 0.9 : 1,
         backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
         borderRadius: 24,
         padding: 18,
@@ -38,7 +47,7 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({ isDark = t
         flexWrap: 'wrap',
         gap: 16,
         ...createShadow('#000000', { width: 0, height: 3 }, isDark ? 0.2 : 0.04, 8),
-      }}
+      })}
     >
       {/* Lado Izquierdo: Sol brillante + Temperatura 18° + Estado */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
@@ -87,13 +96,13 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({ isDark = t
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <MapPin size={12} color={theme.text.tertiary} />
             <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
-              Despeñaderos, Córdoba
+              {currentCity}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Lado Derecho: Rango Térmico & Métricas Secundarias */}
+      {/* Lado Derecho: Rango Térmico & Métricas Secundarias + Chevron */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         {/* Max / Min Badge */}
         <View
@@ -130,7 +139,9 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({ isDark = t
             </Text>
           </View>
         </View>
+
+        <ChevronRight size={16} color={theme.text.tertiary} />
       </View>
-    </View>
+    </Pressable>
   );
 };

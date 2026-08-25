@@ -35,6 +35,14 @@ function calculateFortnightProgress(completedDaysArray) {
   return { completed, total, percentage };
 }
 
+function cycleHabitIndex(currentIndex, totalHabits, direction = 'next') {
+  if (totalHabits <= 0) return 0;
+  if (direction === 'next') {
+    return (currentIndex + 1) % totalHabits;
+  }
+  return (currentIndex - 1 + totalHabits) % totalHabits;
+}
+
 test('1. Cálculo de cuenta regresiva para el próximo colectivo', () => {
   // Colectivo de las 06:25 saliendo a la 01:09 -> 5h 16m
   const countdown = calculateBusCountdown('06:25', 1, 9);
@@ -63,4 +71,16 @@ test('3. Formateo de temporizador y progreso quincenal de hábitos', () => {
   assert.equal(progress.completed, 8);
   assert.equal(progress.total, 10);
   assert.equal(progress.percentage, 80);
+});
+
+test('4. Paginación y ciclado horizontal de carrusel de hábitos', () => {
+  const total = 3;
+  // Avanzar del 0 al 1, 1 al 2, 2 al 0
+  assert.equal(cycleHabitIndex(0, total, 'next'), 1);
+  assert.equal(cycleHabitIndex(1, total, 'next'), 2);
+  assert.equal(cycleHabitIndex(2, total, 'next'), 0);
+
+  // Retroceder del 0 al 2, 2 al 1
+  assert.equal(cycleHabitIndex(0, total, 'prev'), 2);
+  assert.equal(cycleHabitIndex(2, total, 'prev'), 1);
 });

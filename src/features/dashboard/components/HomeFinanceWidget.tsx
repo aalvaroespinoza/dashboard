@@ -2,6 +2,7 @@
  * HomeFinanceWidget.tsx
  * Widget de Finanzas del Mes del Dashboard estilo iPadOS 18 (Apple HIG).
  * Muestra el balance neto en negrita, gráfico spline suave con área sombreada y píldoras compactas de Ingresos/Gastos.
+ * Al presionar la tarjeta navega directamente al módulo de finanzas.
  */
 
 import React from 'react';
@@ -14,10 +15,14 @@ import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface HomeFinanceWidgetProps {
+  onPress?: () => void;
   isDark?: boolean;
 }
 
-export const HomeFinanceWidget: React.FC<HomeFinanceWidgetProps> = React.memo(({ isDark = true }) => {
+export const HomeFinanceWidget: React.FC<HomeFinanceWidgetProps> = React.memo(({
+  onPress,
+  isDark = true,
+}) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
   const { setActiveModule } = useAppStore();
 
@@ -33,9 +38,19 @@ export const HomeFinanceWidget: React.FC<HomeFinanceWidgetProps> = React.memo(({
   const width = 200;
   const height = 54;
 
+  const handleCardPress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      setActiveModule('finance');
+    }
+  };
+
   return (
-    <View
-      style={{
+    <Pressable
+      onPress={handleCardPress}
+      style={({ pressed }) => ({
+        transform: [{ scale: pressed ? 0.99 : 1 }],
         flex: 1,
         backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
         borderRadius: 24,
@@ -47,7 +62,7 @@ export const HomeFinanceWidget: React.FC<HomeFinanceWidgetProps> = React.memo(({
         minHeight: 168,
         gap: 12,
         ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.22 : 0.03, 8),
-      }}
+      })}
     >
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -183,6 +198,6 @@ export const HomeFinanceWidget: React.FC<HomeFinanceWidgetProps> = React.memo(({
           </View>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 });

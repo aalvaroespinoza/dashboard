@@ -1,7 +1,7 @@
 /**
  * HomeRemindersWidget.tsx
  * Widget de Recordatorios Inteligentes del Dashboard estilo iPadOS 18.
- * Checkboxes circulares táctiles, subtítulo de vencimiento, píldoras temáticas Apple HIG y botón de creación rápida.
+ * Checkboxes circulares táctiles, subtítulo de vencimiento, píldoras temáticas Apple HIG, botón de creación rápida y apertura de detalles.
  */
 
 import React, { useMemo } from 'react';
@@ -17,14 +17,17 @@ import { useAppStore } from '../../../store/useAppStore';
 import { ReminderCheckbox } from '../../reminders/components/ReminderCheckbox';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
+import { TaskItem } from '../../../types';
 
 interface HomeRemindersWidgetProps {
   onQuickTaskPress?: () => void;
+  onTaskPress?: (task: TaskItem) => void;
   isDark?: boolean;
 }
 
 export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.memo(({
   onQuickTaskPress,
+  onTaskPress,
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
@@ -41,12 +44,12 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
 
     // Fallback con tareas de ejemplo si no hay en base de datos para simular la maqueta
     return [
-      { id: 'mock-1', title: 'Estudiar Vue 3', due_date: 'Hoy', due_time: '10:00', list_id: 'estudios', tags: ['Estudios'], is_completed: 0 },
-      { id: 'mock-2', title: 'Enviar informe mensual', due_date: 'Hoy', due_time: '12:30', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0 },
-      { id: 'mock-3', title: 'Entrenamiento físico', due_date: 'Hoy', due_time: '18:00', list_id: 'personal', tags: ['Personal'], is_completed: 0 },
-      { id: 'mock-4', title: 'Comprar regalos de cumpleaños', due_date: 'Mañana', due_time: '17:00', list_id: 'personal', tags: ['Personal'], is_completed: 0 },
-      { id: 'mock-5', title: 'Revisar PR del proyecto', due_date: 'Jue, 27 ago', due_time: '16:00', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0 },
-    ];
+      { id: 'mock-1', title: 'Estudiar Vue 3', due_date: 'Hoy', due_time: '10:00', list_id: 'estudios', tags: ['Estudios'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
+      { id: 'mock-2', title: 'Enviar informe mensual', due_date: 'Hoy', due_time: '12:30', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
+      { id: 'mock-3', title: 'Entrenamiento físico', due_date: 'Hoy', due_time: '18:00', list_id: 'personal', tags: ['Personal'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
+      { id: 'mock-4', title: 'Comprar regalos de cumpleaños', due_date: 'Mañana', due_time: '17:00', list_id: 'personal', tags: ['Personal'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
+      { id: 'mock-5', title: 'Revisar PR del proyecto', due_date: 'Jue, 27 ago', due_time: '16:00', list_id: 'trabajo', tags: ['Trabajo'], is_completed: 0, sync_status: 'synced', created_at: '', updated_at: '' },
+    ] as TaskItem[];
   }, [tasks]);
 
   const getTagColor = (tagName: string) => {
@@ -128,7 +131,7 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                paddingVertical: 6,
+                paddingVertical: 4,
               }}
             >
               {/* Lado Izquierdo: Checkbox + Título + Fecha/Hora */}
@@ -144,7 +147,14 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
                   isDark={isDark}
                 />
 
-                <View style={{ flex: 1, gap: 2 }}>
+                <Pressable
+                  onPress={() => onTaskPress?.(task)}
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.75 : 1,
+                    flex: 1,
+                    gap: 2,
+                  })}
+                >
                   <Text
                     numberOfLines={1}
                     style={{
@@ -176,7 +186,7 @@ export const HomeRemindersWidget: React.FC<HomeRemindersWidgetProps> = React.mem
                       </Text>
                     </View>
                   )}
-                </View>
+                </Pressable>
               </View>
 
               {/* Lado Derecho: Píldora de Categoría / Tag */}

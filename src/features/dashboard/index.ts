@@ -1,5 +1,6 @@
 export * from './HomeScreen';
 export * from './components/HomeWeatherWidget';
+export * from './components/WeatherForecastModal';
 export * from './components/HomeRemindersWidget';
 export * from './components/HomeCalendarWidget';
 export * from './components/HomeBusWidget';

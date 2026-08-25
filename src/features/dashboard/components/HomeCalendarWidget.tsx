@@ -103,12 +103,12 @@ export const HomeCalendarWidget: React.FC<HomeCalendarWidgetProps> = React.memo(
   return (
     <View
       style={{
-        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+        backgroundColor: theme.card,
         borderRadius: 24,
         padding: 20,
         borderWidth: 1,
-        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E5EA',
-        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.9)',
+        borderColor: theme.border,
+        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.9)',
         gap: 14,
         ...createShadow('#000000', { width: 0, height: 4 }, isDark ? 0.22 : 0.03, 8),
       }}

@@ -269,7 +269,7 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
             bottom: 0,
             right: 0,
             width: SHEET_WIDTH,
-            backgroundColor: isDark ? '#141416' : '#FFFFFF',
+            backgroundColor: theme.card,
             borderLeftWidth: 1,
             borderLeftColor: theme.border,
             flexDirection: 'column',
@@ -743,7 +743,7 @@ export const GritDetailSideSheet: React.FC<GritDetailSideSheetProps> = ({
               padding: 20,
               borderTopWidth: 1,
               borderTopColor: theme.border,
-              backgroundColor: isDark ? '#141416' : '#FFFFFF',
+              backgroundColor: theme.card,
             }}
           >
             <Pressable

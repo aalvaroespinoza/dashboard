@@ -782,7 +782,7 @@ export const GritHabitEditorModal: React.FC<GritHabitEditorModalProps> = ({
               padding: 18,
               borderTopWidth: 1,
               borderTopColor: theme.border,
-              backgroundColor: isDark ? '#141416' : '#FFFFFF',
+              backgroundColor: theme.card,
             }}
           >
             <Pressable

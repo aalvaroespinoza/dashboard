@@ -331,10 +331,10 @@ export const RemindersScreen: React.FC = () => {
             <View
               style={{
                 flex: 1,
-                backgroundColor: isDark ? '#141416' : theme.card,
+                backgroundColor: theme.card,
                 borderRadius: 24,
                 borderWidth: 1,
-                borderColor: isDark ? '#242426' : theme.border,
+                borderColor: theme.border,
                 padding: 16,
               }}
             >

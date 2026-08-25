@@ -49,7 +49,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         paddingBottom: 14,
         borderBottomWidth: 1,
         borderBottomColor: theme.border,
-        backgroundColor: isDark ? 'rgba(20, 20, 22, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+        backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
         gap: 12,
       }}
     >

@@ -210,9 +210,9 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
                 {isExpanded && (
                   <View
                     style={{
-                      backgroundColor: isDark ? '#141416' : '#F9F9FB',
+                      backgroundColor: theme.cardSecondary,
                       borderTopWidth: 1,
-                      borderTopColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                      borderTopColor: theme.border,
                     }}
                   >
                     {listTasks.length === 0 ? (

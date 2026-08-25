@@ -41,7 +41,7 @@ export const GritSidebar: React.FC<GritSidebarProps> = ({
     <View
       style={{
         width: 270,
-        backgroundColor: isDark ? '#141416' : '#F9F9FB',
+        backgroundColor: theme.card,
         borderRightWidth: 1,
         borderRightColor: theme.border,
         paddingVertical: 20,

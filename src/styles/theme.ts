@@ -92,7 +92,7 @@ export const IOS_COLORS = {
     cardTertiary: '#3A3A3C',        // Quaternary Background
     surfaceElevated: '#3A3A3C',     // Elevated / Quaternary (Chips, Search, Modals)
     chip: '#2C2C2E',                // Chips
-    border: '#2C2C2E',              // System Separator / Border
+    border: 'rgba(255, 255, 255, 0.10)', // System Separator / Border
     borderSubtle: '#242426',        // Subtle separator
     borderHighlight: 'rgba(255, 255, 255, 0.12)', // Micro-borde de luz superior
     borderSide: 'rgba(255, 255, 255, 0.05)',
@@ -101,7 +101,7 @@ export const IOS_COLORS = {
     text: {
       primary: '#FFFFFF',           // Primary Label (100% opacity)
       secondary: '#8E8E93',         // Secondary Label (60% opacity)
-      tertiary: '#48484A',          // Tertiary Label (30% opacity)
+      tertiary: '#636366',          // Tertiary Label (30% opacity)
       quaternary: '#38383A',        // Quaternary Label (18% opacity)
     },
 

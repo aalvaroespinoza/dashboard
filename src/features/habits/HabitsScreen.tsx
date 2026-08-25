@@ -114,7 +114,7 @@ export const HabitsScreen: React.FC = () => {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 14,
-          backgroundColor: isDark ? 'rgba(20, 20, 22, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.85)',
         }}
       >
         {/* Título & Badge de Módulo */}

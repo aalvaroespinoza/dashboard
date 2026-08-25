@@ -219,7 +219,7 @@ export const WeekGridView: React.FC<WeekGridViewProps> = ({
       >
         <View style={{ flex: 1, flexDirection: 'row' }}>
           {/* Eje Horario Izquierdo */}
-          <View style={{ width: 56, backgroundColor: isDark ? '#121214' : '#F9FAFB' }}>
+          <View style={{ width: 56, backgroundColor: theme.cardSecondary }}>
             {hoursList.map((hour) => (
               <View
                 key={hour}

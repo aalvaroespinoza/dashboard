@@ -4,6 +4,7 @@ import { X, Trash2, Clock, MapPin, Flag, Calendar } from 'lucide-react-native';
 import { CalendarEventItem, CalendarCategoryItem } from '../../../types';
 import { IOS_COLORS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
+import { IOSDateTimePicker } from '../../../components/ui/IOSDateTimePicker';
 
 interface EventModalProps {
   visible: boolean;
@@ -169,76 +170,54 @@ export const EventModal: React.FC<EventModalProps> = ({
               />
             </View>
 
-            {/* Fecha y Horario */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1, gap: 6 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
-                  Fecha (YYYY-MM-DD)
-                </Text>
-                <TextInput
-                  value={dateStr}
-                  onChangeText={setDateStr}
-                  placeholder="2026-08-24"
-                  placeholderTextColor={theme.text.tertiary}
-                  style={{
-                    backgroundColor: theme.cardSecondary,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    borderRadius: 12,
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: theme.text.primary,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                  }}
-                />
-              </View>
+            {/* Fecha y Horario estilo Apple */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+                Fecha y Horario
+              </Text>
+              <IOSDateTimePicker
+                hasDate={true}
+                onToggleDate={() => {}}
+                dueDate={dateStr}
+                onChangeDate={setDateStr}
+                hasTime={true}
+                onToggleTime={() => {}}
+                dueTime={startTime}
+                onChangeTime={(st) => {
+                  setStartTime(st);
+                  const [h, m] = st.split(':').map(Number);
+                  const nextH = (h + 1) % 24;
+                  setEndTime(`${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                }}
+                accentColor={color}
+                isDark={isDark}
+              />
+            </View>
 
-              <View style={{ width: 85, gap: 6 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
-                  Inicio
-                </Text>
-                <TextInput
-                  value={startTime}
-                  onChangeText={setStartTime}
-                  placeholder="09:00"
-                  placeholderTextColor={theme.text.tertiary}
-                  style={{
-                    backgroundColor: theme.cardSecondary,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    borderRadius: 12,
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: theme.text.primary,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                  }}
-                />
-              </View>
-
-              <View style={{ width: 85, gap: 6 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
-                  Fin
-                </Text>
-                <TextInput
-                  value={endTime}
-                  onChangeText={setEndTime}
-                  placeholder="10:00"
-                  placeholderTextColor={theme.text.tertiary}
-                  style={{
-                    backgroundColor: theme.cardSecondary,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    borderRadius: 12,
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: theme.text.primary,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                  }}
-                />
-              </View>
+            {/* Hora de Finalización */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: theme.cardSecondary, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text.primary }}>
+                Hora de finalización
+              </Text>
+              <TextInput
+                value={endTime}
+                onChangeText={setEndTime}
+                placeholder="10:00"
+                placeholderTextColor={theme.text.tertiary}
+                style={{
+                  backgroundColor: theme.card,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: theme.text.primary,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  textAlign: 'center',
+                  minWidth: 70,
+                }}
+              />
             </View>
 
             {/* Hito / Examen (D-Day) Switch */}

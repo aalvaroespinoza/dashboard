@@ -21,10 +21,11 @@ import {
   CheckCircle2,
   CornerDownRight,
 } from 'lucide-react-native';
-import { TaskItem, TaskList, Priority } from '../../../types';
+import { Priority, TaskItem, TaskList } from '../../../types';
 import { IOS_COLORS } from '../../../styles/theme';
 import { RECURRENCE_PRESETS, getHumanReadableRRule } from '../../../services/recurrenceService';
 import { createShadow } from '../../../styles/shadows';
+import { IOSDateTimePicker } from '../../../components/ui/IOSDateTimePicker';
 
 interface ReminderDetailSheetProps {
   visible: boolean;
@@ -193,82 +194,29 @@ export const ReminderDetailSheet: React.FC<ReminderDetailSheetProps> = ({
               />
             </View>
 
-            {/* 2. Fecha y Hora */}
-            <View
-              style={{
-                backgroundColor: theme.cardSecondary,
-                borderRadius: 14,
-                padding: 14,
-                borderWidth: 1,
-                borderColor: theme.border,
-                gap: 12,
+            {/* 2. Fecha y Hora estilo Apple Reminders */}
+            <IOSDateTimePicker
+              hasDate={hasDate}
+              onToggleDate={(enabled) => {
+                setHasDate(enabled);
+                if (enabled && !dueDate) {
+                  setDueDate(new Date().toISOString().split('T')[0]);
+                }
               }}
-            >
-              {/* Fecha Toggle */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center' }}>
-                    <Calendar size={15} color="#FFFFFF" />
-                  </View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>Fecha</Text>
-                </View>
-                <Switch value={hasDate} onValueChange={setHasDate} trackColor={{ false: theme.border, true: IOS_COLORS.green }} thumbColor="#FFFFFF" />
-              </View>
-
-              {hasDate && (
-                <TextInput
-                  value={dueDate}
-                  onChangeText={setDueDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={theme.text.tertiary}
-                  style={{
-                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                    padding: 10,
-                    borderRadius: 10,
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: theme.text.primary,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                  }}
-                />
-              )}
-
-              {/* Hora Toggle */}
-              {hasDate && (
-                <>
-                  <View style={{ height: 1, backgroundColor: theme.border }} />
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: IOS_COLORS.blue, alignItems: 'center', justifyContent: 'center' }}>
-                        <Clock size={15} color="#FFFFFF" />
-                      </View>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>Hora</Text>
-                    </View>
-                    <Switch value={hasTime} onValueChange={setHasTime} trackColor={{ false: theme.border, true: IOS_COLORS.blue }} thumbColor="#FFFFFF" />
-                  </View>
-
-                  {hasTime && (
-                    <TextInput
-                      value={dueTime}
-                      onChangeText={setDueTime}
-                      placeholder="HH:mm (ej. 14:30)"
-                      placeholderTextColor={theme.text.tertiary}
-                      style={{
-                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                        padding: 10,
-                        borderRadius: 10,
-                        fontSize: 13,
-                        fontWeight: '700',
-                        color: theme.text.primary,
-                        borderWidth: 1,
-                        borderColor: theme.border,
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </View>
+              dueDate={hasDate ? dueDate : null}
+              onChangeDate={setDueDate}
+              hasTime={hasTime}
+              onToggleTime={(enabled) => {
+                setHasTime(enabled);
+                if (enabled && !dueTime) {
+                  setDueTime('09:00');
+                }
+              }}
+              dueTime={hasTime ? dueTime : null}
+              onChangeTime={setDueTime}
+              accentColor={IOS_COLORS.blue}
+              isDark={isDark}
+            />
 
             {/* 3. Recurrencia */}
             <View

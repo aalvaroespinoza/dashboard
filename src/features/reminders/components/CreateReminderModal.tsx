@@ -39,6 +39,7 @@ import { Priority, TaskList, ListSection } from '../../../types';
 import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 import { ListIconRenderer } from '../../../components/ui/ListIconRenderer';
+import { IOSDateTimePicker } from '../../../components/ui/IOSDateTimePicker';
 
 interface CreateReminderModalProps {
   visible: boolean;
@@ -402,90 +403,35 @@ export const CreateReminderModal: React.FC<CreateReminderModalProps> = ({
               </View>
             )}
 
-            {/* 2. Píldoras de Fecha */}
+            {/* 2. Selector de Fecha y Hora estilo Apple Reminders */}
             <View style={{ gap: 6 }}>
               <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: theme.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Fecha de Vencimiento
+                Vencimiento
               </Text>
-              <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                <Pressable
-                  onPress={() => setDueDate(dueDate === todayStr ? null : todayStr)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 11,
-                    paddingVertical: 6,
-                    borderRadius: 9,
-                    backgroundColor: dueDate === todayStr ? 'rgba(0, 122, 255, 0.2)' : theme.cardSecondary,
-                    borderWidth: 1,
-                    borderColor: dueDate === todayStr ? '#007AFF' : theme.border,
-                    gap: 5,
-                  }}
-                >
-                  <Calendar size={12} color={dueDate === todayStr ? '#007AFF' : theme.text.secondary} />
-                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: dueDate === todayStr ? '#007AFF' : theme.text.secondary }}>
-                    Hoy
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setDueDate(dueDate === tomorrowStr ? null : tomorrowStr)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 11,
-                    paddingVertical: 6,
-                    borderRadius: 9,
-                    backgroundColor: dueDate === tomorrowStr ? 'rgba(0, 122, 255, 0.2)' : theme.cardSecondary,
-                    borderWidth: 1,
-                    borderColor: dueDate === tomorrowStr ? '#007AFF' : theme.border,
-                    gap: 5,
-                  }}
-                >
-                  <Calendar size={12} color={dueDate === tomorrowStr ? '#007AFF' : theme.text.secondary} />
-                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: dueDate === tomorrowStr ? '#007AFF' : theme.text.secondary }}>
-                    Mañana
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setDueDate(dueDate === weekendStr ? null : weekendStr)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 11,
-                    paddingVertical: 6,
-                    borderRadius: 9,
-                    backgroundColor: dueDate === weekendStr ? 'rgba(0, 122, 255, 0.2)' : theme.cardSecondary,
-                    borderWidth: 1,
-                    borderColor: dueDate === weekendStr ? '#007AFF' : theme.border,
-                    gap: 5,
-                  }}
-                >
-                  <Calendar size={12} color={dueDate === weekendStr ? '#007AFF' : theme.text.secondary} />
-                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: dueDate === weekendStr ? '#007AFF' : theme.text.secondary }}>
-                    Fin de semana
-                  </Text>
-                </Pressable>
-
-                {dueDate && (
-                  <Pressable
-                    onPress={() => setDueDate(null)}
-                    style={{
-                      paddingHorizontal: 8,
-                      paddingVertical: 6,
-                      borderRadius: 9,
-                      backgroundColor: theme.cardSecondary,
-                      borderWidth: 1,
-                      borderColor: theme.border,
-                    }}
-                  >
-                    <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: '#FF3B30' }}>
-                      Quitar fecha
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
+              <IOSDateTimePicker
+                hasDate={Boolean(dueDate)}
+                onToggleDate={(enabled) => {
+                  if (!enabled) {
+                    setDueDate(null);
+                  } else if (!dueDate) {
+                    setDueDate(todayStr);
+                  }
+                }}
+                dueDate={dueDate}
+                onChangeDate={(d) => setDueDate(d)}
+                hasTime={Boolean(dueTime)}
+                onToggleTime={(enabled) => {
+                  if (!enabled) {
+                    setDueTime(null);
+                  } else if (!dueTime) {
+                    setDueTime('09:00');
+                  }
+                }}
+                dueTime={dueTime}
+                onChangeTime={(t) => setDueTime(t)}
+                accentColor={activeListObj?.color || '#007AFF'}
+                isDark={isDark}
+              />
             </View>
 
             {/* 3. Prioridad & Banderín */}

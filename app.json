@@ -38,8 +38,7 @@
       "expo-secure-store",
       "expo-audio",
       "expo-font",
-      "expo-splash-screen",
-      "expo-haptics"
+      "expo-splash-screen"
     ]
   }
 }

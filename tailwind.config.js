@@ -19,18 +19,36 @@ module.exports = {
       },
       colors: {
         ios: {
+          // Acentos Apple HIG
           blue: "#007AFF",
+          blueDark: "#0A84FF",
           green: "#34C759",
+          greenDark: "#30D158",
           red: "#FF3B30",
+          redDark: "#FF453A",
           orange: "#FF9500",
-          purple: "#AF52DE",
-          cyan: "#32ADE6",
-          indigo: "#5856D6",
-          pink: "#FF2D55",
+          orangeDark: "#FF9F0A",
           yellow: "#FFCC00",
+          yellowDark: "#FFD60A",
+          purple: "#AF52DE",
+          purpleDark: "#BF5AF2",
+          pink: "#FF2D55",
+          pinkDark: "#FF375F",
           teal: "#30B0C7",
+          tealDark: "#40C8E0",
+          indigo: "#5856D6",
+          indigoDark: "#5E5CE6",
           mint: "#00C7BE",
+          mintDark: "#63E6E2",
+          cyan: "#32ADE6",
+          cyanDark: "#64D2FF",
+
+          // 4 Capas de Superficie (System Backgrounds)
           bg: {
+            light: "#FFFFFF",
+            dark: "#000000",
+          },
+          grouped: {
             light: "#F2F2F7",
             dark: "#000000",
           },
@@ -39,8 +57,16 @@ module.exports = {
             dark: "#1C1C1E",
           },
           secondary: {
-            light: "#F8F9FA",
+            light: "#F2F2F7",
             dark: "#2C2C2E",
+          },
+          tertiary: {
+            light: "#FFFFFF",
+            dark: "#2C2C2E",
+          },
+          quaternary: {
+            light: "#E5E5EA",
+            dark: "#3A3A3C",
           },
           chip: {
             light: "#E5E5EA",
@@ -48,15 +74,19 @@ module.exports = {
           },
           border: {
             light: "#E5E5EA",
-            dark: "#38383A",
+            dark: "#2C2C2E",
           },
+
+          // 4 Etiquetas de Texto (System Labels)
           text: {
             primaryLight: "#000000",
             primaryDark: "#FFFFFF",
-            secondaryLight: "#6C6C70",
+            secondaryLight: "#8A8A8E",
             secondaryDark: "#8E8E93",
-            tertiaryLight: "#8E8E93",
-            tertiaryDark: "#636366",
+            tertiaryLight: "#C7C7CC",
+            tertiaryDark: "#48484A",
+            quaternaryLight: "#E5E5EA",
+            quaternaryDark: "#38383A",
           },
         },
       },

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { IOS_COLORS } from '../../../styles/theme';
+import { View, Text } from 'react-native';
+import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT, getSpecularCardStyle } from '../../../styles/theme';
+import { createShadow } from '../../../styles/shadows';
 
 interface FinanceMetricCardsProps {
   income: number;
@@ -18,98 +19,88 @@ export const FinanceMetricCards: React.FC<FinanceMetricCardsProps> = ({
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
   const formatCurrency = (val: number) => {
-    return `$${val.toLocaleString('es-AR')}`;
+    return `$${Math.round(val).toLocaleString('es-AR')}`;
   };
+
+  const specularStyle = getSpecularCardStyle(isDark);
+  const shadow = createShadow('#000000', { width: 0, height: 2 }, isDark ? 0.2 : 0.03, 6);
 
   return (
     <View style={{ flexDirection: 'row', gap: 14 }}>
-      {/* 1. Ingresos */}
+      {/* 1. Ingresos (Apple System Green) */}
       <View
         style={{
           flex: 1,
-          backgroundColor: theme.card,
-          borderRadius: 20,
+          ...specularStyle,
           padding: 18,
-          borderWidth: 1,
-          borderColor: theme.border,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.03,
-          shadowRadius: 3,
+          ...shadow,
         }}
       >
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text.secondary }}>
+        <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Ingresos
         </Text>
         <Text
           style={{
             fontSize: 24,
-            fontWeight: '900',
-            color: IOS_COLORS.green,
+            fontFamily: IOS_FONTS.roundedHeavy,
+            color: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
             letterSpacing: -0.5,
             marginTop: 6,
+            fontVariant: ['tabular-nums'],
           }}
         >
           {formatCurrency(income)}
         </Text>
       </View>
 
-      {/* 2. Gastos */}
+      {/* 2. Gastos (Apple System Red) */}
       <View
         style={{
           flex: 1,
-          backgroundColor: theme.card,
-          borderRadius: 20,
+          ...specularStyle,
           padding: 18,
-          borderWidth: 1,
-          borderColor: theme.border,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.03,
-          shadowRadius: 3,
+          ...shadow,
         }}
       >
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text.secondary }}>
+        <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Gastos
         </Text>
         <Text
           style={{
             fontSize: 24,
-            fontWeight: '900',
-            color: IOS_COLORS.red,
+            fontFamily: IOS_FONTS.roundedHeavy,
+            color: isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light,
             letterSpacing: -0.5,
             marginTop: 6,
+            fontVariant: ['tabular-nums'],
           }}
         >
           {formatCurrency(expense)}
         </Text>
       </View>
 
-      {/* 3. Ahorro */}
+      {/* 3. Ahorro / Balance (Apple System Mint / Blue) */}
       <View
         style={{
           flex: 1,
-          backgroundColor: theme.card,
-          borderRadius: 20,
+          ...specularStyle,
           padding: 18,
-          borderWidth: 1,
-          borderColor: theme.border,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.03,
-          shadowRadius: 3,
+          ...shadow,
         }}
       >
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text.secondary }}>
-          Ahorro
+        <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Balance Neto
         </Text>
         <Text
           style={{
             fontSize: 24,
-            fontWeight: '900',
-            color: IOS_COLORS.blue,
+            fontFamily: IOS_FONTS.roundedHeavy,
+            color: savings >= 0
+              ? (isDark ? APPLE_ACCENT.mint.dark : APPLE_ACCENT.mint.light)
+              : (isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light),
             letterSpacing: -0.5,
             marginTop: 6,
+            fontVariant: ['tabular-nums'],
           }}
         >
           {formatCurrency(savings)}

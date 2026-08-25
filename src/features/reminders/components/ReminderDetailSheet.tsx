@@ -289,11 +289,11 @@ export const ReminderDetailSheet: React.FC<ReminderDetailSheetProps> = ({
                           fontWeight: '800',
                           color:
                             p === 'high'
-                              ? IOS_COLORS.red
+                              ? (isDark ? '#FF453A' : '#FF3B30')
                               : p === 'medium'
-                              ? IOS_COLORS.orange
+                              ? (isDark ? '#FF9F0A' : '#FF9500')
                               : p === 'low'
-                              ? IOS_COLORS.blue
+                              ? (isDark ? '#0A84FF' : '#007AFF')
                               : theme.text.secondary,
                         }}
                       >
@@ -308,12 +308,12 @@ export const ReminderDetailSheet: React.FC<ReminderDetailSheetProps> = ({
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: IOS_COLORS.orange, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: isDark ? '#FF9F0A' : '#FF9500', alignItems: 'center', justifyContent: 'center' }}>
                     <Flag size={15} color="#FFFFFF" fill="#FFFFFF" />
                   </View>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text.primary }}>Con marca (Flag)</Text>
                 </View>
-                <Switch value={flagged} onValueChange={setFlagged} trackColor={{ false: theme.border, true: IOS_COLORS.orange }} thumbColor="#FFFFFF" />
+                <Switch value={flagged} onValueChange={setFlagged} trackColor={{ false: theme.border, true: isDark ? '#FF9F0A' : '#FF9500' }} thumbColor="#FFFFFF" />
               </View>
             </View>
 

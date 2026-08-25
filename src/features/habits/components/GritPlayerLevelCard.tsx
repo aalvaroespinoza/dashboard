@@ -89,79 +89,79 @@ export const GritPlayerLevelCard: React.FC<GritPlayerLevelCardProps> = ({ isDark
 
       {/* Mini Gauges de Atributos RPG (STR / INT / FOC) */}
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        {/* Fuerza (Cuerpo) */}
+        {/* Fuerza (Cuerpo / Salud - Apple System Pink) */}
         <View
           style={{
             flex: 1,
-            backgroundColor: isDark ? '#242426' : '#F9FAFB',
-            paddingVertical: 6,
+            backgroundColor: isDark ? 'rgba(255, 55, 95, 0.12)' : 'rgba(255, 45, 85, 0.08)',
+            paddingVertical: 8,
             paddingHorizontal: 8,
-            borderRadius: 10,
+            borderRadius: 12,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6,
             borderWidth: 1,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+            borderColor: isDark ? 'rgba(255, 55, 95, 0.25)' : 'rgba(255, 45, 85, 0.2)',
           }}
         >
-          <Dumbbell size={13} color="#FF3B30" />
+          <Dumbbell size={14} color={isDark ? '#FF375F' : '#FF2D55'} />
           <View>
-            <Text style={{ fontSize: 9, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: 9, fontFamily: 'SF-Pro-Display-Bold', color: isDark ? '#FF375F' : '#FF2D55', textTransform: 'uppercase' }}>
               Fuerza
             </Text>
-            <Text style={{ fontSize: 11, fontWeight: '900', color: theme.text.primary }}>
+            <Text style={{ fontSize: 11, fontFamily: 'SF-Pro-Display-Bold', color: theme.text.primary }}>
               {rpgProfile.strength_exp} pts
             </Text>
           </View>
         </View>
 
-        {/* Inteligencia (Mente) */}
+        {/* Inteligencia (Mente / Estudio - Apple System Purple) */}
         <View
           style={{
             flex: 1,
-            backgroundColor: isDark ? '#242426' : '#F9FAFB',
-            paddingVertical: 6,
+            backgroundColor: isDark ? 'rgba(191, 90, 242, 0.12)' : 'rgba(175, 82, 222, 0.08)',
+            paddingVertical: 8,
             paddingHorizontal: 8,
-            borderRadius: 10,
+            borderRadius: 12,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6,
             borderWidth: 1,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+            borderColor: isDark ? 'rgba(191, 90, 242, 0.25)' : 'rgba(175, 82, 222, 0.2)',
           }}
         >
-          <Brain size={13} color="#007AFF" />
+          <Brain size={14} color={isDark ? '#BF5AF2' : '#AF52DE'} />
           <View>
-            <Text style={{ fontSize: 9, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: 9, fontFamily: 'SF-Pro-Display-Bold', color: isDark ? '#BF5AF2' : '#AF52DE', textTransform: 'uppercase' }}>
               Inteligencia
             </Text>
-            <Text style={{ fontSize: 11, fontWeight: '900', color: theme.text.primary }}>
+            <Text style={{ fontSize: 11, fontFamily: 'SF-Pro-Display-Bold', color: theme.text.primary }}>
               {rpgProfile.intelligence_exp} pts
             </Text>
           </View>
         </View>
 
-        {/* Enfoque (Disciplina) */}
+        {/* Enfoque (Productividad / Foco - Apple System Teal) */}
         <View
           style={{
             flex: 1,
-            backgroundColor: isDark ? '#242426' : '#F9FAFB',
-            paddingVertical: 6,
+            backgroundColor: isDark ? 'rgba(64, 200, 224, 0.12)' : 'rgba(48, 176, 199, 0.08)',
+            paddingVertical: 8,
             paddingHorizontal: 8,
-            borderRadius: 10,
+            borderRadius: 12,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6,
             borderWidth: 1,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#E5E5EA',
+            borderColor: isDark ? 'rgba(64, 200, 224, 0.25)' : 'rgba(48, 176, 199, 0.2)',
           }}
         >
-          <Target size={13} color="#34C759" />
+          <Target size={14} color={isDark ? '#40C8E0' : '#30B0C7'} />
           <View>
-            <Text style={{ fontSize: 9, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
+            <Text style={{ fontSize: 9, fontFamily: 'SF-Pro-Display-Bold', color: isDark ? '#40C8E0' : '#30B0C7', textTransform: 'uppercase' }}>
               Enfoque
             </Text>
-            <Text style={{ fontSize: 11, fontWeight: '900', color: theme.text.primary }}>
+            <Text style={{ fontSize: 11, fontFamily: 'SF-Pro-Display-Bold', color: theme.text.primary }}>
               {rpgProfile.focus_exp} pts
             </Text>
           </View>

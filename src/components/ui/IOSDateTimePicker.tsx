@@ -233,7 +233,7 @@ export const IOSDateTimePicker: React.FC<IOSDateTimePickerProps> = ({
               width: 30,
               height: 30,
               borderRadius: 8,
-              backgroundColor: hasDate ? '#FF3B30' : (isDark ? '#3A3A3C' : '#E5E5EA'),
+              backgroundColor: hasDate ? (isDark ? '#FF453A' : '#FF3B30') : (isDark ? '#3A3A3C' : '#E5E5EA'),
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -260,7 +260,7 @@ export const IOSDateTimePicker: React.FC<IOSDateTimePickerProps> = ({
               onChangeDate(todayStr);
             }
           }}
-          trackColor={{ false: isDark ? '#39393D' : '#E9E9EB', true: '#34C759' }}
+          trackColor={{ false: isDark ? '#39393D' : '#E9E9EB', true: isDark ? '#30D158' : '#34C759' }}
           thumbColor="#FFFFFF"
         />
       </View>
@@ -471,7 +471,7 @@ export const IOSDateTimePicker: React.FC<IOSDateTimePickerProps> = ({
               width: 30,
               height: 30,
               borderRadius: 8,
-              backgroundColor: hasTime ? '#007AFF' : (isDark ? '#3A3A3C' : '#E5E5EA'),
+              backgroundColor: hasTime ? (isDark ? '#0A84FF' : '#007AFF') : (isDark ? '#3A3A3C' : '#E5E5EA'),
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -498,7 +498,7 @@ export const IOSDateTimePicker: React.FC<IOSDateTimePickerProps> = ({
               onChangeTime('09:00');
             }
           }}
-          trackColor={{ false: isDark ? '#39393D' : '#E9E9EB', true: '#34C759' }}
+          trackColor={{ false: isDark ? '#39393D' : '#E9E9EB', true: isDark ? '#30D158' : '#34C759' }}
           thumbColor="#FFFFFF"
         />
       </View>

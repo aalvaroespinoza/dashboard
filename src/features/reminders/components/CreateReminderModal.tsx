@@ -444,11 +444,11 @@ export const CreateReminderModal: React.FC<CreateReminderModalProps> = ({
                   const isSelected = priority === p;
                   const color =
                     p === 'high'
-                      ? '#FF3B30'
+                      ? (isDark ? '#FF453A' : '#FF3B30')
                       : p === 'medium'
-                      ? '#FF9500'
+                      ? (isDark ? '#FF9F0A' : '#FF9500')
                       : p === 'low'
-                      ? '#007AFF'
+                      ? (isDark ? '#0A84FF' : '#007AFF')
                       : theme.text.secondary;
                   const label =
                     p === 'high' ? 'P1 Alta' : p === 'medium' ? 'P5 Media' : p === 'low' ? 'P9 Baja' : 'Ninguna';

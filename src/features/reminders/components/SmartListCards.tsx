@@ -1,8 +1,14 @@
+/**
+ * SmartListCards.tsx
+ * Tarjetas Inteligentes de Apple Reminders (Hoy, Programados, Todos, Con Marca, Completados)
+ * con paleta adaptativa Apple HIG y Tinted Pills a 15% de opacidad.
+ */
+
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Calendar, Clock, Inbox, Flag, CheckCircle2 } from 'lucide-react-native';
 import { SmartListFilter } from '../../../types';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface SmartListCardsProps {
@@ -39,40 +45,40 @@ export const SmartListCards: React.FC<SmartListCardsProps> = ({
       label: 'Hoy',
       count: counts.today,
       icon: Calendar,
-      color: IOS_COLORS.blue,
-      bgColor: isDark ? 'rgba(0, 122, 255, 0.2)' : '#DBEAFE',
+      color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
+      bgColor: isDark ? 'rgba(10, 132, 255, 0.15)' : 'rgba(0, 122, 255, 0.12)',
     },
     {
       id: 'scheduled',
       label: 'Programados',
       count: counts.scheduled,
       icon: Clock,
-      color: IOS_COLORS.red,
-      bgColor: isDark ? 'rgba(255, 59, 48, 0.2)' : '#FEE2E2',
+      color: isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light,
+      bgColor: isDark ? 'rgba(255, 69, 58, 0.15)' : 'rgba(255, 59, 48, 0.12)',
     },
     {
       id: 'all',
       label: 'Todos',
       count: counts.all,
       icon: Inbox,
-      color: isDark ? '#A1A1AA' : '#4B5563',
-      bgColor: isDark ? 'rgba(161, 161, 170, 0.2)' : '#F3F4F6',
+      color: isDark ? APPLE_ACCENT.indigo.dark : APPLE_ACCENT.indigo.light,
+      bgColor: isDark ? 'rgba(94, 92, 230, 0.15)' : 'rgba(88, 86, 214, 0.12)',
     },
     {
       id: 'flagged',
       label: 'Con marca',
       count: counts.flagged,
       icon: Flag,
-      color: IOS_COLORS.orange,
-      bgColor: isDark ? 'rgba(255, 149, 0, 0.2)' : '#FEF3C7',
+      color: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light,
+      bgColor: isDark ? 'rgba(255, 159, 10, 0.15)' : 'rgba(255, 149, 0, 0.12)',
     },
     {
       id: 'completed',
       label: 'Completados',
       count: counts.completed,
       icon: CheckCircle2,
-      color: IOS_COLORS.green,
-      bgColor: isDark ? 'rgba(52, 199, 89, 0.2)' : '#ECFDF5',
+      color: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
+      bgColor: isDark ? 'rgba(48, 209, 88, 0.15)' : 'rgba(52, 199, 89, 0.12)',
     },
   ];
 
@@ -99,26 +105,26 @@ export const SmartListCards: React.FC<SmartListCardsProps> = ({
               ...createShadow('#000000', { width: 0, height: 1 }, 0.03, 3),
             })}
           >
-            {/* Top row: Icono circular + Contador */}
+            {/* Top: Icono con fondo circular translúcido + Contador */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
                   backgroundColor: card.bgColor,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Icon size={16} color={card.color} />
+                <Icon size={18} color={card.color} strokeWidth={2.2} />
               </View>
 
               <Text
                 style={{
                   fontSize: 22,
-                  fontWeight: '900',
-                  color: theme.text.primary,
+                  fontFamily: IOS_FONTS.bold,
+                  color: isSelected ? card.color : theme.text.primary,
                   fontVariant: ['tabular-nums'],
                 }}
               >
@@ -126,13 +132,13 @@ export const SmartListCards: React.FC<SmartListCardsProps> = ({
               </Text>
             </View>
 
-            {/* Label */}
+            {/* Bottom: Etiqueta */}
             <Text
               style={{
-                fontSize: 12,
-                fontWeight: '700',
+                fontSize: 13,
+                fontFamily: IOS_FONTS.bold,
                 color: isSelected ? card.color : theme.text.secondary,
-                marginTop: 6,
+                marginTop: 8,
               }}
             >
               {card.label}

@@ -550,22 +550,25 @@ export const RemindersScreen: React.FC = () => {
               </Text>
               <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                 {[
-                  IOS_COLORS.blue,
-                  '#FF9500',
-                  '#34C759',
-                  '#AF52DE',
-                  '#FF3B30',
-                  '#32ADE6',
-                  '#FF2D55',
-                  '#FFCC00',
+                  isDark ? '#0A84FF' : '#007AFF', // Blue
+                  isDark ? '#FF453A' : '#FF3B30', // Red
+                  isDark ? '#30D158' : '#34C759', // Green
+                  isDark ? '#FF9F0A' : '#FF9500', // Orange
+                  isDark ? '#FFD60A' : '#FFCC00', // Yellow
+                  isDark ? '#BF5AF2' : '#AF52DE', // Purple
+                  isDark ? '#FF375F' : '#FF2D55', // Pink
+                  isDark ? '#40C8E0' : '#30B0C7', // Teal
+                  isDark ? '#5E5CE6' : '#5856D6', // Indigo
+                  isDark ? '#63E6E2' : '#00C7BE', // Mint
+                  isDark ? '#64D2FF' : '#32ADE6', // Cyan
                 ].map((c) => (
                   <Pressable
                     key={c}
                     onPress={() => setNewListColor(c)}
                     style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
                       backgroundColor: c,
                       borderWidth: newListColor === c ? 3 : 0,
                       borderColor: '#FFFFFF',

@@ -213,19 +213,49 @@ export const TabletSidebar: React.FC = () => {
     color: string;
     badge?: number;
   }[] = [
-    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard, color: '#5856D6' },
+    {
+      id: 'dashboard',
+      label: 'Inicio',
+      icon: LayoutDashboard,
+      color: isDark ? '#5E5CE6' : '#5856D6', // System Indigo
+    },
     {
       id: 'tasks',
       label: 'Recordatorios',
       icon: CheckSquare,
-      color: '#007AFF',
+      color: isDark ? '#0A84FF' : '#007AFF', // System Blue
       badge: pendingTasksCount > 0 ? pendingTasksCount : undefined,
     },
-    { id: 'habits', label: 'Hábitos', icon: Zap, color: '#FF9500' },
-    { id: 'calendar', label: 'Calendario', icon: Calendar, color: '#34C759' },
-    { id: 'finance', label: 'Finanzas', icon: DollarSign, color: '#32ADE6' },
-    { id: 'bus', label: 'Colectivos', icon: Bus, color: '#FF2D55' },
-    { id: 'settings', label: 'Ajustes', icon: Settings, color: '#8E8E93' },
+    {
+      id: 'habits',
+      label: 'Hábitos',
+      icon: Zap,
+      color: isDark ? '#30D158' : '#34C759', // System Green (Fitness / Activity)
+    },
+    {
+      id: 'calendar',
+      label: 'Calendario',
+      icon: Calendar,
+      color: isDark ? '#FF453A' : '#FF3B30', // System Red (Apple Calendar)
+    },
+    {
+      id: 'finance',
+      label: 'Finanzas',
+      icon: DollarSign,
+      color: isDark ? '#63E6E2' : '#00C7BE', // System Mint (Apple Wallet / Finance)
+    },
+    {
+      id: 'bus',
+      label: 'Colectivos',
+      icon: Bus,
+      color: isDark ? '#64D2FF' : '#32ADE6', // System Cyan (Transit / Maps)
+    },
+    {
+      id: 'settings',
+      label: 'Ajustes',
+      icon: Settings,
+      color: isDark ? '#8E8E93' : '#8A8A8E', // System Gray
+    },
   ];
 
   return (

@@ -11,7 +11,7 @@ import { useTasksStore } from '../../../store/useTasksStore';
 import { useCalendarStore } from '../../../store/useCalendarStore';
 import { useFinanceStore } from '../../../store/useFinanceStore';
 import { useAppStore } from '../../../store/useAppStore';
-import { IOS_COLORS, IOS_FONTS, getSpecularCardStyle } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT, getSpecularCardStyle } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface DashboardTopRowProps {
@@ -41,8 +41,8 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
       value: `${pendingTasksCount}`,
       subtitle: pendingTasksCount === 1 ? '1 pendiente' : `${pendingTasksCount} pendientes`,
       icon: CheckCircle2,
-      color: '#007AFF',
-      bgColor: isDark ? 'rgba(0, 122, 255, 0.16)' : '#EFF6FF',
+      color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
+      bgColor: isDark ? 'rgba(10, 132, 255, 0.15)' : 'rgba(0, 122, 255, 0.12)',
       onPress: () => setActiveModule('tasks'),
     },
     {
@@ -51,28 +51,28 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
       value: `${eventsCount}`,
       subtitle: eventsCount === 1 ? '1 evento agendado' : `${eventsCount} eventos agendados`,
       icon: CalendarIcon,
-      color: '#34C759',
-      bgColor: isDark ? 'rgba(52, 199, 89, 0.16)' : '#ECFDF5',
+      color: isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light,
+      bgColor: isDark ? 'rgba(255, 69, 58, 0.15)' : 'rgba(255, 59, 48, 0.12)',
       onPress: () => setActiveModule('calendar'),
     },
     {
       id: 'income',
       title: 'Ingresos del mes',
-      value: formatCurrency(totalIncome || 850000),
+      value: formatCurrency(totalIncome || 0),
       subtitle: 'Mes de Agosto',
       icon: TrendingUp,
-      color: '#32ADE6',
-      bgColor: isDark ? 'rgba(50, 173, 230, 0.16)' : '#E0F2FE',
+      color: isDark ? APPLE_ACCENT.green.dark : APPLE_ACCENT.green.light,
+      bgColor: isDark ? 'rgba(48, 209, 88, 0.15)' : 'rgba(52, 199, 89, 0.12)',
       onPress: () => setActiveModule('finance'),
     },
     {
       id: 'expense',
       title: 'Gastos del mes',
-      value: formatCurrency(totalExpense || 324300),
+      value: formatCurrency(totalExpense || 0),
       subtitle: 'Mes de Agosto',
       icon: TrendingDown,
-      color: '#FF3B30',
-      bgColor: isDark ? 'rgba(255, 59, 48, 0.16)' : '#FEF2F2',
+      color: isDark ? APPLE_ACCENT.red.dark : APPLE_ACCENT.red.light,
+      bgColor: isDark ? 'rgba(255, 69, 58, 0.15)' : 'rgba(255, 59, 48, 0.12)',
       onPress: () => setActiveModule('finance'),
     },
   ];
@@ -118,7 +118,7 @@ export const DashboardTopRow: React.FC<DashboardTopRowProps> = ({ isDark = true 
                   numberOfLines={1}
                   style={{
                     fontSize: 12,
-                    fontWeight: '700',
+                    fontFamily: IOS_FONTS.bold,
                     color: theme.text.secondary,
                     textTransform: 'uppercase',
                     letterSpacing: 0.5,

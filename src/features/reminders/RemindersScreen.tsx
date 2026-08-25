@@ -39,7 +39,6 @@ import { ReminderSectionHeader } from './components/ReminderSectionHeader';
 import { GritColumnBoard } from './components/GritColumnBoard';
 import { CreateReminderModal } from './components/CreateReminderModal';
 import { ReminderDetailSheet } from './components/ReminderDetailSheet';
-import { TaskContextMenuModal } from './components/TaskContextMenuModal';
 import { ListIconRenderer } from '../../components/ui/ListIconRenderer';
 import { IOS_COLORS } from '../../styles/theme';
 import { createShadow } from '../../styles/shadows';
@@ -87,7 +86,6 @@ export const RemindersScreen: React.FC = () => {
 
   // Modales
   const [inspectingTask, setInspectingTask] = useState<TaskItem | null>(null);
-  const [contextMenuTask, setContextMenuTask] = useState<TaskItem | null>(null);
   const [isCreateReminderModalOpen, setIsCreateReminderModalOpen] = useState(false);
   const [isAddListModalOpen, setIsAddListModalOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
@@ -316,7 +314,7 @@ export const RemindersScreen: React.FC = () => {
               onSelectTag={(tag) => setSearchFilter(tag)}
               onToggleTaskComplete={toggleTaskComplete}
               onPressTask={(t) => setInspectingTask(t)}
-              onLongPressTask={(t) => setContextMenuTask(t)}
+              onDeleteTask={deleteTask}
               onToggleTaskFlag={toggleFlag}
               onAddQuickTaskInList={(listId) => {
                 setSelectedListId(listId);
@@ -385,7 +383,6 @@ export const RemindersScreen: React.FC = () => {
                                 onToggleCollapse={toggleTaskCollapse}
                                 onAddSubtask={(parentId) => addSubtask(parentId, 'Nueva subtarea')}
                                 onPress={(t) => setInspectingTask(t)}
-                                onLongPress={(t) => setContextMenuTask(t)}
                                 onDelete={deleteTask}
                                 onToggleFlag={toggleFlag}
                                 isDark={isDark}
@@ -421,7 +418,6 @@ export const RemindersScreen: React.FC = () => {
                           onToggleCollapse={toggleTaskCollapse}
                           onAddSubtask={(parentId) => addSubtask(parentId, 'Nueva subtarea')}
                           onPress={(t) => setInspectingTask(t)}
-                          onLongPress={(t) => setContextMenuTask(t)}
                           onDelete={deleteTask}
                           onToggleFlag={toggleFlag}
                           isDark={isDark}
@@ -476,22 +472,6 @@ export const RemindersScreen: React.FC = () => {
             section_id: t.section_id || targetSectionForNewTask,
           });
           setTargetSectionForNewTask(null);
-        }}
-        isDark={isDark}
-      />
-
-      {/* Mini Menú Contextual (Long Press) */}
-      <TaskContextMenuModal
-        visible={Boolean(contextMenuTask)}
-        task={contextMenuTask}
-        onClose={() => setContextMenuTask(null)}
-        onEdit={(t) => {
-          setContextMenuTask(null);
-          setInspectingTask(t);
-        }}
-        onDelete={async (t) => {
-          await deleteTask(t.id);
-          setContextMenuTask(null);
         }}
         isDark={isDark}
       />

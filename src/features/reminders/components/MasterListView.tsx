@@ -20,6 +20,9 @@ import {
   Flag,
   Calendar,
   Layers,
+  Edit3,
+  Trash2,
+  X,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { TaskList, TaskItem } from '../../../types';
@@ -37,6 +40,7 @@ interface MasterListViewProps {
   onToggleTaskComplete?: (taskId: string) => void;
   onPressTask?: (task: TaskItem) => void;
   onLongPressTask?: (task: TaskItem) => void;
+  onDeleteTask?: (taskId: string) => void;
   onToggleTaskFlag?: (taskId: string) => void;
   onAddQuickTaskInList?: (listId: string) => void;
   isDark?: boolean;
@@ -51,6 +55,7 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
   onToggleTaskComplete,
   onPressTask,
   onLongPressTask,
+  onDeleteTask,
   onToggleTaskFlag,
   onAddQuickTaskInList,
   isDark = true,
@@ -59,6 +64,7 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
 
   // Estado de listas desplegadas inline (acordeón)
   const [expandedListIds, setExpandedListIds] = useState<string[]>([]);
+  const [activeTaskActionId, setActiveTaskActionId] = useState<string | null>(null);
 
   // Toggle acordeón con háptica
   const handleToggleAccordion = (listId: string) => {
@@ -216,62 +222,171 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
                         </Text>
                       </View>
                     ) : (
-                      listTasks.map((task) => (
-                        <Pressable
-                          key={task.id}
-                          onPress={() => onPressTask?.(task)}
-                          onLongPress={() => onLongPressTask?.(task)}
-                          delayLongPress={350}
-                          style={({ pressed }) => ({
-                            opacity: pressed ? 0.75 : 1,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingVertical: 10,
-                            paddingHorizontal: 16,
-                            gap: 12,
-                            borderBottomWidth: 1,
-                            borderBottomColor: isDark ? '#222224' : '#EFEFF4',
-                          })}
-                        >
-                          {/* Checkbox interactivo */}
-                          <ReminderCheckbox
-                            checked={Boolean(task.is_completed)}
-                            onToggle={() => onToggleTaskComplete?.(task.id)}
-                            color={list.color || IOS_COLORS.blue}
-                            size={20}
-                            isDark={isDark}
-                          />
+                      listTasks.map((task) => {
+                        const isActionOpen = activeTaskActionId === task.id;
 
-                          {/* Título y metadatos */}
-                          <View style={{ flex: 1, gap: 2 }}>
-                            <Text
-                              style={{
-                                fontSize: 14,
-                                fontFamily: IOS_FONTS.semibold,
-                                color: task.is_completed ? theme.text.tertiary : theme.text.primary,
-                                textDecorationLine: task.is_completed ? 'line-through' : 'none',
-                              }}
-                              numberOfLines={1}
-                            >
-                              {task.title}
-                            </Text>
+                        return (
+                          <Pressable
+                            key={task.id}
+                            onPress={() => {
+                              if (isActionOpen) {
+                                setActiveTaskActionId(null);
+                              } else {
+                                onPressTask?.(task);
+                              }
+                            }}
+                            onLongPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                              setActiveTaskActionId(task.id);
+                            }}
+                            delayLongPress={350}
+                            style={({ pressed }) => ({
+                              opacity: pressed ? 0.75 : 1,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              gap: 12,
+                              borderBottomWidth: 1,
+                              borderBottomColor: isDark ? '#222224' : '#EFEFF4',
+                              position: 'relative',
+                              backgroundColor: isActionOpen
+                                ? isDark
+                                  ? 'rgba(0, 122, 255, 0.08)'
+                                  : 'rgba(0, 122, 255, 0.04)'
+                                : 'transparent',
+                            })}
+                          >
+                            {/* Checkbox interactivo */}
+                            <ReminderCheckbox
+                              checked={Boolean(task.is_completed)}
+                              onToggle={() => onToggleTaskComplete?.(task.id)}
+                              color={list.color || IOS_COLORS.blue}
+                              size={20}
+                              isDark={isDark}
+                            />
 
-                            {task.due_date && (
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Calendar size={11} color={list.color || IOS_COLORS.blue} />
-                                <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: list.color || IOS_COLORS.blue }}>
-                                  {task.due_date} {task.due_time ? `• ${task.due_time}` : ''}
-                                </Text>
+                            {/* Título y metadatos */}
+                            <View style={{ flex: 1, gap: 2 }}>
+                              <Text
+                                style={{
+                                  fontSize: 14,
+                                  fontFamily: IOS_FONTS.semibold,
+                                  color: task.is_completed ? theme.text.tertiary : theme.text.primary,
+                                  textDecorationLine: task.is_completed ? 'line-through' : 'none',
+                                }}
+                                numberOfLines={1}
+                              >
+                                {task.title}
+                              </Text>
+
+                              {task.due_date && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                  <Calendar size={11} color={list.color || IOS_COLORS.blue} />
+                                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: list.color || IOS_COLORS.blue }}>
+                                    {task.due_date} {task.due_time ? `• ${task.due_time}` : ''}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+
+                            {/* Flag Icon */}
+                            {Boolean(task.flagged) && (
+                              <Flag size={13} color="#FF9500" fill="#FF9500" />
+                            )}
+
+                            {/* Mini Menú de Acciones Compacto en el Borde */}
+                            {isActionOpen && (
+                              <View
+                                style={{
+                                  position: 'absolute',
+                                  right: 8,
+                                  top: 6,
+                                  bottom: 6,
+                                  zIndex: 60,
+                                  backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+                                  borderRadius: 12,
+                                  borderWidth: 1,
+                                  borderColor: isDark ? '#3A3A3C' : '#E5E5EA',
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                  paddingHorizontal: 6,
+                                  gap: 4,
+                                  ...createShadow('#000000', { width: 0, height: 4 }, 0.25, 8),
+                                }}
+                              >
+                                {/* Botón Editar */}
+                                <Pressable
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTaskActionId(null);
+                                    onPressTask?.(task);
+                                  }}
+                                  style={({ pressed }) => ({
+                                    opacity: pressed ? 0.7 : 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 5,
+                                    borderRadius: 8,
+                                    backgroundColor: isDark ? 'rgba(0, 122, 255, 0.2)' : '#EFF6FF',
+                                  })}
+                                >
+                                  <Edit3 size={13} color="#007AFF" />
+                                  <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: '#007AFF' }}>
+                                    Editar
+                                  </Text>
+                                </Pressable>
+
+                                {/* Botón Eliminar */}
+                                <Pressable
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTaskActionId(null);
+                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+                                    onDeleteTask?.(task.id);
+                                  }}
+                                  style={({ pressed }) => ({
+                                    opacity: pressed ? 0.7 : 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 5,
+                                    borderRadius: 8,
+                                    backgroundColor: isDark ? 'rgba(255, 59, 48, 0.2)' : '#FEE2E2',
+                                  })}
+                                >
+                                  <Trash2 size={13} color="#FF3B30" />
+                                  <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: '#FF3B30' }}>
+                                    Eliminar
+                                  </Text>
+                                </Pressable>
+
+                                {/* Botón Cerrar */}
+                                <Pressable
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTaskActionId(null);
+                                  }}
+                                  style={({ pressed }) => ({
+                                    opacity: pressed ? 0.7 : 1,
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F2F2F7',
+                                  })}
+                                >
+                                  <X size={12} color={theme.text.secondary} />
+                                </Pressable>
                               </View>
                             )}
-                          </View>
-
-                          {/* Flag Icon */}
-                          {Boolean(task.flagged) && (
-                            <Flag size={13} color="#FF9500" fill="#FF9500" />
-                          )}
-                        </Pressable>
-                      ))
+                          </Pressable>
+                        );
+                      })
                     )}
 
                     {/* Barra de acciones de la lista expandida */}

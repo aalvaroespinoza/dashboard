@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import {
   Calendar,
@@ -8,11 +8,15 @@ import {
   Repeat,
   CornerDownRight,
   Plus,
+  Edit3,
+  Trash2,
+  X,
 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import { TaskItem, Priority } from '../../../types';
 import { ReminderCheckbox } from './ReminderCheckbox';
 import { RichLinkPreviewCard } from './RichLinkPreviewCard';
-import { IOS_COLORS } from '../../../styles/theme';
+import { IOS_COLORS, IOS_FONTS } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 import { getHumanReadableRRule } from '../../../services/recurrenceService';
 
@@ -37,9 +41,11 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
   onAddSubtask,
   onPress,
   onLongPress,
+  onDelete,
   onToggleFlag,
   isDark = true,
 }) => {
+  const [showActionPill, setShowActionPill] = useState(false);
   const isCompleted = Boolean(task.is_completed);
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
@@ -65,8 +71,17 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
 
   return (
     <Pressable
-      onPress={() => onPress?.(task)}
-      onLongPress={() => onLongPress?.(task)}
+      onPress={() => {
+        if (showActionPill) {
+          setShowActionPill(false);
+        } else {
+          onPress?.(task);
+        }
+      }}
+      onLongPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        setShowActionPill(true);
+      }}
       delayLongPress={350}
       style={({ pressed }) => ({
         opacity: pressed ? 0.85 : 1,
@@ -76,12 +91,101 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
         paddingHorizontal: 14,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: isDark ? '#2C2C2E' : '#E5E5EA',
+        borderColor: showActionPill ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA'),
         marginLeft: level * 20, // Indentación visual de subtareas
         position: 'relative',
         ...createShadow('#000000', { width: 0, height: 2 }, isDark ? 0.2 : 0.03, 4),
       })}
     >
+      {/* Mini Menú de Acciones Compacto en el Borde */}
+      {showActionPill && (
+        <View
+          style={{
+            position: 'absolute',
+            right: 8,
+            top: 7,
+            bottom: 7,
+            zIndex: 60,
+            backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: isDark ? '#3A3A3C' : '#E5E5EA',
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 6,
+            gap: 4,
+            ...createShadow('#000000', { width: 0, height: 4 }, 0.25, 8),
+          }}
+        >
+          {/* Botón Editar */}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              setShowActionPill(false);
+              onPress?.(task);
+            }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              paddingHorizontal: 8,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: isDark ? 'rgba(0, 122, 255, 0.2)' : '#EFF6FF',
+            })}
+          >
+            <Edit3 size={13} color="#007AFF" />
+            <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: '#007AFF' }}>
+              Editar
+            </Text>
+          </Pressable>
+
+          {/* Botón Eliminar */}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              setShowActionPill(false);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+              onDelete?.(task.id);
+            }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              paddingHorizontal: 8,
+              paddingVertical: 6,
+              borderRadius: 8,
+              backgroundColor: isDark ? 'rgba(255, 59, 48, 0.2)' : '#FEE2E2',
+            })}
+          >
+            <Trash2 size={13} color="#FF3B30" />
+            <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: '#FF3B30' }}>
+              Eliminar
+            </Text>
+          </Pressable>
+
+          {/* Botón Cerrar */}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              setShowActionPill(false);
+            }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F2F2F7',
+            })}
+          >
+            <X size={12} color={theme.text.secondary} />
+          </Pressable>
+        </View>
+      )}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
         {/* Indicador de jerarquía para subtareas */}
         {level > 0 && (

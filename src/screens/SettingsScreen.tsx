@@ -1,12 +1,13 @@
 /**
  * SettingsScreen.tsx
- * Panel de Ajustes y Configuración de MiHub iPadOS 18
+ * Panel de Ajustes y Gestión Integral de Base de Datos de MiHub.
  *
- * Incluye:
- * 1. Sincronización iCloud (CalDAV)
- * 2. Gestión de Base de Datos (Backup JSON, Importar JSON, Reset Selectivo)
- * 3. Preferencias de Cursado & Transporte
- * 4. Apariencia y Registro de Sincronización
+ * Características:
+ * 1. Sincronización iCloud (CalDAV con cifrado SecureStore)
+ * 2. Gestión de Base de Datos (Exportar JSON, Importar JSON con Portapapeles)
+ * 3. Reset selectivo por módulo con Modal de Advertencia y Confirmación destructiva
+ * 4. Preferencias de Cursado & Transporte (Arquitectura / Pernoctación en Córdoba)
+ * 5. Consola de Logs CalDAV
  */
 
 import React, { useState, useEffect } from 'react';
@@ -17,28 +18,29 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
-  Alert,
   Modal,
   Switch,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import {
   Cloud,
   Lock,
-  Key,
-  Mail,
   RefreshCw,
   Trash2,
   CheckCircle,
   AlertTriangle,
   Database,
-  Moon,
-  Sun,
   Download,
   Upload,
   Bus,
   Check,
   X,
-  GraduationCap,
+  Copy,
+  Sparkles,
+  Layers,
+  Calendar,
+  Zap,
+  DollarSign,
 } from 'lucide-react-native';
 import { useSyncStore } from '../store/useSyncStore';
 import { useAppStore } from '../store/useAppStore';
@@ -48,12 +50,20 @@ import { useFinanceStore } from '../store/useFinanceStore';
 import { useHabitsStore } from '../features/habits/stores/useHabitsStore';
 import { useTodaySchedule } from '../features/bus/hooks/useTodaySchedule';
 import { backupService } from '../services/backupService';
-import { settingsRepo } from '../db/repositories/settingsRepo';
 import { IOS_COLORS } from '../styles/theme';
 import { createShadow } from '../styles/shadows';
 
+interface ConfirmDialogState {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  isDanger: boolean;
+  onConfirm: () => Promise<void>;
+}
+
 export const SettingsScreen: React.FC = () => {
-  const { themeMode, toggleTheme } = useAppStore();
+  const { themeMode } = useAppStore();
   const isDark = themeMode === 'dark';
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
 
@@ -87,6 +97,17 @@ export const SettingsScreen: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [backupJsonText, setBackupJsonText] = useState('');
   const [importJsonText, setImportJsonText] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Modal de Confirmación de Advertencia
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmLabel: 'Confirmar',
+    isDanger: true,
+    onConfirm: async () => {},
+  });
 
   useEffect(() => {
     loadCredentials().then(() => {
@@ -118,55 +139,101 @@ export const SettingsScreen: React.FC = () => {
     try {
       const json = await backupService.exportToJson();
       setBackupJsonText(json);
+      setIsCopied(false);
       setIsExportModalOpen(true);
     } catch (e: any) {
       showStatus(`Error al exportar: ${e.message}`, 'error');
     }
   };
 
-  const handleImportBackup = async () => {
-    if (!importJsonText.trim()) return;
+  const handleCopyToClipboard = async () => {
     try {
-      await backupService.importFromJson(importJsonText);
-      // Recargar todos los stores
-      await Promise.all([
-        useTasksStore.getState().loadTasksAndLists(),
-        useCalendarStore.getState().loadEvents(),
-        useFinanceStore.getState().loadFinanceData(),
-        useHabitsStore.getState().loadHabitsData(),
-      ]);
-      setIsImportModalOpen(false);
-      setImportJsonText('');
-      showStatus('¡Copia de seguridad restaurada exitosamente!');
-    } catch (e: any) {
-      Alert.alert('Error al importar', e.message);
+      await Clipboard.setStringAsync(backupJsonText);
+      setIsCopied(true);
+      showStatus('¡Copia de seguridad JSON copiada al portapapeles!');
+      setTimeout(() => setIsCopied(false), 3000);
+    } catch {
+      showStatus('No se pudo copiar automáticamente al portapapeles.', 'error');
     }
   };
 
-  const handleSelectiveReset = (module: 'tasks' | 'calendar' | 'habits' | 'finances' | 'all', label: string) => {
-    Alert.alert(
-      `Restablecer ${label}`,
-      `¿Estás seguro de que deseas vaciar los datos de ${label}? Esta acción no se puede deshacer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Restablecer',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await backupService.resetModule(module);
-              if (module === 'tasks' || module === 'all') await useTasksStore.getState().loadTasksAndLists();
-              if (module === 'calendar' || module === 'all') await useCalendarStore.getState().loadEvents();
-              if (module === 'habits' || module === 'all') await useHabitsStore.getState().loadHabitsData();
-              if (module === 'finances' || module === 'all') await useFinanceStore.getState().loadFinanceData();
-              showStatus(`Módulo ${label} restablecido correctamente.`);
-            } catch (e: any) {
-              showStatus(`Error: ${e.message}`, 'error');
-            }
-          },
-        },
-      ]
-    );
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (text && text.trim().startsWith('{')) {
+        setImportJsonText(text);
+        showStatus('JSON pegado desde el portapapeles.');
+      } else {
+        showStatus('El portapapeles no contiene un JSON de backup válido.', 'error');
+      }
+    } catch {
+      showStatus('Error al leer del portapapeles.', 'error');
+    }
+  };
+
+  const triggerImportWithWarning = () => {
+    if (!importJsonText.trim()) {
+      showStatus('Por favor ingresa o pega el JSON de respaldo.', 'error');
+      return;
+    }
+
+    try {
+      JSON.parse(importJsonText);
+    } catch {
+      showStatus('El texto ingresado no es un JSON válido.', 'error');
+      return;
+    }
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Restaurar Base de Datos',
+      description:
+        'Esta acción sobrescribirá los datos actuales de todos los módulos con los registros de la copia de seguridad. ¿Deseas proceder?',
+      confirmLabel: 'Restaurar Copia',
+      isDanger: false,
+      onConfirm: async () => {
+        try {
+          await backupService.importFromJson(importJsonText);
+          await Promise.all([
+            useTasksStore.getState().loadTasksAndLists(),
+            useCalendarStore.getState().loadEvents(),
+            useFinanceStore.getState().loadFinanceData(),
+            useHabitsStore.getState().loadHabitsData(),
+          ]);
+          setIsImportModalOpen(false);
+          setImportJsonText('');
+          showStatus('¡Copia de seguridad restaurada exitosamente!');
+        } catch (e: any) {
+          showStatus(`Error al importar: ${e.message}`, 'error');
+        }
+      },
+    });
+  };
+
+  const requestSelectiveReset = (
+    module: 'tasks' | 'calendar' | 'habits' | 'finances' | 'all',
+    label: string,
+    description: string
+  ) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: `⚠️ Vaciar ${label}`,
+      description: `${description}\n\n¿Estás completamente seguro? Esta acción no se puede deshacer.`,
+      confirmLabel: module === 'all' ? 'Restablecer Todo de Fábrica' : `Sí, Vaciar ${label}`,
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          await backupService.resetModule(module);
+          if (module === 'tasks' || module === 'all') await useTasksStore.getState().loadTasksAndLists();
+          if (module === 'calendar' || module === 'all') await useCalendarStore.getState().loadEvents();
+          if (module === 'habits' || module === 'all') await useHabitsStore.getState().loadHabitsData();
+          if (module === 'finances' || module === 'all') await useFinanceStore.getState().loadFinanceData();
+          showStatus(`Módulo ${label} restablecido correctamente.`);
+        } catch (e: any) {
+          showStatus(`Error: ${e.message}`, 'error');
+        }
+      },
+    });
   };
 
   return (
@@ -178,7 +245,10 @@ export const SettingsScreen: React.FC = () => {
       {statusMessage && (
         <View
           style={{
-            backgroundColor: statusMessage.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(52, 199, 89, 0.15)',
+            backgroundColor:
+              statusMessage.type === 'error'
+                ? 'rgba(239, 68, 68, 0.15)'
+                : 'rgba(52, 199, 89, 0.15)',
             borderColor: statusMessage.type === 'error' ? '#EF4444' : '#34C759',
             borderWidth: 1,
             borderRadius: 14,
@@ -193,13 +263,19 @@ export const SettingsScreen: React.FC = () => {
           ) : (
             <CheckCircle size={18} color="#34C759" />
           )}
-          <Text style={{ color: statusMessage.type === 'error' ? '#EF4444' : '#34C759', fontWeight: '800', fontSize: 13 }}>
+          <Text
+            style={{
+              color: statusMessage.type === 'error' ? '#EF4444' : '#34C759',
+              fontWeight: '800',
+              fontSize: 13,
+            }}
+          >
             {statusMessage.text}
           </Text>
         </View>
       )}
 
-      {/* Grid de 2 Columnas para Tablet iPadOS 18 */}
+      {/* Grid de 2 Columnas para Tablet */}
       <View style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start' }}>
         {/* COLUMNA IZQUIERDA: iCloud CalDAV + Cursado */}
         <View style={{ flex: 1, gap: 20 }}>
@@ -216,7 +292,16 @@ export const SettingsScreen: React.FC = () => {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(0, 122, 255, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(0, 122, 255, 0.15)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Cloud size={20} color="#007AFF" />
               </View>
               <View>
@@ -240,14 +325,24 @@ export const SettingsScreen: React.FC = () => {
               }}
             >
               <Text style={{ fontSize: 12, color: theme.text.secondary, lineHeight: 17 }}>
-                <Text style={{ fontWeight: '800', color: theme.text.primary }}>Seguridad:</Text> Usá una <Text style={{ fontWeight: '800', color: '#007AFF' }}>Contraseña de Aplicación</Text> generada en appleid.apple.com. Se cifra localmente con SecureStore.
+                <Text style={{ fontWeight: '800', color: theme.text.primary }}>Seguridad:</Text> Usá una{' '}
+                <Text style={{ fontWeight: '800', color: '#007AFF' }}>Contraseña de Aplicación</Text>{' '}
+                generada en appleid.apple.com. Se cifra localmente con SecureStore.
               </Text>
             </View>
 
             {/* Formulario */}
             <View style={{ gap: 12 }}>
               <View>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase', marginBottom: 4 }}>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '800',
+                    color: theme.text.secondary,
+                    textTransform: 'uppercase',
+                    marginBottom: 4,
+                  }}
+                >
                   Apple ID (Correo)
                 </Text>
                 <TextInput
@@ -272,10 +367,28 @@ export const SettingsScreen: React.FC = () => {
               </View>
 
               <View>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase', marginBottom: 4 }}>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '800',
+                    color: theme.text.secondary,
+                    textTransform: 'uppercase',
+                    marginBottom: 4,
+                  }}
+                >
                   Contraseña de Aplicación
                 </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.cardSecondary, borderRadius: 10, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12 }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: theme.cardSecondary,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    paddingHorizontal: 12,
+                  }}
+                >
                   <TextInput
                     value={inputPassword}
                     onChangeText={setInputPassword}
@@ -377,7 +490,16 @@ export const SettingsScreen: React.FC = () => {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255, 45, 85, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(255, 45, 85, 0.15)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Bus size={20} color="#FF2D55" />
               </View>
               <View>
@@ -391,7 +513,14 @@ export const SettingsScreen: React.FC = () => {
             </View>
 
             <View style={{ gap: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 4,
+                }}
+              >
                 <View style={{ flex: 1, paddingRight: 12 }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary }}>
                     Cursa Arquitectura los Martes
@@ -409,7 +538,14 @@ export const SettingsScreen: React.FC = () => {
 
               <View style={{ height: 1, backgroundColor: theme.border }} />
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 4,
+                }}
+              >
                 <View style={{ flex: 1, paddingRight: 12 }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary }}>
                     Duerme en Córdoba los Viernes
@@ -430,7 +566,7 @@ export const SettingsScreen: React.FC = () => {
 
         {/* COLUMNA DERECHA: Gestión de Base de Datos + Logs CalDAV */}
         <View style={{ flex: 1, gap: 20 }}>
-          {/* 3. Panel de Base de Datos (Backup, Restore, Reset) */}
+          {/* 3. Panel de Base de Datos (Backup, Restore, Reset con Advertencia) */}
           <View
             style={{
               backgroundColor: theme.card,
@@ -443,7 +579,16 @@ export const SettingsScreen: React.FC = () => {
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(52, 199, 89, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(52, 199, 89, 0.15)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Database size={20} color="#34C759" />
               </View>
               <View>
@@ -474,7 +619,7 @@ export const SettingsScreen: React.FC = () => {
                   gap: 6,
                 })}
               >
-                <Download size={15} color="#34C759" />
+                <Download size={16} color="#34C759" />
                 <Text style={{ fontSize: 13, fontWeight: '800', color: theme.text.primary }}>
                   Exportar JSON
                 </Text>
@@ -496,61 +641,166 @@ export const SettingsScreen: React.FC = () => {
                   gap: 6,
                 })}
               >
-                <Upload size={15} color="#007AFF" />
+                <Upload size={16} color="#007AFF" />
                 <Text style={{ fontSize: 13, fontWeight: '800', color: theme.text.primary }}>
                   Importar JSON
                 </Text>
               </Pressable>
             </View>
 
-            {/* Resets Selectivos */}
-            <View style={{ gap: 8 }}>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary, textTransform: 'uppercase' }}>
-                Restablecer Módulos Selectivamente
-              </Text>
+            {/* Botones de Reset Selectivo con Advertencia */}
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <AlertTriangle size={13} color="#FF9500" />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '800',
+                    color: theme.text.secondary,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Restablecer Módulos Selectivamente
+                </Text>
+              </View>
 
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {/* Tareas */}
                 <Pressable
-                  onPress={() => handleSelectiveReset('tasks', 'Recordatorios')}
-                  style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7', borderWidth: 1, borderColor: theme.border }}
+                  onPress={() =>
+                    requestSelectiveReset(
+                      'tasks',
+                      'Recordatorios',
+                      'Se vaciarán todas las listas, tareas y recordatorios locales.'
+                    )
+                  }
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 9,
+                    borderRadius: 11,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  })}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+                  <Layers size={13} color={theme.text.secondary} />
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: theme.text.secondary }}>
                     Vaciar Tareas
                   </Text>
                 </Pressable>
 
+                {/* Calendario */}
                 <Pressable
-                  onPress={() => handleSelectiveReset('calendar', 'Calendario')}
-                  style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7', borderWidth: 1, borderColor: theme.border }}
+                  onPress={() =>
+                    requestSelectiveReset(
+                      'calendar',
+                      'Calendario',
+                      'Se eliminarán todos los eventos locales y calendarios personalizados.'
+                    )
+                  }
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 9,
+                    borderRadius: 11,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  })}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+                  <Calendar size={13} color={theme.text.secondary} />
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: theme.text.secondary }}>
                     Vaciar Eventos
                   </Text>
                 </Pressable>
 
+                {/* Hábitos */}
                 <Pressable
-                  onPress={() => handleSelectiveReset('habits', 'Hábitos')}
-                  style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7', borderWidth: 1, borderColor: theme.border }}
+                  onPress={() =>
+                    requestSelectiveReset(
+                      'habits',
+                      'Hábitos',
+                      'Se borrarán todos los hábitos, historial de días, cronómetros y perfil de nivel RPG.'
+                    )
+                  }
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 9,
+                    borderRadius: 11,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  })}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+                  <Zap size={13} color={theme.text.secondary} />
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: theme.text.secondary }}>
                     Vaciar Hábitos
                   </Text>
                 </Pressable>
 
+                {/* Finanzas */}
                 <Pressable
-                  onPress={() => handleSelectiveReset('finances', 'Finanzas')}
-                  style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7', borderWidth: 1, borderColor: theme.border }}
+                  onPress={() =>
+                    requestSelectiveReset(
+                      'finances',
+                      'Finanzas',
+                      'Se eliminarán todas las cuentas de origen, transacciones y compras en cuotas.'
+                    )
+                  }
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 9,
+                    borderRadius: 11,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7',
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  })}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: theme.text.secondary }}>
+                  <DollarSign size={13} color={theme.text.secondary} />
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: theme.text.secondary }}>
                     Vaciar Finanzas
                   </Text>
                 </Pressable>
 
+                {/* Reset Completo de Fábrica */}
                 <Pressable
-                  onPress={() => handleSelectiveReset('all', 'Base de Datos Completa')}
-                  style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(255, 59, 48, 0.15)', borderWidth: 1, borderColor: '#FF3B30' }}
+                  onPress={() =>
+                    requestSelectiveReset(
+                      'all',
+                      'Base de Datos Completa',
+                      'Esta acción eliminará TODOS los registros de todos los módulos y restablecerá la base de datos a los valores de fábrica.'
+                    )
+                  }
+                  style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 14,
+                    paddingVertical: 9,
+                    borderRadius: 11,
+                    backgroundColor: 'rgba(255, 59, 48, 0.15)',
+                    borderWidth: 1,
+                    borderColor: '#FF3B30',
+                  })}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '900', color: '#FF3B30' }}>
+                  <Trash2 size={13} color="#FF3B30" />
+                  <Text style={{ fontSize: 12, fontWeight: '900', color: '#FF3B30' }}>
                     Reset Completo
                   </Text>
                 </Pressable>
@@ -569,7 +819,14 @@ export const SettingsScreen: React.FC = () => {
               gap: 12,
             }}
           >
-            <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text.primary, textTransform: 'uppercase' }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '800',
+                color: theme.text.primary,
+                textTransform: 'uppercase',
+              }}
+            >
               Consola de Sincronización CalDAV
             </Text>
 
@@ -594,7 +851,10 @@ export const SettingsScreen: React.FC = () => {
                     style={{
                       fontSize: 11,
                       fontFamily: 'monospace',
-                      color: log.includes('Error') || log.includes('Falló') ? '#FF3B30' : theme.text.secondary,
+                      color:
+                        log.includes('Error') || log.includes('Falló')
+                          ? '#FF3B30'
+                          : theme.text.secondary,
                       marginBottom: 4,
                     }}
                   >
@@ -607,21 +867,43 @@ export const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Modal Exportar Backup JSON */}
+      {/* Modal 1: Exportar Backup JSON */}
       <Modal visible={isExportModalOpen} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ width: '90%', maxWidth: 540, backgroundColor: theme.card, borderRadius: 24, padding: 24, gap: 14, borderWidth: 1, borderColor: theme.border }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              width: '90%',
+              maxWidth: 560,
+              backgroundColor: theme.card,
+              borderRadius: 24,
+              padding: 24,
+              gap: 16,
+              borderWidth: 1,
+              borderColor: theme.border,
+            }}
+          >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary }}>
-                Copia de Seguridad JSON
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Download size={20} color="#34C759" />
+                <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary }}>
+                  Copia de Seguridad JSON
+                </Text>
+              </View>
               <Pressable onPress={() => setIsExportModalOpen(false)}>
-                <X size={18} color={theme.text.secondary} />
+                <X size={20} color={theme.text.secondary} />
               </Pressable>
             </View>
 
-            <Text style={{ fontSize: 12, color: theme.text.secondary }}>
-              Podés copiar este JSON para guardarlo externamente o restaurarlo en otra tablet.
+            <Text style={{ fontSize: 12, color: theme.text.secondary, lineHeight: 17 }}>
+              Se ha generado la copia de seguridad completa con todos los módulos. Podés copiarla al portapapeles o guardarla externamente:
             </Text>
 
             <TextInput
@@ -641,42 +923,93 @@ export const SettingsScreen: React.FC = () => {
               }}
             />
 
-            <Pressable
-              onPress={() => {
-                setIsExportModalOpen(false);
-                showStatus('JSON copiado con éxito');
-              }}
-              style={{ backgroundColor: '#007AFF', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                Cerrar
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable
+                onPress={handleCopyToClipboard}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  flex: 1,
+                  minHeight: 44,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isCopied ? '#34C759' : '#007AFF',
+                  borderRadius: 12,
+                  gap: 8,
+                })}
+              >
+                {isCopied ? <Check size={16} color="#FFFFFF" /> : <Copy size={16} color="#FFFFFF" />}
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>
+                  {isCopied ? '¡Copiado con Éxito!' : 'Copiar al Portapapeles'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setIsExportModalOpen(false)}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  paddingHorizontal: 20,
+                  minHeight: 44,
+                  backgroundColor: theme.cardSecondary,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                })}
+              >
+                <Text style={{ color: theme.text.primary, fontWeight: '800', fontSize: 13 }}>
+                  Cerrar
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* Modal Importar Backup JSON */}
+      {/* Modal 2: Importar Backup JSON */}
       <Modal visible={isImportModalOpen} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <View style={{ width: '90%', maxWidth: 540, backgroundColor: theme.card, borderRadius: 24, padding: 24, gap: 14, borderWidth: 1, borderColor: theme.border }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              width: '90%',
+              maxWidth: 560,
+              backgroundColor: theme.card,
+              borderRadius: 24,
+              padding: 24,
+              gap: 16,
+              borderWidth: 1,
+              borderColor: theme.border,
+            }}
+          >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary }}>
-                Restaurar desde JSON
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Upload size={20} color="#007AFF" />
+                <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text.primary }}>
+                  Restaurar desde JSON
+                </Text>
+              </View>
               <Pressable onPress={() => setIsImportModalOpen(false)}>
-                <X size={18} color={theme.text.secondary} />
+                <X size={20} color={theme.text.secondary} />
               </Pressable>
             </View>
 
-            <Text style={{ fontSize: 12, color: theme.text.secondary }}>
-              Pegá el contenido del backup JSON para restaurar todas las tablas:
+            <Text style={{ fontSize: 12, color: theme.text.secondary, lineHeight: 17 }}>
+              Pegá el contenido JSON de una copia de seguridad para restaurar todas las tablas:
             </Text>
 
             <TextInput
               value={importJsonText}
               onChangeText={setImportJsonText}
-              placeholder="Pegar JSON aquí..."
+              placeholder="Pegar JSON de respaldo aquí..."
               placeholderTextColor={theme.text.tertiary}
               multiline
               style={{
@@ -692,14 +1025,153 @@ export const SettingsScreen: React.FC = () => {
               }}
             />
 
-            <Pressable
-              onPress={handleImportBackup}
-              style={{ backgroundColor: '#34C759', paddingVertical: 12, borderRadius: 12, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>
-                Restaurar Datos
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable
+                onPress={handlePasteFromClipboard}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  paddingHorizontal: 16,
+                  minHeight: 44,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: theme.cardSecondary,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  gap: 6,
+                })}
+              >
+                <Copy size={15} color={theme.text.secondary} />
+                <Text style={{ color: theme.text.primary, fontWeight: '800', fontSize: 13 }}>
+                  Pegar
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={triggerImportWithWarning}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  flex: 1,
+                  minHeight: 44,
+                  backgroundColor: '#34C759',
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>
+                  Restaurar Datos...
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal 3: Diálogo de Confirmación de Advertencia */}
+      <Modal visible={confirmDialog.isOpen} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+            zIndex: 9999,
+          }}
+        >
+          <View
+            style={{
+              width: '90%',
+              maxWidth: 480,
+              backgroundColor: theme.card,
+              borderRadius: 24,
+              padding: 24,
+              gap: 16,
+              borderWidth: 1,
+              borderColor: confirmDialog.isDanger ? '#FF3B30' : theme.border,
+              ...createShadow(
+                confirmDialog.isDanger ? '#FF3B30' : '#000000',
+                { width: 0, height: 6 },
+                0.3,
+                16
+              ),
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  backgroundColor: confirmDialog.isDanger
+                    ? 'rgba(255, 59, 48, 0.18)'
+                    : 'rgba(255, 149, 0, 0.18)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <AlertTriangle
+                  size={24}
+                  color={confirmDialog.isDanger ? '#FF3B30' : '#FF9500'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 17, fontWeight: '900', color: theme.text.primary }}>
+                  {confirmDialog.title}
+                </Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF9500', textTransform: 'uppercase' }}>
+                  Advertencia de Modificación de Datos
+                </Text>
+              </View>
+            </View>
+
+            <Text style={{ fontSize: 13, color: theme.text.secondary, lineHeight: 19 }}>
+              {confirmDialog.description}
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
+              <Pressable
+                onPress={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.8 : 1,
+                  flex: 1,
+                  minHeight: 46,
+                  backgroundColor: theme.cardSecondary,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                })}
+              >
+                <Text style={{ color: theme.text.primary, fontWeight: '800', fontSize: 13 }}>
+                  Cancelar
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={async () => {
+                  const action = confirmDialog.onConfirm;
+                  setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+                  await action();
+                }}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.85 : 1,
+                  flex: 1,
+                  minHeight: 46,
+                  backgroundColor: confirmDialog.isDanger ? '#FF3B30' : '#34C759',
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                })}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>
+                  {confirmDialog.confirmLabel}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>

@@ -43,6 +43,27 @@ function cycleHabitIndex(currentIndex, totalHabits, direction = 'next') {
   return (currentIndex - 1 + totalHabits) % totalHabits;
 }
 
+function getWeatherConditionInfo(code, isDay = true) {
+  switch (code) {
+    case 0:
+      return { condition: 'Despejado', emoji: isDay ? '☀️' : '🌙' };
+    case 1:
+      return { condition: 'Mayormente despejado', emoji: isDay ? '🌤️' : '🌙' };
+    case 2:
+      return { condition: 'Parcialmente nublado', emoji: '⛅' };
+    case 3:
+      return { condition: 'Nublado', emoji: '☁️' };
+    case 61:
+    case 63:
+    case 65:
+      return { condition: 'Lluvia', emoji: '🌧️' };
+    case 95:
+      return { condition: 'Tormenta eléctrica', emoji: '⛈️' };
+    default:
+      return { condition: 'Despejado', emoji: '☀️' };
+  }
+}
+
 test('1. Cálculo de cuenta regresiva para el próximo colectivo', () => {
   // Colectivo de las 06:25 saliendo a la 01:09 -> 5h 16m
   const countdown = calculateBusCountdown('06:25', 1, 9);
@@ -83,4 +104,11 @@ test('4. Paginación y ciclado horizontal de carrusel de hábitos', () => {
   // Retroceder del 0 al 2, 2 al 1
   assert.equal(cycleHabitIndex(0, total, 'prev'), 2);
   assert.equal(cycleHabitIndex(2, total, 'prev'), 1);
+});
+
+test('5. Mapeo de códigos meteorológicos WMO para Despeñaderos', () => {
+  assert.equal(getWeatherConditionInfo(0, true).condition, 'Despejado');
+  assert.equal(getWeatherConditionInfo(2, true).condition, 'Parcialmente nublado');
+  assert.equal(getWeatherConditionInfo(61, true).condition, 'Lluvia');
+  assert.equal(getWeatherConditionInfo(95, true).condition, 'Tormenta eléctrica');
 });

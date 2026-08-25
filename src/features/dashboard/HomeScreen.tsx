@@ -4,7 +4,7 @@
  *
  * Todos los widgets son 100% interactivos y conectados a SQLite:
  * 1. Header con Saludo Dinámico, Fecha y Avatar de Perfil con ProfileSettingsModal.
- * 2. Widget de Clima iOS: Abre WeatherForecastModal con pronóstico 24h/7días, multi-ciudad y deep link.
+ * 2. Widget de Clima iOS: Conectado a Open-Meteo para Despeñaderos, Córdoba (con opción de agregar más ciudades).
  * 3. Nivel Central:
  *    - Recordatorios Inteligentes con checkboxes táctiles, tags y apertura de ReminderDetailSheet.
  *    - Calendario Split 50/50 con selector de días sincronizado e inspección de EventModal.
@@ -30,6 +30,7 @@ import { useTasksStore } from '../../store/useTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { useFinanceStore } from '../../store/useFinanceStore';
 import { useHabitsStore } from '../habits/stores/useHabitsStore';
+import { useWeatherStore } from '../../store/useWeatherStore';
 import { HomeWeatherWidget } from './components/HomeWeatherWidget';
 import { HomeRemindersWidget } from './components/HomeRemindersWidget';
 import { HomeCalendarWidget } from './components/HomeCalendarWidget';
@@ -46,7 +47,6 @@ import { AppleEmoji } from '../../components/ui/AppleEmoji';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../styles/theme';
 import { createShadow } from '../../styles/shadows';
 import { TaskItem, CalendarEventItem } from '../../types';
-import { DayOfWeek } from '../bus/types';
 
 export const HomeScreen: React.FC = () => {
   const { themeMode, userName, userAvatar, initApp, setActiveModule } = useAppStore();
@@ -57,11 +57,11 @@ export const HomeScreen: React.FC = () => {
   const { events, categories: calendarCategories, loadEvents, loadCategories, addEvent, updateEvent, deleteEvent } = useCalendarStore();
   const { loadFinanceData } = useFinanceStore();
   const { loadHabitsData } = useHabitsStore();
+  const { loadWeatherStore } = useWeatherStore();
 
   // Estados de Modales Interactivos
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
-  const [selectedWeatherCity, setSelectedWeatherCity] = useState('Despeñaderos, Córdoba');
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [selectedTaskForSheet, setSelectedTaskForSheet] = useState<TaskItem | null>(null);
   const [selectedEventForModal, setSelectedEventForModal] = useState<CalendarEventItem | null>(null);
@@ -77,6 +77,7 @@ export const HomeScreen: React.FC = () => {
       loadCategories(),
       loadFinanceData(),
       loadHabitsData(),
+      loadWeatherStore(),
     ]);
   }, []);
 
@@ -197,10 +198,9 @@ export const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* 2. Fila Superior: Widget de Clima iOS (Interactiva) */}
+      {/* 2. Fila Superior: Widget de Clima iOS (Conectado a Open-Meteo) */}
       <HomeWeatherWidget
         onPress={() => setIsWeatherModalOpen(true)}
-        currentCity={selectedWeatherCity}
         isDark={isDark}
       />
 
@@ -256,8 +256,6 @@ export const HomeScreen: React.FC = () => {
       <WeatherForecastModal
         visible={isWeatherModalOpen}
         onClose={() => setIsWeatherModalOpen(false)}
-        selectedCity={selectedWeatherCity}
-        onSelectCity={(city) => setSelectedWeatherCity(city)}
         isDark={isDark}
       />
 

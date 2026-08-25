@@ -1,33 +1,67 @@
 /**
  * HomeWeatherWidget.tsx
  * Tarjeta de Clima interactiva estilo Apple Weather (iOS / iPadOS) con gradiente pastel y acabado Glassmorphism.
- * Al presionar abre el modal detallado de pronóstico con selector multi-ciudad y deep link.
+ * Conectado en tiempo real a Open-Meteo para mostrar el clima real de Despeñaderos, Córdoba (o la ciudad activa).
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import {
   Sun,
+  CloudSun,
+  Cloud,
+  CloudRain,
+  CloudLightning,
   Droplets,
   Wind,
   MapPin,
   ChevronRight,
 } from 'lucide-react-native';
+import { useWeatherStore } from '../../../store/useWeatherStore';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface HomeWeatherWidgetProps {
   onPress?: () => void;
-  currentCity?: string;
   isDark?: boolean;
 }
 
 export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
   onPress,
-  currentCity = 'Despeñaderos, Córdoba',
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
+
+  const {
+    weatherData,
+    loadWeatherStore,
+    locations,
+    selectedLocationId,
+  } = useWeatherStore();
+
+  useEffect(() => {
+    loadWeatherStore();
+  }, []);
+
+  const activeLoc = locations.find((l) => l.id === selectedLocationId) || locations[0];
+  const cityName = weatherData?.locationName || activeLoc?.name || 'Despeñaderos, Córdoba';
+  const temp = weatherData ? `${weatherData.temperature}°` : '18°';
+  const condition = weatherData?.condition || 'Despejado';
+  const maxTemp = weatherData ? `${weatherData.tempMax}°` : '22°';
+  const minTemp = weatherData ? `${weatherData.tempMin}°` : '8°';
+  const humidity = weatherData ? `${weatherData.humidity}%` : '48%';
+  const windSpeed = weatherData ? `${weatherData.windSpeed} km/h` : '12 km/h';
+  const code = weatherData?.code ?? 0;
+
+  const renderWeatherIcon = () => {
+    const color = isDark ? APPLE_ACCENT.yellow.dark : APPLE_ACCENT.yellow.light;
+    if (code === 0 || code === 1) return <Sun size={30} color={color} strokeWidth={2.3} />;
+    if (code === 2) return <CloudSun size={30} color={color} strokeWidth={2.3} />;
+    if (code === 3) return <Cloud size={30} color={theme.text.secondary} strokeWidth={2.3} />;
+    if (code >= 51 && code <= 82) return <CloudRain size={30} color={isDark ? APPLE_ACCENT.cyan.dark : APPLE_ACCENT.cyan.light} strokeWidth={2.3} />;
+    if (code >= 95) return <CloudLightning size={30} color={isDark ? APPLE_ACCENT.purple.dark : APPLE_ACCENT.purple.light} strokeWidth={2.3} />;
+    return <Sun size={30} color={color} strokeWidth={2.3} />;
+  };
 
   return (
     <Pressable
@@ -49,9 +83,9 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
         ...createShadow('#000000', { width: 0, height: 3 }, isDark ? 0.2 : 0.04, 8),
       })}
     >
-      {/* Lado Izquierdo: Sol brillante + Temperatura 18° + Estado */}
+      {/* Lado Izquierdo: Icono del Clima + Temperatura Real + Estado */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-        {/* Sol con Aura Dorada */}
+        {/* Aura de Clima */}
         <View
           style={{
             width: 52,
@@ -64,10 +98,10 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
             borderColor: isDark ? 'rgba(255, 214, 10, 0.35)' : 'rgba(255, 204, 0, 0.3)',
           }}
         >
-          <Sun size={30} color={isDark ? APPLE_ACCENT.yellow.dark : APPLE_ACCENT.yellow.light} strokeWidth={2.3} />
+          {renderWeatherIcon()}
         </View>
 
-        {/* Temperatura & Condición */}
+        {/* Temperatura & Condición Real */}
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
             <Text
@@ -79,7 +113,7 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
                 fontVariant: ['tabular-nums'],
               }}
             >
-              18°
+              {temp}
             </Text>
             <Text
               style={{
@@ -88,15 +122,15 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
                 color: theme.text.primary,
               }}
             >
-              Despejado
+              {condition}
             </Text>
           </View>
 
-          {/* Ubicación */}
+          {/* Ubicación Real */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <MapPin size={12} color={theme.text.tertiary} />
             <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
-              {currentCity}
+              {cityName}
             </Text>
           </View>
         </View>
@@ -120,7 +154,7 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
             Rango Térmico
           </Text>
           <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary, fontVariant: ['tabular-nums'] }}>
-            Máx. 22° · Mín. 8°
+            Máx. {maxTemp} · Mín. {minTemp}
           </Text>
         </View>
 
@@ -129,13 +163,13 @@ export const HomeWeatherWidget: React.FC<HomeWeatherWidgetProps> = ({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Droplets size={12} color={isDark ? APPLE_ACCENT.cyan.dark : APPLE_ACCENT.cyan.light} />
             <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.semibold, color: theme.text.secondary }}>
-              48% Humedad
+              {humidity} Humedad
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Wind size={12} color={isDark ? APPLE_ACCENT.teal.dark : APPLE_ACCENT.teal.light} />
             <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.semibold, color: theme.text.secondary }}>
-              12 km/h SSE
+              {windSpeed}
             </Text>
           </View>
         </View>

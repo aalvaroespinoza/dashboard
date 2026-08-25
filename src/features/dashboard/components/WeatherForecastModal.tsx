@@ -1,7 +1,10 @@
 /**
  * WeatherForecastModal.tsx
  * Modal de Pronóstico del Clima estilo Apple Weather (iOS / iPadOS 18).
- * Incluye pronóstico de 24h, extendido de 7 días, selector multi-ciudad y botón deep link a la app nativa de Clima.
+ * - Conectado en tiempo real a Open-Meteo API.
+ * - Ciudad por defecto: Despeñaderos, Córdoba (con opción de buscar y agregar cualquier ciudad del mundo).
+ * - Pronóstico de 24 horas y 7 días reales.
+ * - Soporte universal para tablets Huawei / Android / iOS / Web vía Google Weather y weather://.
  */
 
 import React, { useState } from 'react';
@@ -11,93 +14,98 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  TextInput,
   Linking,
-  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import {
   X,
   Sun,
   CloudSun,
   CloudRain,
+  Cloud,
+  CloudLightning,
   Wind,
   Droplets,
   ExternalLink,
   MapPin,
   Plus,
+  Trash2,
+  Search,
   Check,
+  RefreshCw,
 } from 'lucide-react-native';
+import { useWeatherStore } from '../../../store/useWeatherStore';
+import { WeatherLocation } from '../../../services/weatherService';
 import { IOS_COLORS, IOS_FONTS, APPLE_ACCENT } from '../../../styles/theme';
 import { createShadow } from '../../../styles/shadows';
 
 interface WeatherForecastModalProps {
   visible: boolean;
   onClose: () => void;
-  selectedCity: string;
-  onSelectCity: (city: string) => void;
   isDark?: boolean;
 }
-
-const CITIES = [
-  { name: 'Despeñaderos, Córdoba', temp: '18°', condition: 'Despejado', max: '22°', min: '8°', weatherUrl: 'https://weather.com/es-AR/tiempo/hoy/l/-31.81,-64.29' },
-  { name: 'Córdoba Capital, Argentina', temp: '19°', condition: 'Parcialmente nublado', max: '24°', min: '11°', weatherUrl: 'https://weather.com/es-AR/tiempo/hoy/l/-31.42,-64.18' },
-  { name: 'Río Tercero, Córdoba', temp: '17°', condition: 'Despejado', max: '21°', min: '7°', weatherUrl: 'https://weather.com/es-AR/tiempo/hoy/l/-32.17,-64.11' },
-  { name: 'Alta Gracia, Córdoba', temp: '18°', condition: 'Soleado', max: '23°', min: '9°', weatherUrl: 'https://weather.com/es-AR/tiempo/hoy/l/-31.65,-64.43' },
-  { name: 'Villa Carlos Paz, Córdoba', temp: '16°', condition: 'Despejado', max: '20°', min: '6°', weatherUrl: 'https://weather.com/es-AR/tiempo/hoy/l/-31.42,-64.49' },
-];
-
-const HOURLY_FORECAST = [
-  { hour: 'Ahora', temp: '18°', icon: Sun, pop: '0%' },
-  { hour: '14:00', temp: '20°', icon: Sun, pop: '0%' },
-  { hour: '15:00', temp: '22°', icon: Sun, pop: '0%' },
-  { hour: '16:00', temp: '21°', icon: CloudSun, pop: '5%' },
-  { hour: '17:00', temp: '19°', icon: CloudSun, pop: '10%' },
-  { hour: '18:00', temp: '17°', icon: CloudSun, pop: '10%' },
-  { hour: '19:00', temp: '15°', icon: Sun, pop: '0%' },
-  { hour: '20:00', temp: '13°', icon: Sun, pop: '0%' },
-  { hour: '21:00', temp: '12°', icon: Sun, pop: '0%' },
-  { hour: '22:00', temp: '11°', icon: Sun, pop: '0%' },
-  { hour: '23:00', temp: '10°', icon: Sun, pop: '0%' },
-];
-
-const DAILY_FORECAST = [
-  { day: 'Hoy', condition: 'Despejado', icon: Sun, min: 8, max: 22 },
-  { day: 'Mié', condition: 'Soleado', icon: Sun, min: 9, max: 24 },
-  { day: 'Jue', condition: 'Parcialmente nublado', icon: CloudSun, min: 11, max: 25 },
-  { day: 'Vie', condition: 'Chubascos aislados', icon: CloudRain, min: 12, max: 21 },
-  { day: 'Sáb', condition: 'Despejado', icon: Sun, min: 7, max: 19 },
-  { day: 'Dom', condition: 'Soleado', icon: Sun, min: 8, max: 22 },
-  { day: 'Lun', condition: 'Despejado', icon: Sun, min: 10, max: 24 },
-];
 
 export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
   visible,
   onClose,
-  selectedCity,
-  onSelectCity,
   isDark = true,
 }) => {
   const theme = isDark ? IOS_COLORS.dark : IOS_COLORS.light;
-  const currentCityObj = CITIES.find((c) => c.name === selectedCity) || CITIES[0];
 
-  const handleOpenNativeWeatherApp = async () => {
+  const {
+    locations,
+    selectedLocationId,
+    weatherData,
+    isLoading,
+    searchQuery,
+    searchResults,
+    isSearching,
+    selectLocation,
+    addLocation,
+    removeLocation,
+    searchCities,
+    clearSearchResults,
+    refreshWeather,
+  } = useWeatherStore();
+
+  const [isAddingCity, setIsAddingCity] = useState(false);
+
+  const selectedLoc = locations.find((l) => l.id === selectedLocationId) || locations[0];
+
+  const handleOpenNativeWeather = async () => {
+    const locName = selectedLoc?.name || 'Despeñaderos, Córdoba';
+    
+    // 1. Intentar protocolo nativo de Apple Weather (si es iOS/iPadOS)
     try {
-      // Intentar protocolo nativo de Apple Weather en iOS
-      const appleWeatherUrl = 'weather://';
-      const supported = await Linking.canOpenURL(appleWeatherUrl);
-      if (supported) {
-        await Linking.openURL(appleWeatherUrl);
+      const appleUrl = 'weather://';
+      const canOpen = await Linking.canOpenURL(appleUrl);
+      if (canOpen) {
+        await Linking.openURL(appleUrl);
         return;
       }
     } catch {
       // Continuar al fallback
     }
 
-    // Fallback web oficial
+    // 2. Fallback universal óptimo para Huawei Tablet / Android / Web
+    // Abre directamente la tarjeta interactiva de clima en el navegador del dispositivo
     try {
-      await Linking.openURL(currentCityObj.weatherUrl);
+      const query = encodeURIComponent(`clima ${locName}`);
+      await Linking.openURL(`https://www.google.com/search?q=${query}`);
     } catch {
-      await Linking.openURL('https://weather.com');
+      await Linking.openURL(`https://weather.com/es-AR/tiempo/hoy/l/${selectedLoc?.lat || -31.81},${selectedLoc?.lon || -64.29}`);
     }
+  };
+
+  const getWeatherIcon = (code: number, size: number = 20) => {
+    const color = isDark ? APPLE_ACCENT.yellow.dark : APPLE_ACCENT.yellow.light;
+    if (code === 0 || code === 1) return <Sun size={size} color={color} strokeWidth={2.3} />;
+    if (code === 2) return <CloudSun size={size} color={color} strokeWidth={2.3} />;
+    if (code === 3) return <Cloud size={size} color={theme.text.secondary} strokeWidth={2.3} />;
+    if (code >= 51 && code <= 82) return <CloudRain size={size} color={isDark ? APPLE_ACCENT.cyan.dark : APPLE_ACCENT.cyan.light} strokeWidth={2.3} />;
+    if (code >= 95) return <CloudLightning size={size} color={isDark ? APPLE_ACCENT.purple.dark : APPLE_ACCENT.purple.light} strokeWidth={2.3} />;
+    return <Sun size={size} color={color} strokeWidth={2.3} />;
   };
 
   return (
@@ -120,7 +128,7 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
             padding: 24,
             borderWidth: 1,
             borderColor: theme.border,
-            gap: 18,
+            gap: 16,
             maxHeight: '90%',
             ...createShadow('#000000', { width: 0, height: 8 }, isDark ? 0.35 : 0.08, 16),
           }}
@@ -134,37 +142,139 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
               </Text>
             </View>
 
-            <Pressable
-              onPress={onClose}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F2F2F7',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <X size={16} color={theme.text.secondary} />
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Pressable
+                onPress={refreshWeather}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F2F2F7',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <RefreshCw size={15} color={theme.text.secondary} />
+              </Pressable>
+
+              <Pressable
+                onPress={onClose}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F2F2F7',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={16} color={theme.text.secondary} />
+              </Pressable>
+            </View>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
-            {/* 1. Selector de Ciudades */}
+            {/* 1. Selector de Ciudades & Botón Agregar */}
             <View style={{ gap: 8 }}>
-              <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: theme.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Mis Ciudades
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: theme.text.secondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Mis Ciudades
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setIsAddingCity(!isAddingCity);
+                    if (isAddingCity) clearSearchResults();
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                >
+                  <Plus size={13} color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} />
+                  <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
+                    {isAddingCity ? 'Cancelar' : 'Agregar Ciudad'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              {/* Formulario de Búsqueda de Ciudades */}
+              {isAddingCity && (
+                <View
+                  style={{
+                    backgroundColor: theme.cardSecondary,
+                    padding: 12,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light,
+                    gap: 8,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Search size={14} color={theme.text.tertiary} />
+                    <TextInput
+                      value={searchQuery}
+                      onChangeText={searchCities}
+                      placeholder="Buscar ciudad (ej. Córdoba, Río Tercero, Madrid)..."
+                      placeholderTextColor={theme.text.tertiary}
+                      autoFocus
+                      style={{
+                        flex: 1,
+                        fontSize: 13,
+                        fontFamily: IOS_FONTS.semibold,
+                        color: theme.text.primary,
+                        padding: 0,
+                      }}
+                    />
+                    {isSearching && <ActivityIndicator size="small" color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} />}
+                  </View>
+
+                  {/* Resultados de búsqueda */}
+                  {searchResults.length > 0 && (
+                    <View style={{ gap: 4, marginTop: 4 }}>
+                      {searchResults.map((city) => (
+                        <Pressable
+                          key={city.id}
+                          onPress={async () => {
+                            await addLocation(city);
+                            setIsAddingCity(false);
+                            clearSearchResults();
+                          }}
+                          style={({ pressed }) => ({
+                            opacity: pressed ? 0.75 : 1,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingVertical: 8,
+                            paddingHorizontal: 10,
+                            borderRadius: 10,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF',
+                          })}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <MapPin size={12} color={isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light} />
+                            <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.semibold, color: theme.text.primary }}>
+                              {city.name}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light }}>
+                            + Añadir
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Chips de Ciudades Guardadas */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {CITIES.map((c) => {
-                  const isSelected = c.name === currentCityObj.name;
+                {locations.map((loc) => {
+                  const isSelected = loc.id === selectedLocationId;
+                  const isDefault = loc.id === 'despenaderos-cba';
                   return (
                     <Pressable
-                      key={c.name}
-                      onPress={() => onSelectCity(c.name)}
+                      key={loc.id}
+                      onPress={() => selectLocation(loc.id)}
                       style={{
-                        paddingHorizontal: 14,
-                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
                         borderRadius: 14,
                         backgroundColor: isSelected
                           ? (isDark ? 'rgba(10, 132, 255, 0.22)' : 'rgba(0, 122, 255, 0.14)')
@@ -186,11 +296,20 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
                           color: isSelected ? (isDark ? APPLE_ACCENT.blue.dark : APPLE_ACCENT.blue.light) : theme.text.primary,
                         }}
                       >
-                        {c.name.split(',')[0]}
+                        {loc.name.split(',')[0]}
                       </Text>
-                      <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.bold, color: theme.text.secondary }}>
-                        {c.temp}
-                      </Text>
+
+                      {!isDefault && (
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            removeLocation(loc.id);
+                          }}
+                          style={{ padding: 2 }}
+                        >
+                          <X size={12} color={theme.text.tertiary} />
+                        </Pressable>
+                      )}
                     </Pressable>
                   );
                 })}
@@ -210,15 +329,15 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
                 borderColor: theme.border,
               }}
             >
-              <View style={{ gap: 2 }}>
+              <View style={{ gap: 2, flex: 1 }}>
                 <Text style={{ fontSize: 16, fontFamily: IOS_FONTS.bold, color: theme.text.primary }}>
-                  {currentCityObj.name}
+                  {weatherData?.locationName || selectedLoc?.name || 'Despeñaderos, Córdoba'}
                 </Text>
                 <Text style={{ fontSize: 36, fontFamily: IOS_FONTS.roundedHeavy, color: theme.text.primary, fontVariant: ['tabular-nums'] }}>
-                  {currentCityObj.temp}
+                  {weatherData ? `${weatherData.temperature}°` : '18°'}
                 </Text>
                 <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.semibold, color: theme.text.secondary }}>
-                  {currentCityObj.condition} · Máx. {currentCityObj.max} · Mín. {currentCityObj.min}
+                  {weatherData?.condition || 'Despejado'} · Máx. {weatherData?.tempMax ?? 22}° · Mín. {weatherData?.tempMin ?? 8}°
                 </Text>
               </View>
 
@@ -232,7 +351,7 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
                   justifyContent: 'center',
                 }}
               >
-                <Sun size={34} color={isDark ? APPLE_ACCENT.yellow.dark : APPLE_ACCENT.yellow.light} />
+                {getWeatherIcon(weatherData?.code ?? 0, 32)}
               </View>
             </View>
 
@@ -242,33 +361,30 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
                 Pronóstico por Horas
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                {HOURLY_FORECAST.map((h, i) => {
-                  const Icon = h.icon;
-                  return (
-                    <View
-                      key={i}
-                      style={{
-                        backgroundColor: theme.cardSecondary,
-                        borderRadius: 14,
-                        paddingVertical: 12,
-                        paddingHorizontal: 12,
-                        alignItems: 'center',
-                        gap: 8,
-                        minWidth: 56,
-                        borderWidth: 1,
-                        borderColor: theme.border,
-                      }}
-                    >
-                      <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.semibold, color: theme.text.secondary }}>
-                        {h.hour}
-                      </Text>
-                      <Icon size={20} color={isDark ? APPLE_ACCENT.yellow.dark : APPLE_ACCENT.yellow.light} />
-                      <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary, fontVariant: ['tabular-nums'] }}>
-                        {h.temp}
-                      </Text>
-                    </View>
-                  );
-                })}
+                {(weatherData?.hourly || []).map((h, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      backgroundColor: theme.cardSecondary,
+                      borderRadius: 14,
+                      paddingVertical: 12,
+                      paddingHorizontal: 12,
+                      alignItems: 'center',
+                      gap: 8,
+                      minWidth: 56,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontFamily: IOS_FONTS.semibold, color: theme.text.secondary }}>
+                      {h.hourLabel}
+                    </Text>
+                    {getWeatherIcon(h.code, 18)}
+                    <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary, fontVariant: ['tabular-nums'] }}>
+                      {h.temp}°
+                    </Text>
+                  </View>
+                ))}
               </ScrollView>
             </View>
 
@@ -287,58 +403,55 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
                   gap: 10,
                 }}
               >
-                {DAILY_FORECAST.map((d, i) => {
-                  const Icon = d.icon;
-                  return (
-                    <View
-                      key={i}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        borderBottomWidth: i < DAILY_FORECAST.length - 1 ? 1 : 0,
-                        borderBottomColor: theme.border,
-                        paddingBottom: i < DAILY_FORECAST.length - 1 ? 8 : 0,
-                      }}
-                    >
-                      <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 44 }}>
-                        {d.day}
+                {(weatherData?.daily || []).map((d, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottomWidth: i < (weatherData?.daily.length || 0) - 1 ? 1 : 0,
+                      borderBottomColor: theme.border,
+                      paddingBottom: i < (weatherData?.daily.length || 0) - 1 ? 8 : 0,
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 44 }}>
+                      {d.dayLabel}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                      {getWeatherIcon(d.code, 16)}
+                      <Text numberOfLines={1} style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
+                        {d.condition}
                       </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                        <Icon size={16} color={isDark ? APPLE_ACCENT.yellow.dark : APPLE_ACCENT.yellow.light} />
-                        <Text numberOfLines={1} style={{ fontSize: 11, fontFamily: IOS_FONTS.regular, color: theme.text.secondary }}>
-                          {d.condition}
-                        </Text>
-                      </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.regular, color: theme.text.secondary, width: 28, textAlign: 'right' }}>
-                          {d.min}°
-                        </Text>
-                        {/* Barra Térmica */}
-                        <View style={{ width: 60, height: 4, borderRadius: 2, backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA', overflow: 'hidden' }}>
-                          <View
-                            style={{
-                              height: '100%',
-                              width: `${Math.min(100, (d.max - d.min) * 6)}%`,
-                              backgroundColor: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light,
-                              borderRadius: 2,
-                            }}
-                          />
-                        </View>
-                        <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 28, textAlign: 'right' }}>
-                          {d.max}°
-                        </Text>
-                      </View>
                     </View>
-                  );
-                })}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.regular, color: theme.text.secondary, width: 28, textAlign: 'right' }}>
+                        {d.min}°
+                      </Text>
+                      {/* Barra Térmica */}
+                      <View style={{ width: 60, height: 4, borderRadius: 2, backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA', overflow: 'hidden' }}>
+                        <View
+                          style={{
+                            height: '100%',
+                            width: `${Math.min(100, (d.max - d.min) * 6)}%`,
+                            backgroundColor: isDark ? APPLE_ACCENT.orange.dark : APPLE_ACCENT.orange.light,
+                            borderRadius: 2,
+                          }}
+                        />
+                      </View>
+                      <Text style={{ fontSize: 12, fontFamily: IOS_FONTS.bold, color: theme.text.primary, width: 28, textAlign: 'right' }}>
+                        {d.max}°
+                      </Text>
+                    </View>
+                  </View>
+                ))}
               </View>
             </View>
           </ScrollView>
 
-          {/* Botón Deep Link a la App Nativa del Clima */}
+          {/* Botón Deep Link Universal (Huawei / Android / iOS / Web) */}
           <Pressable
-            onPress={handleOpenNativeWeatherApp}
+            onPress={handleOpenNativeWeather}
             style={({ pressed }) => ({
               opacity: pressed ? 0.85 : 1,
               flexDirection: 'row',
@@ -353,7 +466,7 @@ export const WeatherForecastModal: React.FC<WeatherForecastModalProps> = ({
           >
             <ExternalLink size={16} color="#FFFFFF" />
             <Text style={{ fontSize: 14, fontFamily: IOS_FONTS.bold, color: '#FFFFFF' }}>
-              Abrir en App de Clima del Dispositivo
+              Abrir Clima en Navegador / App del Dispositivo
             </Text>
           </Pressable>
         </View>

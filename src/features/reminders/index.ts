@@ -9,5 +9,6 @@ export * from './components/SmartListCards';
 export * from './components/RemindersViewToggle';
 export * from './components/CreateReminderModal';
 export * from './components/ReminderDetailSheet';
+export * from './components/TaskContextMenuModal';
 export * from './components/RichLinkPreviewCard';
 export * from './components/ReminderSectionHeader';

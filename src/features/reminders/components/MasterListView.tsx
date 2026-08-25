@@ -36,6 +36,7 @@ interface MasterListViewProps {
   onSelectTag?: (tag: string) => void;
   onToggleTaskComplete?: (taskId: string) => void;
   onPressTask?: (task: TaskItem) => void;
+  onLongPressTask?: (task: TaskItem) => void;
   onToggleTaskFlag?: (taskId: string) => void;
   onAddQuickTaskInList?: (listId: string) => void;
   isDark?: boolean;
@@ -49,6 +50,7 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
   onSelectTag,
   onToggleTaskComplete,
   onPressTask,
+  onLongPressTask,
   onToggleTaskFlag,
   onAddQuickTaskInList,
   isDark = true,
@@ -218,6 +220,8 @@ export const MasterListView: React.FC<MasterListViewProps> = ({
                         <Pressable
                           key={task.id}
                           onPress={() => onPressTask?.(task)}
+                          onLongPress={() => onLongPressTask?.(task)}
+                          delayLongPress={350}
                           style={({ pressed }) => ({
                             opacity: pressed ? 0.75 : 1,
                             flexDirection: 'row',

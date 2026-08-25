@@ -23,6 +23,7 @@ interface HierarchicalTaskItemProps {
   onToggleCollapse?: (id: string) => void;
   onAddSubtask?: (parentId: string) => void;
   onPress?: (task: TaskItem) => void;
+  onLongPress?: (task: TaskItem) => void;
   onDelete?: (id: string) => void;
   onToggleFlag?: (id: string) => void;
   isDark?: boolean;
@@ -35,6 +36,7 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
   onToggleCollapse,
   onAddSubtask,
   onPress,
+  onLongPress,
   onToggleFlag,
   isDark = true,
 }) => {
@@ -64,6 +66,8 @@ export const HierarchicalTaskItem: React.FC<HierarchicalTaskItemProps> = ({
   return (
     <Pressable
       onPress={() => onPress?.(task)}
+      onLongPress={() => onLongPress?.(task)}
+      delayLongPress={350}
       style={({ pressed }) => ({
         opacity: pressed ? 0.85 : 1,
         backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',

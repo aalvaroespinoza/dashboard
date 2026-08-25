@@ -38,9 +38,12 @@ export async function seedDatabase(db: SQLiteDatabase, force: boolean = false): 
     ('cat-transport', 'Transporte & Colectivo', 'expense', 'bus', '#FF2D55', 30000),
     ('cat-rent', 'Alquiler & Expensas', 'expense', 'home', '#FF3B30', 350000);
 
-    -- 4. Cuenta Principal de Finanzas (Saldo inicial $0)
-    INSERT OR IGNORE INTO accounts (id, name, type, balance, color, is_archived, created_at, updated_at) VALUES
-    ('acc-main', 'Cuenta Principal', 'bank', 0, '#007AFF', 0, '${now}', '${now}');
+    -- 4. Cuentas base de Finanzas (Saldo inicial $0)
+    INSERT OR IGNORE INTO accounts (id, name, type, color, icon, initial_balance, position, created_at) VALUES
+    ('acc-cash', 'Efectivo', 'cash', '#34C759', '💵', 0, 0, '${now}'),
+    ('acc-galicia', 'Débito Galicia', 'debit', '#007AFF', '💳', 0, 1, '${now}'),
+    ('acc-mp', 'Mercado Pago', 'savings', '#32ADE6', '📱', 0, 2, '${now}'),
+    ('acc-visa', 'Crédito Visa', 'credit', '#FF9500', '💳', 0, 3, '${now}');
 
     -- 5. Categorías base de Hábitos y Perfil RPG Nivel 1 (0 hábitos iniciales, 0 EXP)
     INSERT OR IGNORE INTO habit_categories (id, name, emoji, color, position) VALUES
@@ -49,8 +52,8 @@ export async function seedDatabase(db: SQLiteDatabase, force: boolean = false): 
     ('cat-bonds', 'Vínculos', '🧡', '#FF9500', 2),
     ('cat-focus', 'Certificación y Foco', '🎯', '#FF3B30', 3);
 
-    INSERT OR IGNORE INTO habit_gamification_profile (id, level, current_exp, next_level_exp, rank_title, strength_exp, intelligence_exp, focus_exp, perfect_days_count, total_exp_earned, created_at, updated_at) VALUES
-    ('main-profile', 1, 0, 100, 'Novato', 0, 0, 0, 0, 0, '${now}', '${now}');
+    INSERT OR IGNORE INTO habit_gamification_profile (id, level, current_exp, strength_exp, intelligence_exp, focus_exp, perfect_days_count, total_exp_earned, updated_at) VALUES
+    ('default_player', 1, 0, 0, 0, 0, 0, 0, '${now}');
 
     -- 6. Ajustes iniciales de la App
     INSERT OR IGNORE INTO app_settings (key, value) VALUES

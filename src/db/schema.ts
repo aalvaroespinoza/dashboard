@@ -113,20 +113,41 @@ export const CREATE_TABLES_SQL = `
     budget_limit REAL
   );
 
+  -- Cuentas de finanzas (multi-cuenta)
+  CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'debit' CHECK(type IN ('cash', 'debit', 'credit', 'savings')),
+    color TEXT NOT NULL DEFAULT '#007AFF',
+    icon TEXT NOT NULL DEFAULT '💳',
+    initial_balance REAL DEFAULT 0,
+    position INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+
   -- Transacciones financieras
   CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY,
     category_id TEXT NOT NULL,
+    account_id TEXT,
     type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
     amount REAL NOT NULL,
     description TEXT NOT NULL,
     payment_method TEXT NOT NULL DEFAULT 'debit',
     transaction_date TEXT NOT NULL,
+    installments INTEGER DEFAULT 1,
+    installment_current INTEGER DEFAULT 1,
+    is_recurring INTEGER DEFAULT 0,
+    recurring_day INTEGER,
+    next_due_date TEXT,
+    notes TEXT,
     created_at TEXT NOT NULL,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL
   );
   CREATE INDEX IF NOT EXISTS idx_trans_date ON transactions(transaction_date);
   CREATE INDEX IF NOT EXISTS idx_trans_cat ON transactions(category_id);
+  CREATE INDEX IF NOT EXISTS idx_trans_account ON transactions(account_id);
 
   -- Presupuestos mensuales por categoría
   CREATE TABLE IF NOT EXISTS finance_budgets (
@@ -295,6 +316,10 @@ export async function runMigrations(db: any) {
     { table: 'habits', column: 'is_archived INTEGER DEFAULT 0' },
     { table: 'habit_logs', column: 'is_skipped INTEGER DEFAULT 0' },
     // Finanzas v2: multi-cuenta
+    { table: 'accounts', column: 'initial_balance REAL DEFAULT 0' },
+    { table: 'accounts', column: 'position INTEGER DEFAULT 0' },
+    { table: 'accounts', column: 'color TEXT DEFAULT "#007AFF"' },
+    { table: 'accounts', column: 'icon TEXT DEFAULT "💳"' },
     { table: 'transactions', column: 'account_id TEXT' },
     { table: 'transactions', column: 'installments INTEGER DEFAULT 1' },
     { table: 'transactions', column: 'installment_current INTEGER DEFAULT 1' },

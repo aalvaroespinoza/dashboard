@@ -10,6 +10,7 @@ import { habitsRepo } from '../../../db/repositories/habitsRepo';
 import { gamificationRepo } from '../../../db/repositories/gamificationRepo';
 import { activeTimersRepo } from '../../../db/repositories/activeTimersRepo';
 import { calculateActionExp, calculateMasteryBadge } from '../utils/gamificationUtils';
+import { playHabitCompleteSound } from '../../../utils/soundEffects';
 
 export interface ActiveTimerState {
   habitId: string;
@@ -210,6 +211,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
 
     // Otorgar EXP y progresión RPG si se completó
     if (isNowCompleted === 1) {
+      playHabitCompleteSound();
       const category = get().categories.find((c) => c.id === habit.category_id);
       const expGained = calculateActionExp('check', 1, habit.streak_count || 0);
 
@@ -271,6 +273,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
 
     // Otorgar EXP cuando pasa de no completado a completado
     if (!wasCompleted && isCompleted === 1) {
+      playHabitCompleteSound();
       const category = get().categories.find((c) => c.id === habit.category_id);
       const expGained = calculateActionExp('counter', nextVal, habit.streak_count || 0);
 
@@ -462,6 +465,7 @@ export const useHabitsStore = create<HabitsStoreState>((set, get) => ({
     await activeTimersRepo.delete(habitId);
 
     if (isCompleted === 1 && currentLog?.is_completed !== 1) {
+      playHabitCompleteSound();
       const category = get().categories.find((c) => c.id === habit.category_id);
       const expGained = calculateActionExp('timer', finalValue, habit.streak_count || 0);
 
